@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import Celebration from '../components/Celebration'
 import type { StoreOnMap, Supermarket } from '../lib/types'
 import { formatDistance, formatPrice } from '../lib/geo'
 import { useStores, useUserPosition } from '../lib/useStores'
@@ -27,11 +28,22 @@ export default function Results() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  // Show the savings celebration once, only when arriving fresh from a scan
+  // (Home passes `state.celebrate`). Strip it so refresh/back-nav won't repeat.
+  const location = useLocation()
+  const [celebrate, setCelebrate] = useState(
+    () => Boolean((location.state as { celebrate?: boolean } | null)?.celebrate),
+  )
+  useEffect(() => {
+    if (window.history.state?.usr?.celebrate) window.history.replaceState(null, '')
+  }, [])
 
   const receiptTotal = totalOf(active.items)
   const receiptItemCount = countOf(active.items)
   const name = savedName ?? active.name
   const receiptId = savedId ?? active.id
+  // Roll `.reveal` cards into view as they enter the scroll container.
+  const scrollRef = useScrollReveal(ranked.length)
 
   if (!userPos || active.loading) {
     return (
@@ -63,7 +75,13 @@ export default function Results() {
       setEditing(false)
     } catch (err) {
       console.error('[sali] save failed:', err)
-      setSaveError('שמירת הקבלה נכשלה — בדקו שטבלת receipts קיימת ב־Supabase.')
+      const e = err as { code?: string; message?: string }
+      const detail = [e.message, e.code && `(${e.code})`].filter(Boolean).join(' ')
+      setSaveError(
+        e.code === '42501'
+          ? 'שמירה נכשלה: אין הרשאה (RLS). כנראה אינכם מחוברים — התחברו ונסו שוב.'
+          : `שמירה נכשלה: ${detail || 'שגיאה לא ידועה'}`,
+      )
     } finally {
       setSaving(false)
     }
@@ -76,21 +94,24 @@ export default function Results() {
 
   return (
     <div className="results">
-      <header className="results-header">
-        <button className="back-btn" onClick={() => navigate('/')} aria-label="חזרה">
+      {/* Fixed top: floating nav chips + the pinned price summary. Doesn't scroll. */}
+      <div className="results-fixed">
+      {/* Floating, decomposed nav: three separate rounded chips. */}
+      <nav className="float-nav">
+        <button className="nav-chip nav-icon" onClick={() => navigate('/')} aria-label="חזרה">
           →
         </button>
+
         {naming ? (
-          /* The page title doubles as the name field — saving is blocked until it has one. */
           <form
-            className="field-row title-name-form"
+            className="nav-chip nav-name"
             onSubmit={(e) => {
               e.preventDefault()
               void commitSave()
             }}
           >
             <input
-              className="field"
+              className="nav-name-input"
               value={draftName}
               onChange={(e) => setDraftName(e.target.value)}
               placeholder="שם הקבלה"
@@ -98,24 +119,29 @@ export default function Results() {
               maxLength={40}
               autoFocus={editing}
             />
-            <button className="btn btn-primary" type="submit" disabled={!draftName.trim() || saving}>
-              {saving ? '…' : 'שמירה'}
-            </button>
           </form>
         ) : (
-          <>
-            <h1 className="results-title">{name}</h1>
-            <button className="title-edit" onClick={startEdit} aria-label="עריכת השם">
-              <EditIcon />
-            </button>
-          </>
+          <div className="nav-chip nav-name">
+            <span className="nav-name-text">{name}</span>
+          </div>
         )}
-      </header>
 
-      {saveError && <p className="save-error">{saveError}</p>}
+        {naming ? (
+          <button
+            className="nav-chip nav-save"
+            onClick={() => void commitSave()}
+            disabled={!draftName.trim() || saving}
+          >
+            {saving ? '…' : 'שמירה'}
+          </button>
+        ) : (
+          <button className="nav-chip nav-icon" onClick={startEdit} aria-label="עריכת השם">
+            <EditIcon />
+          </button>
+        )}
+      </nav>
 
-      <div className="results-scroll">
-        {/* The receipt itself — the baseline everything else is compared to. */}
+        {/* The receipt itself — the baseline, pinned below the nav. */}
         <div className="receipt-card">
           <div className="receipt-total mono" dir="ltr">
             {formatPrice(receiptTotal)}
@@ -127,8 +153,12 @@ export default function Results() {
             </p>
           )}
         </div>
+      </div>
 
-        <p className="list-subhead">
+      {saveError && <p className="save-error">{saveError}</p>}
+
+      <div className="results-scroll" ref={scrollRef}>
+        <p className="list-subhead reveal">
           המחיר הטוב ביותר בכל סופר
           <span className="subhead-note">כולל החלפה למוצרים דומים וזולים יותר</span>
         </p>
@@ -141,6 +171,7 @@ export default function Results() {
               rank={i + 1}
               best={store.bestPrice === cheapestBest}
               receiptTotal={receiptTotal}
+              style={{ transitionDelay: `${Math.min(i, 6) * 55}ms` }}
             />
           ))}
         </ol>
@@ -152,6 +183,10 @@ export default function Results() {
           הצגה על המפה
         </button>
       </div>
+
+      {celebrate && bestSaving > 0 && (
+        <Celebration amount={bestSaving} onDone={() => setCelebrate(false)} />
+      )}
     </div>
   )
 }
@@ -161,11 +196,13 @@ function StoreRow({
   rank,
   best,
   receiptTotal,
+  style,
 }: {
   store: Supermarket
   rank: number
   best: boolean
   receiptTotal: number
+  style?: React.CSSProperties
 }) {
   const diff = receiptTotal - store.bestPrice
 
@@ -176,7 +213,7 @@ function StoreRow({
     : formatDistance((store as StoreOnMap).distanceM)
 
   return (
-    <li className={`store-row ${best ? 'best' : ''} ${store.online ? 'online' : ''}`}>
+    <li className={`store-row reveal ${best ? 'best' : ''} ${store.online ? 'online' : ''}`} style={style}>
       <span className="row-rank mono">{rank}</span>
       <span className="row-logo">
         <img src={store.logo} alt={store.brand} />
@@ -210,6 +247,56 @@ function StoreRow({
       </div>
     </li>
   )
+}
+
+/**
+ * Rolls `.reveal` elements into view as they enter the scroll container.
+ * `ready` changes (0 → N) once the list renders, so the observer attaches then.
+ *
+ * Fail-safe: `.reveal` starts at opacity 0, so anything the observer misses would
+ * stay invisible. We use threshold 0 (the roll transform foreshortens rows and can
+ * defeat higher thresholds) plus a timeout that force-reveals whatever is already
+ * on screen — content must never get stuck hidden.
+ */
+function useScrollReveal(ready: number) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const root = ref.current
+    if (!root) return
+    const els = Array.from(root.querySelectorAll<HTMLElement>('.reveal'))
+    if (!('IntersectionObserver' in window)) {
+      els.forEach((el) => el.classList.add('in'))
+      return
+    }
+    const io = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('in')
+            io.unobserve(e.target)
+          }
+        }),
+      { root, threshold: 0, rootMargin: '0px 0px -6% 0px' },
+    )
+    els.forEach((el) => io.observe(el))
+    // Safety net for anything on screen the observer didn't catch.
+    const t = setTimeout(() => {
+      const rootRect = root.getBoundingClientRect()
+      els.forEach((el) => {
+        if (el.classList.contains('in')) return
+        const r = el.getBoundingClientRect()
+        if (r.top < rootRect.bottom && r.bottom > rootRect.top) {
+          el.classList.add('in')
+          io.unobserve(el)
+        }
+      })
+    }, 300)
+    return () => {
+      clearTimeout(t)
+      io.disconnect()
+    }
+  }, [ready])
+  return ref
 }
 
 function EditIcon() {

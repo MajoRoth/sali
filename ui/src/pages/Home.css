@@ -222,6 +222,18 @@
 
 .new-receipt {
   margin-bottom: 16px;
+  padding: 16px;
+}
+
+.new-receipt .panel-title {
+  font-size: 14px;
+  padding-bottom: 12px;
+}
+
+/* Three bigger tiles on one line, with the link field always below. */
+.new-receipt .tile-grid {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .url-form.inline {

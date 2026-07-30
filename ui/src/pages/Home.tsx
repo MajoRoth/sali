@@ -64,7 +64,7 @@ export default function Home() {
     }
     const t = setTimeout(() => {
       setStages(null)
-      if (user) navigate('/results')
+      if (user) navigate('/results', { state: { celebrate: true } })
       else setGateOpen(true)
     }, STAGE_MS)
     return () => clearTimeout(t)
@@ -74,7 +74,7 @@ export default function Home() {
   useEffect(() => {
     if (gateOpen && user) {
       setGateOpen(false)
-      navigate('/results')
+      navigate('/results', { state: { celebrate: true } })
     }
   }, [gateOpen, user, navigate])
 
@@ -163,7 +163,7 @@ function UploadHome({ onScan }: UploadProps) {
         <div className="wordmark" dir="ltr">
           sali<span className="wordmark-dot">_</span>
         </div>
-        <p className="tagline">סורקים · משווים · חוסכים</p>
+        <p className="tagline">יכולת לחסוך, לא חבל?</p>
       </header>
 
       <main
@@ -265,7 +265,6 @@ function ReceiptListHome({
   onCreateEmpty,
   onScan,
 }: ListProps) {
-  const [urlOpen, setUrlOpen] = useState(false)
   const [url, setUrl] = useState('')
   const cameraRef = useRef<HTMLInputElement>(null)
   const uploadRef = useRef<HTMLInputElement>(null)
@@ -287,58 +286,45 @@ function ReceiptListHome({
         </div>
       </header>
 
-      {/* Compact echo of the upload zone — the entry point for a new receipt. */}
+      {/* Echo of the full upload zone — the entry point for a new receipt. */}
       <section className="panel new-receipt">
         <p className="panel-title">קבלה חדשה</p>
-        <div className="tile-grid">
-          <button className="tile" onClick={onCreateEmpty}>
+        <div className="tile-grid lg">
+          <button className="tile lg" onClick={onCreateEmpty}>
             <PlusIcon />
             עגלה ריקה
           </button>
-          <button className="tile" onClick={() => cameraRef.current?.click()}>
+          <button className="tile lg" onClick={() => cameraRef.current?.click()}>
             <CameraIcon />
             מצלמה
           </button>
-          <button className="tile" onClick={() => uploadRef.current?.click()}>
+          <button className="tile lg" onClick={() => uploadRef.current?.click()}>
             <ImageIcon />
             קובץ
           </button>
-          <button
-            className={`tile ${urlOpen ? 'active' : ''}`}
-            onClick={() => setUrlOpen((o) => !o)}
-          >
-            <LinkIcon />
-            קישור
-          </button>
         </div>
 
-        {urlOpen && (
-          <form
-            className="field-row url-form inline"
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (url.trim()) {
-                setUrlOpen(false)
-                onScan('url')
-              }
-            }}
-          >
-            <input
-              className="field mono"
-              type="url"
-              inputMode="url"
-              dir="ltr"
-              placeholder="https://..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              aria-label="קישור לקבלה"
-              autoFocus
-            />
-            <button className="icon-btn forward" type="submit" disabled={!url.trim()} aria-label="טעינת הקבלה">
-              <ArrowIcon />
-            </button>
-          </form>
-        )}
+        <form
+          className="field-row url-form inline"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (url.trim()) onScan('url')
+          }}
+        >
+          <input
+            className="field mono"
+            type="url"
+            inputMode="url"
+            dir="ltr"
+            placeholder="הדביקו קישור לקבלה"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            aria-label="קישור לקבלה"
+          />
+          <button className="icon-btn forward" type="submit" disabled={!url.trim()} aria-label="טעינת הקבלה">
+            <ArrowIcon />
+          </button>
+        </form>
       </section>
 
       <ul className="receipt-list">
@@ -449,18 +435,6 @@ function ImageIcon() {
   )
 }
 
-function LinkIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true">
-      <path
-        d="M10 13a4 4 0 0 0 6 .5l2-2a4 4 0 0 0-5.7-5.7l-1 1M14 11a4 4 0 0 0-6-.5l-2 2A4 4 0 0 0 11.7 18l1-1"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
 
 function PlusIcon() {
   return (
