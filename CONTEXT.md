@@ -10,6 +10,16 @@ A merchant-issued proof of purchase accessible through a URL, containing
 transaction metadata and purchased line items.
 _Avoid_: Digital recipe, recipe
 
+**Receipt Image**:
+A user-supplied photograph or scan of a completed purchase receipt, containing
+visual purchase evidence rather than a merchant-hosted URL.
+_Avoid_: Digital Receipt, receipt upload
+
+**Verified Receipt Image**:
+A Receipt Image whose readable visual evidence supports extraction of its
+transaction, total, and line-item facts.
+_Avoid_: Plausible receipt photo, assumed receipt
+
 **Verified Digital Receipt**:
 A Digital Receipt whose accessible evidence establishes that it is
 merchant-issued purchase evidence and supports extraction of its transaction,
@@ -17,8 +27,9 @@ total, and line-item facts.
 _Avoid_: Plausible receipt page, assumed receipt
 
 **Normalized Receipt**:
-A platform-independent, schema-validated representation of a Digital Receipt's
-merchant, transaction totals, and ordered line items.
+A platform-independent, schema-validated representation of a Digital Receipt
+or Verified Receipt Image's merchant, transaction totals, and ordered line
+items.
 _Avoid_: Model-generated CSV, unvalidated model output
 
 **Reconciled Receipt**:

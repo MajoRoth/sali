@@ -7,6 +7,7 @@ from sali.receipt_extraction.errors import (
     HostedReceiptError,
     ReceiptInspectionFailure,
 )
+from sali.receipt_extraction.image_validation import MAX_RECEIPT_IMAGE_BYTES
 from sali.receipt_extraction.models import NormalizedReceipt, validate_and_reconcile
 
 
@@ -98,6 +99,94 @@ def test_extract_reports_service_failures_without_internal_detail() -> None:
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "extraction_unavailable"
     assert "missing key" not in response.text
+
+
+def test_extract_image_returns_the_same_receipt_document_without_persistence() -> None:
+    requested = []
+
+    def extract(image):
+        requested.append(image)
+        return receipt_document()
+
+    response = TestClient(create_app(extract_receipt_image=extract)).post(
+        "/api/receipts/extract-image",
+        files={"image": ("receipt.jpg", b"\xff\xd8\xff\xdb", "image/jpeg")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["receipt"]["items"][0]["name"] == "Example product"
+    assert requested[0].media_type == "image/jpeg"
+    assert requested[0].data == b"\xff\xd8\xff\xdb"
+    assert "receipt.jpg" not in response.text
+
+
+def test_extract_image_rejects_an_invalid_or_missing_upload() -> None:
+    client = TestClient(create_app())
+
+    missing = client.post("/api/receipts/extract-image")
+    unsupported = client.post(
+        "/api/receipts/extract-image",
+        files={"image": ("receipt.gif", b"GIF89a", "image/gif")},
+    )
+    mismatched = client.post(
+        "/api/receipts/extract-image",
+        files={"image": ("receipt.jpg", b"\x89PNG\r\n\x1a\n", "image/jpeg")},
+    )
+    oversized = client.post(
+        "/api/receipts/extract-image",
+        files={
+            "image": (
+                "receipt.jpg",
+                b"\xff\xd8\xff" + b"0" * MAX_RECEIPT_IMAGE_BYTES,
+                "image/jpeg",
+            )
+        },
+    )
+
+    assert missing.json() == {
+        "error": {"code": "invalid_request", "message": "A receipt image is required."}
+    }
+    for response in (unsupported, mismatched, oversized):
+        assert response.status_code == 422
+        assert response.json() == {
+            "error": {
+                "code": "invalid_image",
+                "message": "Upload one JPEG, PNG, or WEBP receipt image no larger than 10 MiB.",
+            }
+        }
+
+
+def test_extract_image_hides_inspection_and_service_details() -> None:
+    inspection_failure = ReceiptInspectionFailure(
+        failure_code="not_receipt",
+        failure_reason="private receipt text was visible",
+    )
+    failed = TestClient(
+        create_app(
+            extract_receipt_image=lambda _image: (_ for _ in ()).throw(
+                inspection_failure
+            )
+        )
+    ).post(
+        "/api/receipts/extract-image",
+        files={"image": ("receipt.png", b"\x89PNG\r\n\x1a\n", "image/png")},
+    )
+    unavailable = TestClient(
+        create_app(
+            extract_receipt_image=lambda _image: (_ for _ in ()).throw(
+                HostedReceiptError("missing key")
+            )
+        )
+    ).post(
+        "/api/receipts/extract-image",
+        files={"image": ("receipt.webp", b"RIFF\x00\x00\x00\x00WEBP", "image/webp")},
+    )
+
+    assert failed.json() == {
+        "error": {"code": "not_receipt", "message": "The image did not show a receipt."}
+    }
+    assert unavailable.status_code == 503
+    assert "missing key" not in unavailable.text
 
 
 def test_api_allows_the_local_vite_origin_only() -> None:

@@ -11,6 +11,10 @@ class InvalidReceiptUrlError(HostedReceiptError):
     """The caller supplied a URL outside the public Digital Receipt policy."""
 
 
+class InvalidReceiptImageError(HostedReceiptError):
+    """The caller supplied an image outside the Receipt Image policy."""
+
+
 FailureCode = Literal[
     "none",
     "unreachable",
@@ -37,7 +41,7 @@ class ReceiptInspectionFailure(HostedReceiptError):
         self.diagnostics = diagnostics
 
         message = (
-            f"{source} could not verify an extractable Digital Receipt "
+            f"{source} could not verify extractable receipt evidence "
             f"({failure_code}): {failure_reason}"
         )
         if diagnostics:
@@ -52,6 +56,7 @@ class OutputExistsError(FileExistsError):
 __all__ = [
     "FailureCode",
     "HostedReceiptError",
+    "InvalidReceiptImageError",
     "InvalidReceiptUrlError",
     "OutputExistsError",
     "ReceiptInspectionFailure",

@@ -29,12 +29,22 @@ uv run sali-api
 ```
 
 It exposes `POST /api/receipts/extract` with a JSON body such as
-`{"url":"https://merchant.example/receipt/public-token"}` and returns a
-reconciled Receipt Document. The service accepts public HTTPS receipt URLs only
-and does not store receipt URLs or extraction results. By default, browser
-requests are allowed only from `http://localhost:5173`; set
+`{"url":"https://merchant.example/receipt/public-token"}`, plus
+`POST /api/receipts/extract-image` with one `multipart/form-data` field named
+`image`. Both return a reconciled Receipt Document. The image endpoint accepts
+JPEG, PNG, and WEBP receipt images up to 10 MiB; it does not support PDFs,
+HEIC, GIF, or multi-image receipts. The service does not store receipt URLs,
+images, or extraction results. By default, browser requests are allowed only
+from `http://localhost:5173`; set
 `SALI_CORS_ORIGINS` to a comma-separated allowlist when using another trusted
 UI origin.
+
+For example:
+
+```bash
+curl -X POST http://localhost:8000/api/receipts/extract-image \
+  -F 'image=@/path/to/receipt.jpg;type=image/jpeg'
+```
 
 ## UI
 
