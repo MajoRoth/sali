@@ -27,6 +27,9 @@ htmlcov/
 .idea/
 .vscode/
 
+# Claude Code (machine-local permission grants)
+.claude/settings.local.json
+
 # OS
 .DS_Store
 
@@ -35,3 +38,7 @@ data/*.csv
 data/*.xml
 data/*.gz
 data/*.db
+
+# other
+docs/
+scripts/extract_recipe_data/*.csv
