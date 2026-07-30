@@ -200,7 +200,10 @@ export default function Results() {
               ?
             </button>
           </div>
-          <span className="subhead-note">כולל החלפה למוצרים דומים וזולים יותר</span>
+          <span className="subhead-note">
+            <SwapIcon size={13} />
+            כולל החלפה למוצרים דומים וזולים יותר
+          </span>
           {showPriceHelp && (
             <div className="price-help-pop">
               המספרים בסוגריים <b dir="ltr">(א/ב)</b>:
@@ -302,13 +305,39 @@ function StoreRow({
       <div className="row-savings">
         <SavingBadge amount={Math.abs(diff)} save={diff > 0} size="lg" />
         <span className="price-xy mono" dir="ltr">
-          {formatPrice(store.cartTotal)} / {formatPrice(store.bestPrice)}
+          {formatPrice(store.cartTotal)} /{' '}
+          <span className="swap-price">
+            <SwapIcon />
+            {formatPrice(store.bestPrice)}
+          </span>
         </span>
       </div>
     </li>
   )
 }
 
+
+// Two round arrows forming a circle — the "swap for a cheaper item" cycle.
+function SwapIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width={size} height={size} aria-hidden="true">
+      <path
+        d="M18.5 8.5A8 8 0 0 0 5.2 7.3"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path d="M18.9 4.6v4h-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M5.5 15.5a8 8 0 0 0 13.3 1.2"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path d="M5.1 19.4v-4h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
 
 function EditIcon() {
   return (
