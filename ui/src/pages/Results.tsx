@@ -1,7 +1,17 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { StoreOnMap, Supermarket } from '../lib/types'
 import { formatDistance, formatPrice } from '../lib/geo'
-import { receiptItemCount, receiptTotal, useStores, useUserPosition } from '../lib/useStores'
+import { useStores, useUserPosition } from '../lib/useStores'
+import { useAuth } from '../lib/auth'
+import {
+  countOf,
+  createReceipt,
+  renameReceipt,
+  setActiveReceipt,
+  totalOf,
+  useActiveReceipt,
+} from '../lib/receipts'
 import './Results.css'
 
 export default function Results() {
@@ -9,7 +19,21 @@ export default function Results() {
   const userPos = useUserPosition()
   const { ranked, cheapestBest } = useStores(userPos)
 
-  if (!userPos) {
+  const { user } = useAuth()
+  const active = useActiveReceipt(user?.id ?? null)
+  const [savedName, setSavedName] = useState<string | null>(null)
+  const [savedId, setSavedId] = useState<string | null>(active.id)
+  const [draftName, setDraftName] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  const receiptTotal = totalOf(active.items)
+  const receiptItemCount = countOf(active.items)
+  const name = savedName ?? active.name
+  const receiptId = savedId ?? active.id
+
+  if (!userPos || active.loading) {
     return (
       <div className="results loading-state">
         <div className="spinner-sm" />
@@ -19,6 +43,36 @@ export default function Results() {
   }
 
   const bestSaving = receiptTotal - cheapestBest
+  // Show the name field when there's no name yet, or the user is renaming.
+  const naming = !name || editing
+
+  const commitSave = async () => {
+    const chosen = draftName.trim()
+    if (!chosen || saving) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      if (receiptId) {
+        await renameReceipt(user?.id ?? null, receiptId, chosen)
+      } else {
+        const record = await createReceipt(user?.id ?? null, chosen, active.items)
+        setActiveReceipt(record.id)
+        setSavedId(record.id)
+      }
+      setSavedName(chosen)
+      setEditing(false)
+    } catch (err) {
+      console.error('[sali] save failed:', err)
+      setSaveError('שמירת הקבלה נכשלה — בדקו שטבלת receipts קיימת ב־Supabase.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const startEdit = () => {
+    setDraftName(name ?? '')
+    setEditing(true)
+  }
 
   return (
     <div className="results">
@@ -26,13 +80,43 @@ export default function Results() {
         <button className="back-btn" onClick={() => navigate('/')} aria-label="חזרה">
           →
         </button>
-        <h1>השוואת מחירים</h1>
+        {naming ? (
+          /* The page title doubles as the name field — saving is blocked until it has one. */
+          <form
+            className="field-row title-name-form"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void commitSave()
+            }}
+          >
+            <input
+              className="field"
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              placeholder="שם הקבלה"
+              aria-label="שם הקבלה"
+              maxLength={40}
+              autoFocus={editing}
+            />
+            <button className="btn btn-primary" type="submit" disabled={!draftName.trim() || saving}>
+              {saving ? '…' : 'שמירה'}
+            </button>
+          </form>
+        ) : (
+          <>
+            <h1 className="results-title">{name}</h1>
+            <button className="title-edit" onClick={startEdit} aria-label="עריכת השם">
+              <EditIcon />
+            </button>
+          </>
+        )}
       </header>
 
+      {saveError && <p className="save-error">{saveError}</p>}
+
       <div className="results-scroll">
-        {/* The scanned receipt itself — the baseline everything else is compared to. */}
+        {/* The receipt itself — the baseline everything else is compared to. */}
         <div className="receipt-card">
-          <span className="receipt-badge">הקבלה שלכם</span>
           <div className="receipt-total mono" dir="ltr">
             {formatPrice(receiptTotal)}
           </div>
@@ -56,6 +140,7 @@ export default function Results() {
               store={store}
               rank={i + 1}
               best={store.bestPrice === cheapestBest}
+              receiptTotal={receiptTotal}
             />
           ))}
         </ol>
@@ -71,7 +156,17 @@ export default function Results() {
   )
 }
 
-function StoreRow({ store, rank, best }: { store: Supermarket; rank: number; best: boolean }) {
+function StoreRow({
+  store,
+  rank,
+  best,
+  receiptTotal,
+}: {
+  store: Supermarket
+  rank: number
+  best: boolean
+  receiptTotal: number
+}) {
   const diff = receiptTotal - store.bestPrice
 
   const where = store.online
@@ -114,6 +209,20 @@ function StoreRow({ store, rank, best }: { store: Supermarket; rank: number; bes
         <span className="price-swaps">{store.swaps} החלפות</span>
       </div>
     </li>
+  )
+}
+
+function EditIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" width="18" height="18" aria-hidden="true">
+      <path
+        d="M4 20h4L18.5 9.5a2 2 0 0 0-2.83-2.83L5 17v3z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path d="M13.5 7.5 16.5 10.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
   )
 }
 

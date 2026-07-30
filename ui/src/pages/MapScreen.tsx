@@ -3,14 +3,38 @@ import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import { divIcon } from 'leaflet'
 import type { StoreOnMap, Supermarket } from '../lib/types'
-import { formatDistance, formatPrice } from '../lib/geo'
-import { receiptItemCount, receiptTotal, useStores, useUserPosition } from '../lib/useStores'
+import { distanceMeters, formatDistance, formatPrice } from '../lib/geo'
+import { useStores, useUserPosition } from '../lib/useStores'
+import { useAuth } from '../lib/auth'
+import { countOf, totalOf, useActiveReceipt } from '../lib/receipts'
+import originData from '../resources/origin.json'
 import './MapScreen.css'
+
+/** The origin store gets a map pin only when it's within this radius of the
+ *  user — a receipt bought across town shouldn't zoom the map out to reach it. */
+const ORIGIN_NEARBY_M = 2500
+const ORIGIN_ID = '__origin__'
 
 export default function MapScreen() {
   const navigate = useNavigate()
   const userPos = useUserPosition()
   const { physical, online, cheapestBest } = useStores(userPos)
+
+  const { user } = useAuth()
+  const active = useActiveReceipt(user?.id ?? null)
+  const receiptTotal = totalOf(active.items)
+  const receiptItemCount = countOf(active.items)
+
+  // The store the receipt was actually bought at, at the price actually paid.
+  const origin = userPos
+    ? (() => {
+        const lat = userPos[0] + originData.dLat
+        const lng = userPos[1] + originData.dLng
+        const distanceM = distanceMeters(userPos, [lat, lng])
+        return { ...originData, lat, lng, distanceM, price: receiptTotal }
+      })()
+    : null
+  const originOnMap = origin !== null && origin.distanceM <= ORIGIN_NEARBY_M
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const cardRefs = useRef<Record<string, HTMLButtonElement | null>>({})
 
@@ -21,13 +45,24 @@ export default function MapScreen() {
     if (cheapestNearby && !selectedId) setSelectedId(cheapestNearby.id)
   }, [cheapestNearby, selectedId])
 
-  const selected = physical.find((s) => s.id === selectedId)
+  const selectedPos: [number, number] | null =
+    selectedId === ORIGIN_ID && origin
+      ? [origin.lat, origin.lng]
+      : (() => {
+          const s = physical.find((p) => p.id === selectedId)
+          return s ? [s.lat, s.lng] : null
+        })()
 
   const selectStore = (id: string, scrollCard: boolean) => {
     setSelectedId(id)
     if (scrollCard) {
       cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
     }
+  }
+
+  const selectOrigin = () => {
+    setSelectedId(ORIGIN_ID)
+    cardRefs.current[ORIGIN_ID]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
   }
 
   if (!userPos) {
@@ -49,7 +84,7 @@ export default function MapScreen() {
         attributionControl={false}
       >
         <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
-        <FlyTo target={selected ? [selected.lat, selected.lng] : null} />
+        <FlyTo target={selectedPos} />
 
         <Marker position={userPos} icon={userIcon()} interactive={false} />
 
@@ -61,6 +96,15 @@ export default function MapScreen() {
             eventHandlers={{ click: () => selectStore(s.id, true) }}
           />
         ))}
+
+        {/* Origin pin only when it's genuinely nearby. */}
+        {originOnMap && origin && (
+          <Marker
+            position={[origin.lat, origin.lng]}
+            icon={originIcon(origin.logo, origin.price, selectedId === ORIGIN_ID)}
+            eventHandlers={{ click: () => selectOrigin() }}
+          />
+        )}
       </MapContainer>
 
       <header className="map-topbar">
@@ -70,17 +114,41 @@ export default function MapScreen() {
         <div className="receipt-chip">
           <span className="chip-count">{receiptItemCount} מוצרים</span>
           <span className="chip-sep">·</span>
-          <span>עגלה סרוקה</span>
+          <span>{active.name ?? 'עגלה סרוקה'}</span>
         </div>
       </header>
 
       <section className="store-sheet">
-        <p className="sheet-hint">
-          המחיר הטוב ביותר — חיסכון של עד{' '}
-          <strong className="mono">{formatPrice(receiptTotal - cheapestBest)}</strong>
-        </p>
-
         <div className="store-cards">
+          {origin && (
+            <button
+              ref={(el) => {
+                cardRefs.current[ORIGIN_ID] = el
+              }}
+              className={`store-card origin ${selectedId === ORIGIN_ID ? 'selected' : ''}`}
+              onClick={selectOrigin}
+            >
+              <div className="card-top">
+                <span className="brand-logo">
+                  <img src={origin.logo} alt={origin.brand} />
+                </span>
+                <div className="brand-info">
+                  <span className="brand-name">{origin.brand}</span>
+                  <span className="brand-distance">
+                    {origin.branch} · {formatDistance(origin.distanceM)}
+                  </span>
+                </div>
+                <span className="origin-tag">מקור</span>
+              </div>
+              <div className="card-price mono" dir="ltr">
+                {formatPrice(origin.price)}
+              </div>
+              <div className="card-save">
+                {originOnMap ? 'הקבלה שסרקתם' : 'רחוק ממיקומכם'}
+              </div>
+            </button>
+          )}
+
           {physical.map((s) => (
             <StoreCard
               key={s.id}
@@ -91,6 +159,7 @@ export default function MapScreen() {
               sub={formatDistance(s.distanceM)}
               selected={s.id === selectedId}
               best={s.bestPrice === cheapestBest}
+              receiptTotal={receiptTotal}
               onClick={() => selectStore(s.id, false)}
             />
           ))}
@@ -139,11 +208,12 @@ interface CardProps {
   sub: string
   selected: boolean
   best: boolean
+  receiptTotal: number
   onClick?: () => void
   ref?: React.Ref<HTMLButtonElement>
 }
 
-function StoreCard({ store, sub, selected, best, onClick, ref }: CardProps) {
+function StoreCard({ store, sub, selected, best, receiptTotal, onClick, ref }: CardProps) {
   const saving = receiptTotal - store.bestPrice
 
   return (
@@ -213,5 +283,19 @@ function storeIcon(s: StoreOnMap, selected: boolean, best: boolean) {
       </div>`,
     iconSize: [0, 0],
     iconAnchor: [55, 22],
+  })
+}
+
+function originIcon(logo: string, price: number, selected: boolean) {
+  return divIcon({
+    className: 'store-marker-wrap',
+    html: `
+      <div class="store-pin origin ${selected ? 'selected' : ''}">
+        <span class="pin-best origin">מקור</span>
+        <span class="pin-logo"><img src="${logo}" alt=""></span>
+        <span class="pin-price">${formatPrice(price)}</span>
+      </div>`,
+    iconSize: [0, 0],
+    iconAnchor: [50, 22],
   })
 }

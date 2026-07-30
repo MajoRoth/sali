@@ -2,6 +2,25 @@
 
 Mobile-first React app. Three screens for the MVP flow: **upload a receipt → see the ranked price list → see it on a map**.
 
+### Shared control language
+
+Every input across the app is built from one small set of primitives in
+`src/styles/controls.css`, so sign-in/out, the receipt list, the upload zone, and
+the name field all read as one system:
+
+- `.panel` — dashed-accent container with a `.panel-title` caption
+- `.tile` — icon-above-label choice button (the "options" pattern; `.lg` for the full upload zone)
+- `.field` / `.field-row` — text input, optionally paired with an `.icon-btn`
+- `.btn` (`.btn-primary` / `.btn-white` / `.btn-danger`) and `.icon-btn`
+
+### The origin store (map screen)
+
+The store the receipt was actually bought at, at the price actually paid, is shown as a
+distinct **slate-accented** card marked "מקור" under a "קניתם כאן" header — always, even when
+it's across town. On the map it gets a pin **only when it's within `ORIGIN_NEARBY_M` (2.5 km)**
+of the user, so a receipt from far away never zooms the map out or clutters it. Mock origin
+lives in `src/resources/origin.json` (offset from the user; far by default).
+
 ### Two prices, everywhere
 
 Every store shows two numbers, and the distinction matters:
@@ -11,15 +30,21 @@ Every store shows two numbers, and the distinction matters:
 
 Design language: **bright & friendly** — light theme (soft mint-white background), warm emerald-green accent, rounded cards with soft shadows, smooth micro-animations, monospace accents for prices. UI copy is **Hebrew (RTL)**; the brand name `sali` stays in Latin script.
 
-> **Mocked for now:** OCR is faked. Any uploaded/captured file is ignored — we show a short loading spinner, load a mock receipt from `resources/`, and recommend fake nearby supermarkets.
+> **Mocked for now:** OCR is faked. Any uploaded/captured file — or pasted URL — is ignored;
+> nothing is fetched over the network. We show a short loading spinner, load the mock receipt
+> from `src/resources/`, and rank real retailers with mock prices.
 
 ---
 
-## Screen 1 — Home (Receipt Upload)
+## Screen 1 — Home (conditional)
 
 **Route:** `/`
 
-**Purpose:** single-action landing screen. Get the user's receipt in as fast as possible.
+Home renders one of two modes depending on auth state and whether the user has receipts.
+
+### Mode A — upload (signed out, **or** signed in with no receipts)
+
+Single-action landing screen. Get the user's receipt in as fast as possible.
 
 ### Layout (top → bottom)
 
@@ -28,9 +53,12 @@ Design language: **bright & friendly** — light theme (soft mint-white backgrou
    - Large tappable card (~60% of viewport height) with animated dashed/glowing border.
    - Receipt/scan icon with a subtle animated "scanline" effect.
    - Text: "Upload your receipt".
-   - Two actions:
+   - Three ways in:
      - 📷 **Camera** — opens device camera (`<input type="file" accept="image/*" capture="environment">`).
-     - 🖼 **Upload** — opens file picker (also accepts drag & drop on desktop).
+     - 🖼 **Upload** — opens file picker for an image or PDF (also accepts drag & drop on desktop).
+     - 🔗 **Paste a link** — under an "או הדביקו קישור לקבלה" divider, a URL field + submit
+       button for a receipt hosted online (e.g. a retailer's digital-receipt page). Submitting
+       runs the same flow with one extra loading stage ("טוענים את הקבלה מהקישור…").
 3. **Footer hint** — one line, e.g. "We'll find the cheapest cart near you".
 
 ### Behavior
@@ -39,13 +67,27 @@ Design language: **bright & friendly** — light theme (soft mint-white backgrou
 - Transition to a **loading state** (~1.5–2s): full-screen overlay, circular spinner with "Reading your receipt…" then "Finding stores near you…" (staged messages sells the fake OCR).
 - Then navigate to Screen 2.
 
-### States
+### Mode B — receipt list (signed in, has receipts)
 
-| State | UI |
-|---|---|
-| Idle | Upload zone, pulsing glow |
-| Loading | Spinner overlay, staged status text |
-| (Future) Error | Toast + return to idle |
+- Centered `sali` wordmark with a greeting; **`+` button top-right**, sign-out top-left.
+- `+` opens a menu: **קבלה ריקה** (create an empty receipt) · **צילום קבלה** · **העלאת קובץ** ·
+  **מקישור** (reveals the URL field inline).
+- Below it, saved receipts newest-first — name, save date, item count, total. Tapping a row
+  opens `/results` with that receipt as the baseline; a trash button deletes it.
+
+This replaces the old standalone `/saved` screen, which now redirects to `/`.
+
+### Sign-in gate
+
+A signed-out user can scan freely, but when the loading stages finish they hit a modal —
+"הקבלה מוכנה!" with a Google sign-in button — instead of continuing. Signing in resumes
+straight to `/results` with the scan intact (it is stashed under `sali.pendingScan`).
+
+### Auth & persistence
+
+`src/lib/auth.tsx` wraps Supabase Google OAuth; `src/lib/receipts.ts` reads and writes the
+`receipts` table. **Both fall back to a local mode** when `VITE_SUPABASE_*` is unset: sign-in
+is faked and receipts live in `localStorage`, so the UI stays fully usable without credentials.
 
 ---
 
@@ -66,6 +108,18 @@ Design language: **bright & friendly** — light theme (soft mint-white backgrou
    - Saving vs. the receipt, green when cheaper / red when pricier
    - Cheapest row gets a "הכי זול" tag and a green border
 4. **Sticky CTA** — "הצגה על המפה" → Screen 3.
+
+---
+
+### Saving & reopening
+
+After a scan, the receipt card on `/results` offers **"שמירת הקבלה"** → an inline name field
+(prefilled with a date-based suggestion like "קניות 30.7") → saved. The card then shows the
+name in its badge plus "נשמר בקבלות שלי ✓".
+
+Saved receipts live in `localStorage` (`sali.savedReceipts`), with `sali.activeReceipt` naming
+which one the comparison screens should show — `null` means "the receipt just scanned". A new
+scan clears it. See `src/lib/receipts.ts`.
 
 ---
 
@@ -132,6 +186,9 @@ Home (/) ── file selected ──▶ Loading overlay (~2s, fake OCR)
                                    │  "הצגה על המפה"
                                    ▼
                             Map (/map) — user pin + store pins + price sheet
+
+
+Home ── ☰ ──▶ Saved (/saved) ── tap a receipt ──▶ Results (/results)
 ```
 
 Shared location + store logic lives in `src/lib/useStores.ts`, so both `/results` and `/map`
