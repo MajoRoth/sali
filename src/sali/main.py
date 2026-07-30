@@ -11,6 +11,50 @@ from open_supermarkets_api_client.api.products import get_product_by_barcode, co
 
 BASE_URL = "https://data.openisraelisupermarkets.co.il/"
 
+async def get_list_price_per_store(client: AuthenticatedClient | Client, product_ids: list[str]) -> dict[str, float]:
+    """
+    Given a list of product IDs, returns a mapping from store name to the total price
+    of all products in the list, but ONLY for stores that carry ALL the requested products.
+    """
+    response = await compare_product_prices.asyncio_detailed(client=client, product_ids=product_ids)
+    if response.status_code != 200 or not response.parsed or not hasattr(response.parsed, 'comparisons') or not response.parsed.comparisons:
+        return {}
+        
+    store_totals = {}
+    store_product_counts = {}
+    store_info = {}
+    
+    num_products = len(response.parsed.comparisons)
+    
+    for comp in response.parsed.comparisons:
+        for chain_data in comp.chain_comparison:
+            chain_name = chain_data.chain_name
+            for store_price in chain_data.store_prices:
+                props = store_price.additional_properties
+                store_id = props.get('storeId')
+                store_name = props.get('storeName', 'Unknown Store')
+                price = props.get('unitPrice', 0.0) # unitPrice is the price for one unit
+                
+                if not store_id:
+                    continue
+                    
+                city = props.get('city')
+                city_suffix = f" ({city})" if isinstance(city, str) and city and city != "0.0" else ""
+                display_name = f"{chain_name} - {store_name}{city_suffix}"
+                store_info[store_id] = display_name
+                
+                store_totals[store_id] = store_totals.get(store_id, 0.0) + price
+                store_product_counts[store_id] = store_product_counts.get(store_id, 0) + 1
+            
+    # Filter only stores that have all products
+    valid_store_prices = {
+        store_info[store_id]: round(price, 2)
+        for store_id, price in store_totals.items() 
+        if store_product_counts[store_id] == num_products
+    }
+    
+    return valid_store_prices
+
 async def async_main(product_numbers: list[str]) -> None:
     token = os.getenv("SUPERMARKET_API_KEY", "001d35a9-09fb-4805-8fe2-c86f69bc03ce")
     
@@ -41,23 +85,18 @@ async def async_main(product_numbers: list[str]) -> None:
             print("No valid product IDs to compare.")
             return
 
-        # Step 2: Compare prices
-        print(f"\nComparing prices for {len(product_ids)} products...")
-        response = await compare_product_prices.asyncio_detailed(client=c, product_ids=product_ids)
+        # Step 2: Compare prices using the new function
+        print(f"\nCalculating total price per store for the list of {len(product_ids)} products...")
+        store_totals = await get_list_price_per_store(client=c, product_ids=product_ids)
         
-        if response.status_code == 200 and response.parsed:
-            parsed = response.parsed
-            if hasattr(parsed, 'comparisons') and parsed.comparisons:
-                for comp in parsed.comparisons:
-                    print(f"\n=== Price comparison for: {comp.product_name} (Barcode: {comp.product_barcode}) ===")
-                    print(f"Overall lowest price across all chains: {comp.overall_statistics.min_price}")
-                    for chain_data in comp.chain_comparison:
-                        print(f"  - {chain_data.chain_name}: Min {chain_data.min_price}, Avg {chain_data.avg_price}")
-            else:
-                print("No comparisons found in the response.")
+        if store_totals:
+            print("\n=== Total List Price Per Store ===")
+            # Sort stores by total price ascending
+            sorted_stores = sorted(store_totals.items(), key=lambda x: x[1])
+            for store_name, total_price in sorted_stores:
+                print(f"  - {store_name}: {total_price}")
         else:
-            print(f"Failed to compare prices. Status code: {response.status_code}")
-            print(f"Error: {response.content}")
+            print("\nNo stores found that carry all the requested products, or failed to fetch prices.")
 
 
 def main() -> None:
