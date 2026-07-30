@@ -17,9 +17,9 @@ from open_supermarkets_api_client.api.stores import list_stores
 BASE_URL = "https://data.openisraelisupermarkets.co.il/"
 
 @pytest.fixture
-def api_client():
+def api_client(request):
     """Fixture that provides an authenticated client if a key is available, else an anonymous client."""
-    token = os.getenv("SUPERMARKET_API_KEY", "001d35a9-09fb-4805-8fe2-c86f69bc03ce")
+    token = request.config.getoption("--api-key") or os.getenv("SUPERMARKET_API_KEY")
     if token:
         return AuthenticatedClient(base_url=BASE_URL, token=token, timeout=30.0)
     return Client(base_url=BASE_URL, timeout=30.0)
