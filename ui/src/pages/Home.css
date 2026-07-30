@@ -1,14 +1,98 @@
 .home {
+  position: relative;
   height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+  overflow: hidden;
   background:
     radial-gradient(ellipse 90% 55% at 50% -10%, rgba(0, 184, 119, 0.14), transparent),
     var(--bg);
 }
 
+/* Content sits above the map background; the bottom band is left for the map. */
+.home-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: max(20px, env(safe-area-inset-top)) 20px calc(30vh + env(safe-area-inset-bottom));
+}
+
+/* --- Map background: user + nearby stores, faded out toward the top --- */
+
+.home-map {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  /* Visible at the bottom, fully gone by ~40% up the screen. */
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 12%, transparent 42%);
+  mask-image: linear-gradient(to top, #000 0%, #000 12%, transparent 42%);
+}
+
+.home-map-leaflet {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+}
+
+.home-marker-wrap {
+  background: none;
+  border: none;
+}
+
+.home-user {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #ffffff;
+  box-shadow: 0 1px 6px rgba(0, 184, 119, 0.6);
+}
+
+.home-user-pulse {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 184, 119, 0.5);
+  animation: home-pulse 1.8s ease-out infinite;
+}
+
+@keyframes home-pulse {
+  from {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.home-pin {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: #ffffff;
+  border: 1.5px solid rgba(23, 37, 29, 0.12);
+  box-shadow: 0 3px 10px rgba(23, 37, 29, 0.2);
+  overflow: hidden;
+}
+
+/* Leaflet forces max-width/height: none on marker images. */
+.leaflet-container .leaflet-marker-pane .home-pin img {
+  width: auto;
+  height: auto;
+  max-width: 26px !important;
+  max-height: 22px !important;
+  object-fit: contain;
+}
+
 .home-loading {
+  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -73,104 +157,86 @@
   letter-spacing: 1px;
 }
 
-/* --- Upload zone --- */
+/* --- Upload zone: styled like a paper receipt (torn bottom edge) --- */
 
 .upload-zone {
   position: relative;
-  flex: 1;
-  margin: 24px 0;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 330px;
+  margin: 16px auto 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  border: 2px dashed rgba(0, 184, 119, 0.45);
-  border-radius: var(--radius);
-  background: var(--bg-elev);
-  box-shadow: var(--shadow-soft);
-  overflow: hidden;
-  animation: breathe 3.2s ease-in-out infinite;
+  gap: 8px;
+  padding: 22px 20px 20px;
+  background: #ffffff;
+  border-radius: 6px 6px 0 0;
+  box-shadow: 0 10px 26px rgba(23, 37, 29, 0.14);
+}
+
+/* Torn bottom edge — white zigzag teeth below the card (robust, no mask). */
+.upload-zone::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: -8px;
+  height: 9px;
+  background:
+    linear-gradient(-135deg, #ffffff 9px, transparent 0) 0 0,
+    linear-gradient(135deg, #ffffff 9px, transparent 0) 0 0;
+  background-size: 16px 16px;
+  background-repeat: repeat-x;
+  filter: drop-shadow(0 4px 3px rgba(23, 37, 29, 0.06));
 }
 
 .upload-zone.drag-over {
-  border-color: var(--accent);
   background: var(--accent-soft);
 }
 
-@keyframes breathe {
-  0%,
-  100% {
-    box-shadow: var(--shadow-soft);
-  }
-  50% {
-    box-shadow: 0 6px 32px rgba(0, 184, 119, 0.22);
-  }
-}
-
-.scanline {
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.5;
-  animation: scan 2.8s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes scan {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(calc(100vh - 320px));
-  }
+.upload-zone.drag-over::after {
+  background:
+    linear-gradient(-135deg, var(--accent-soft) 9px, transparent 0) 0 0,
+    linear-gradient(135deg, var(--accent-soft) 9px, transparent 0) 0 0;
+  background-size: 16px 16px;
+  background-repeat: repeat-x;
 }
 
 .receipt-icon {
-  width: 72px;
-  height: 72px;
+  width: 52px;
+  height: 52px;
   color: var(--accent);
   filter: drop-shadow(0 4px 10px rgba(0, 184, 119, 0.3));
 }
 
 .upload-title {
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 700;
 }
 
 .upload-sub {
   color: var(--text-dim);
-  font-size: 15px;
-}
-
-.upload-hint {
-  max-width: 27ch;
+  font-size: 13.5px;
   text-align: center;
-  color: var(--text-dim);
-  font-size: 13px;
-  line-height: 1.5;
-  opacity: 0.85;
 }
 
 /* Buttons and field come from styles/controls.css (.tile / .field / .icon-btn);
    only the upload zone's own layout lives here. */
 .upload-actions {
-  margin-top: 18px;
-  width: min(320px, 86%);
+  margin-top: 14px;
+  width: 100%;
 }
 
-/* --- Paste-a-link --- */
+/* --- Paste-a-link — dashed separator, like a receipt divider --- */
 
 .url-divider {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: min(300px, 82%);
-  margin-top: 22px;
+  width: 100%;
+  margin-top: 16px;
   color: var(--text-dim);
-  font-size: 12.5px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
@@ -178,16 +244,16 @@
 .url-divider::after {
   content: '';
   flex: 1;
-  height: 1px;
-  background: rgba(23, 37, 29, 0.12);
+  border-top: 1px dashed rgba(23, 37, 29, 0.22);
 }
 
 .url-form {
-  width: min(300px, 82%);
+  width: 100%;
   margin-top: 10px;
 }
 
 .home-footer {
+  margin-top: 20px;
   text-align: center;
   color: var(--text-dim);
   font-size: 14px;
@@ -222,6 +288,18 @@
 
 .new-receipt {
   margin-bottom: 16px;
+  padding: 16px;
+}
+
+.new-receipt .panel-title {
+  font-size: 14px;
+  padding-bottom: 12px;
+}
+
+/* Three bigger tiles on one line, with the link field always below. */
+.new-receipt .tile-grid {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .url-form.inline {
@@ -264,6 +342,24 @@
 
 .receipt-open:active {
   background: var(--accent-soft);
+}
+
+.receipt-row-logo {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(23, 37, 29, 0.08);
+  overflow: hidden;
+}
+
+.receipt-row-logo img {
+  max-width: 34px;
+  max-height: 28px;
+  object-fit: contain;
 }
 
 .receipt-row-info {

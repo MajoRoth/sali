@@ -1,0 +1,42 @@
+.saving-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  direction: ltr;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.saving-badge.save {
+  color: #2563eb;
+}
+
+.saving-badge.lose {
+  color: var(--danger);
+}
+
+.saving-badge .trend-arrow {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
+.saving-badge.size-sm {
+  font-size: 13px;
+}
+
+.saving-badge.size-md {
+  font-size: 16px;
+}
+
+.saving-badge.size-lg {
+  font-size: 22px;
+}
+
+.saving-label {
+  margin-inline-start: 4px;
+  font-size: 0.7em;
+  font-weight: 600;
+  opacity: 0.8;
+}

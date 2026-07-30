@@ -7,6 +7,8 @@ import { distanceMeters, formatDistance, formatPrice } from '../lib/geo'
 import { useStores, useUserPosition } from '../lib/useStores'
 import { useAuth } from '../lib/auth'
 import { countOf, totalOf, useActiveReceipt } from '../lib/receipts'
+import SavingBadge from '../components/SavingBadge'
+import CrownIcon from '../components/CrownIcon'
 import originData from '../resources/origin.json'
 import './MapScreen.css'
 
@@ -128,6 +130,7 @@ export default function MapScreen() {
               className={`store-card origin ${selectedId === ORIGIN_ID ? 'selected' : ''}`}
               onClick={selectOrigin}
             >
+              <span className="origin-tag">מקור</span>
               <div className="card-top">
                 <span className="brand-logo">
                   <img src={origin.logo} alt={origin.brand} />
@@ -138,14 +141,11 @@ export default function MapScreen() {
                     {origin.branch} · {formatDistance(origin.distanceM)}
                   </span>
                 </div>
-                <span className="origin-tag">מקור</span>
               </div>
               <div className="card-price mono" dir="ltr">
                 {formatPrice(origin.price)}
               </div>
-              <div className="card-save">
-                {originOnMap ? 'הקבלה שסרקתם' : 'רחוק ממיקומכם'}
-              </div>
+              <div className="card-save-note">קניתם כאן</div>
             </button>
           )}
 
@@ -156,7 +156,6 @@ export default function MapScreen() {
                 cardRefs.current[s.id] = el
               }}
               store={s}
-              sub={formatDistance(s.distanceM)}
               selected={s.id === selectedId}
               best={s.bestPrice === cheapestBest}
               receiptTotal={receiptTotal}
@@ -171,31 +170,13 @@ export default function MapScreen() {
         </p>
         <div className="store-cards">
           {online.map((s) => (
-            <div key={s.id} className="online-card">
-              <span className="brand-logo">
-                <img src={s.logo} alt={s.brand} />
-              </span>
-              <div className="brand-info">
-                <span className="brand-name">{s.brand}</span>
-                <span className="brand-distance">
-                  {s.deliveryFee === 0 ? 'משלוח חינם' : `משלוח ${formatPrice(s.deliveryFee)}`}
-                </span>
-              </div>
-              <div className="online-price">
-                <div className="price-stack">
-                  <span className="mono" dir="ltr">
-                    {formatPrice(s.bestPrice)}
-                  </span>
-                  <span className="price-true">
-                    אותה עגלה{' '}
-                    <span className="mono" dir="ltr">
-                      {formatPrice(s.cartTotal)}
-                    </span>
-                  </span>
-                </div>
-                {s.bestPrice === cheapestBest && <span className="best-tag">הכי זול</span>}
-              </div>
-            </div>
+            <StoreCard
+              key={s.id}
+              store={s}
+              selected={false}
+              best={s.bestPrice === cheapestBest}
+              receiptTotal={receiptTotal}
+            />
           ))}
         </div>
       </section>
@@ -205,7 +186,6 @@ export default function MapScreen() {
 
 interface CardProps {
   store: Supermarket
-  sub: string
   selected: boolean
   best: boolean
   receiptTotal: number
@@ -213,40 +193,42 @@ interface CardProps {
   ref?: React.Ref<HTMLButtonElement>
 }
 
-function StoreCard({ store, sub, selected, best, receiptTotal, onClick, ref }: CardProps) {
-  const saving = receiptTotal - store.bestPrice
+function StoreCard({ store, selected, best, receiptTotal, onClick, ref }: CardProps) {
+  const diff = receiptTotal - store.bestPrice
+  const sub = store.online
+    ? store.deliveryFee === 0
+      ? 'משלוח חינם'
+      : `משלוח ${formatPrice(store.deliveryFee)}`
+    : formatDistance((store as StoreOnMap).distanceM)
 
   return (
-    <button ref={ref} className={`store-card ${selected ? 'selected' : ''}`} onClick={onClick}>
-      <div className="card-top">
-        <span className="brand-logo">
-          <img src={store.logo} alt={store.brand} />
+    <button
+      ref={ref}
+      className={`store-card ${selected ? 'selected' : ''} ${store.online ? 'online' : ''}`}
+      onClick={onClick}
+    >
+      {best && (
+        <span className="best-crown" aria-label="הכי זול">
+          <CrownIcon />
         </span>
+      )}
+      <div className="card-top">
+        <div className="store-logo-col">
+          <span className="brand-logo">
+            <img src={store.logo} alt={store.brand} />
+          </span>
+          {store.online && <span className="online-tag">אונליין</span>}
+        </div>
         <div className="brand-info">
           <span className="brand-name">{store.brand}</span>
           <span className="brand-distance">{sub}</span>
         </div>
-        {best && <span className="best-tag">הכי זול</span>}
       </div>
 
-      <div className="card-price mono" dir="ltr">
-        {formatPrice(store.bestPrice)}
-      </div>
-      <div className="price-true">
-        אותה עגלה{' '}
-        <span className="mono" dir="ltr">
-          {formatPrice(store.cartTotal)}
-        </span>
-      </div>
-      <div className="card-save">
-        {saving > 0 ? (
-          <>
-            חוסכים <span className="mono">{formatPrice(saving)}</span>
-          </>
-        ) : (
-          <span className="save-none">יקר מהקבלה</span>
-        )}
-      </div>
+      <SavingBadge amount={Math.abs(diff)} save={diff > 0} size="md" />
+      <span className="price-xy mono" dir="ltr">
+        {formatPrice(store.cartTotal)} / {formatPrice(store.bestPrice)}
+      </span>
     </button>
   )
 }
@@ -269,20 +251,20 @@ function userIcon() {
   })
 }
 
+const CROWN_SVG =
+  '<svg viewBox="0 0 24 24" fill="#ffffff" width="12" height="12"><path d="M3 8l3.5 3L12 5l5.5 6L21 8l-1.6 9.2a1 1 0 0 1-1 .8H5.6a1 1 0 0 1-1-.8L3 8z"/></svg>'
+
 function storeIcon(s: StoreOnMap, selected: boolean, best: boolean) {
   return divIcon({
     className: 'store-marker-wrap',
     html: `
       <div class="store-pin ${selected ? 'selected' : ''} ${best ? 'best' : ''}">
-        ${best ? '<span class="pin-best">הכי זול</span>' : ''}
+        ${best ? `<span class="pin-crown">${CROWN_SVG}</span>` : ''}
         <span class="pin-logo"><img src="${s.logo}" alt=""></span>
-        <span class="pin-prices">
-          <span class="pin-price">${formatPrice(s.bestPrice)}</span>
-          <span class="pin-true">${formatPrice(s.cartTotal)}</span>
-        </span>
+        <span class="pin-price">${formatPrice(s.bestPrice)}</span>
       </div>`,
     iconSize: [0, 0],
-    iconAnchor: [55, 22],
+    iconAnchor: [50, 22],
   })
 }
 

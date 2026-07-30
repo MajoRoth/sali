@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AccountMenu from '../components/AccountMenu'
+import HomeMapBackground from '../components/HomeMapBackground'
 import { useAuth } from '../lib/auth'
 import { formatPrice } from '../lib/geo'
 import {
@@ -9,29 +10,32 @@ import {
   deleteReceipt,
   formatSavedDate,
   listReceipts,
+  receiptOrigin,
+  scannedItems,
   setActiveReceipt,
+  setPendingScan,
   totalOf,
   type SavedReceipt,
 } from '../lib/receipts'
 import './Home.css'
 
-const RECEIPT_API_URL = 'http://localhost:8000/api/receipts/extract'
-const RECEIPT_IMAGE_TOTAL_API_URL = 'http://localhost:8000/api/receipts/extract-image-total'
-
-type ExtractedReceipt = {
-  receipt: { totals: { total: string }, transaction: { currency: string | null } }
-}
-
-type ExtractedReceiptImageTotal = {
-  total: string
-  currency: string | null
-}
+const FILE_STAGES = ['קוראים את הקבלה…', 'מזהים מוצרים…', 'מחפשים סופרים קרובים…']
+const URL_STAGES = ['טוענים את הקבלה מהקישור…', ...FILE_STAGES]
+const STAGE_MS = 750
+/** Set when a signed-out scan awaits sign-in; survives the OAuth redirect. */
+const RESUME_KEY = 'sali.resumeAfterAuth'
+/** Signals Results to play the savings celebration on its next mount. */
+const CELEBRATE_KEY = 'sali.celebrateOnce'
 
 export default function Home() {
   const navigate = useNavigate()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, signInWithGoogle } = useAuth()
 
   const [receipts, setReceipts] = useState<SavedReceipt[] | null>(null)
+  const [stages, setStages] = useState<string[] | null>(null)
+  const [stage, setStage] = useState(0)
+  /** Set when a signed-out user finishes a scan and must sign in to continue. */
+  const [gateOpen, setGateOpen] = useState(false)
 
   // Load the signed-in user's receipts.
   useEffect(() => {
@@ -49,45 +53,52 @@ export default function Home() {
     }
   }, [user, authLoading])
 
-  const alertTotal = (total: string, currency: string | null) => {
-    const amount = currency === 'ILS' ? `₪${total}` : `${total}${currency ? ` ${currency}` : ''}`
-    window.alert(`סך הכול בקבלה: ${amount}`)
+  // Mock OCR: the file or link is ignored — we play the loading stages,
+  // then either continue or stop at the sign-in gate.
+  const startScan = (from: 'file' | 'url') => {
+    setActiveReceipt(null)
+    setPendingScan(scannedItems)
+    setStage(0)
+    setStages(from === 'url' ? URL_STAGES : FILE_STAGES)
   }
 
-  const alertReceiptTotal = async (url: string) => {
-    try {
-      const response = await fetch(RECEIPT_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-      })
-      if (!response.ok) throw new Error('receipt extraction failed')
-      const receipt = await response.json() as ExtractedReceipt
-      alertTotal(receipt.receipt.totals.total, receipt.receipt.transaction.currency)
-    } catch {
-      window.alert('לא הצלחנו לחלץ את סכום הקבלה.')
+  useEffect(() => {
+    if (!stages) return
+    if (stage < stages.length - 1) {
+      const t = setTimeout(() => setStage((s) => s + 1), STAGE_MS)
+      return () => clearTimeout(t)
     }
-  }
+    const t = setTimeout(() => {
+      setStages(null)
+      if (user) {
+        localStorage.setItem(CELEBRATE_KEY, '1')
+        navigate('/results')
+      } else {
+        // Persist the intent: Google sign-in redirects away and reloads the app,
+        // wiping React state, so we can't rely on `gateOpen` to resume afterwards.
+        localStorage.setItem(RESUME_KEY, '1')
+        setGateOpen(true)
+      }
+    }, STAGE_MS)
+    return () => clearTimeout(t)
+  }, [stages, stage, navigate, user])
 
-  const alertReceiptImageTotal = async (image: File) => {
-    const formData = new FormData()
-    formData.append('image', image)
-    try {
-      const response = await fetch(RECEIPT_IMAGE_TOTAL_API_URL, {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) throw new Error('receipt total extraction failed')
-      const receipt = await response.json() as ExtractedReceiptImageTotal
-      alertTotal(receipt.total, receipt.currency)
-    } catch {
-      window.alert('לא הצלחנו לחלץ את סכום הקבלה.')
+  // Resume the scanned receipt once signed in — covers both the instant local
+  // sign-in and returning from the Google OAuth redirect (fresh page load).
+  useEffect(() => {
+    if (user && localStorage.getItem(RESUME_KEY)) {
+      localStorage.removeItem(RESUME_KEY)
+      localStorage.setItem(CELEBRATE_KEY, '1')
+      setGateOpen(false)
+      navigate('/results')
     }
-  }
+  }, [user, navigate])
 
-  const openReceipt = (id: string) => {
-    setActiveReceipt(id)
-    navigate('/results')
+  const openReceipt = (r: SavedReceipt) => {
+    // Pass the record along so Results shows it instantly without a refetch.
+    localStorage.removeItem(CELEBRATE_KEY) // opening a saved receipt never celebrates
+    setActiveReceipt(r.id)
+    navigate('/results', { state: { receipt: r } })
   }
 
   const removeReceipt = async (id: string) => {
@@ -96,6 +107,7 @@ export default function Home() {
   }
 
   const createEmpty = async () => {
+    localStorage.removeItem(CELEBRATE_KEY) // an empty cart has nothing to celebrate
     const now = new Date()
     const record = await createReceipt(user?.id ?? null, `קבלה חדשה ${now.getDate()}.${now.getMonth() + 1}`, [])
     setActiveReceipt(record.id)
@@ -114,18 +126,43 @@ export default function Home() {
 
   return (
     <div className="home">
-      {showList ? (
-        <ReceiptListHome
-          user={user}
-          receipts={receipts}
-          onOpen={openReceipt}
-          onDelete={removeReceipt}
-          onCreateEmpty={createEmpty}
-          onImageSubmit={alertReceiptImageTotal}
-          onUrlSubmit={alertReceiptTotal}
+      <HomeMapBackground />
+      <div className="home-content">
+        {showList ? (
+          <ReceiptListHome
+            user={user}
+            receipts={receipts}
+            onOpen={openReceipt}
+            onDelete={removeReceipt}
+            onCreateEmpty={createEmpty}
+            onScan={startScan}
+          />
+        ) : (
+          <UploadHome onScan={startScan} />
+        )}
+      </div>
+
+      {stages && (
+        <div className="loading-overlay">
+          <div className="spinner" />
+          <p className="loading-text" key={stage}>
+            {stages[stage]}
+          </p>
+          {/* Reveal the count once we're past the "reading" stage. */}
+          <p className="loading-meta">
+            {stage >= stages.length - 2 ? `זוהו ${countOf(scannedItems)} מוצרים ✓` : ' '}
+          </p>
+        </div>
+      )}
+
+      {gateOpen && (
+        <SignInGate
+          onSignIn={signInWithGoogle}
+          onCancel={() => {
+            localStorage.removeItem(RESUME_KEY)
+            setGateOpen(false)
+          }}
         />
-      ) : (
-        <UploadHome onImageSubmit={alertReceiptImageTotal} onUrlSubmit={alertReceiptTotal} />
       )}
     </div>
   )
@@ -136,11 +173,10 @@ export default function Home() {
 /* ------------------------------------------------------------------ */
 
 interface UploadProps {
-  onImageSubmit: (image: File) => Promise<void>
-  onUrlSubmit: (url: string) => Promise<void>
+  onScan: (from: 'file' | 'url') => void
 }
 
-function UploadHome({ onImageSubmit, onUrlSubmit }: UploadProps) {
+function UploadHome({ onScan }: UploadProps) {
   const [dragOver, setDragOver] = useState(false)
   const [url, setUrl] = useState('')
   const cameraRef = useRef<HTMLInputElement>(null)
@@ -155,7 +191,7 @@ function UploadHome({ onImageSubmit, onUrlSubmit }: UploadProps) {
         <div className="wordmark" dir="ltr">
           sali<span className="wordmark-dot">_</span>
         </div>
-        <p className="tagline">סורקים · משווים · חוסכים</p>
+        <p className="tagline">יכולת לחסוך, לא חבל?</p>
       </header>
 
       <main
@@ -168,24 +204,21 @@ function UploadHome({ onImageSubmit, onUrlSubmit }: UploadProps) {
         onDrop={(e) => {
           e.preventDefault()
           setDragOver(false)
-          const image = e.dataTransfer.files[0]
-          if (image) void onImageSubmit(image)
+          onScan('file')
         }}
       >
-        <div className="scanline" />
         <ReceiptGlyph className="receipt-icon" />
         <h1 className="upload-title">העלו את הקבלה שלכם</h1>
-        <p className="upload-sub">קבלה מודפסת או קבלה דיגיטלית — שתיהן עובדות 😊</p>
-        <p className="upload-hint">מצלמים את הקבלה מהסופר, או מעלים צילום מסך שקיבלתם במייל</p>
+        <p className="upload-sub">קבלה מודפסת או דיגיטלית — שתיהן עובדות 😊</p>
 
-        <div className="tile-grid lg upload-actions">
-          <button className="tile lg" onClick={() => cameraRef.current?.click()}>
+        <div className="tile-grid upload-actions">
+          <button className="tile" onClick={() => cameraRef.current?.click()}>
             <CameraIcon />
             מצלמה
           </button>
-          <button className="tile lg" onClick={() => uploadRef.current?.click()}>
+          <button className="tile" onClick={() => uploadRef.current?.click()}>
             <ImageIcon />
-            העלאת קובץ
+            קובץ
           </button>
         </div>
 
@@ -197,7 +230,7 @@ function UploadHome({ onImageSubmit, onUrlSubmit }: UploadProps) {
           className="field-row url-form"
           onSubmit={(e) => {
             e.preventDefault()
-            if (url.trim()) void onUrlSubmit(url.trim())
+            if (url.trim()) onScan('url')
           }}
         >
           <input
@@ -218,27 +251,20 @@ function UploadHome({ onImageSubmit, onUrlSubmit }: UploadProps) {
         <input
           ref={cameraRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/*"
           capture="environment"
           hidden
-          onChange={(e) => {
-            const image = e.target.files?.[0]
-            if (image) void onImageSubmit(image)
-          }}
+          onChange={(e) => e.target.files?.length && onScan('file')}
         />
         <input
           ref={uploadRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/*,application/pdf"
           hidden
-          onChange={(e) => {
-            const image = e.target.files?.[0]
-            if (image) void onImageSubmit(image)
-          }}
+          onChange={(e) => e.target.files?.length && onScan('file')}
         />
       </main>
 
-      <footer className="home-footer">נמצא לכם את הסל הזול ביותר בסביבה</footer>
     </>
   )
 }
@@ -250,11 +276,10 @@ function UploadHome({ onImageSubmit, onUrlSubmit }: UploadProps) {
 interface ListProps {
   user: { name: string | null }
   receipts: SavedReceipt[]
-  onOpen: (id: string) => void
+  onOpen: (r: SavedReceipt) => void
   onDelete: (id: string) => void
   onCreateEmpty: () => void
-  onImageSubmit: (image: File) => Promise<void>
-  onUrlSubmit: (url: string) => Promise<void>
+  onScan: (from: 'file' | 'url') => void
 }
 
 function ReceiptListHome({
@@ -263,10 +288,8 @@ function ReceiptListHome({
   onOpen,
   onDelete,
   onCreateEmpty,
-  onImageSubmit,
-  onUrlSubmit,
+  onScan,
 }: ListProps) {
-  const [urlOpen, setUrlOpen] = useState(false)
   const [url, setUrl] = useState('')
   const cameraRef = useRef<HTMLInputElement>(null)
   const uploadRef = useRef<HTMLInputElement>(null)
@@ -288,68 +311,58 @@ function ReceiptListHome({
         </div>
       </header>
 
-      {/* Compact echo of the upload zone — the entry point for a new receipt. */}
+      {/* Echo of the full upload zone — the entry point for a new receipt. */}
       <section className="panel new-receipt">
         <p className="panel-title">קבלה חדשה</p>
-        <div className="tile-grid">
-          <button className="tile" onClick={onCreateEmpty}>
+        <div className="tile-grid lg">
+          <button className="tile lg" onClick={onCreateEmpty}>
             <PlusIcon />
             עגלה ריקה
           </button>
-          <button className="tile" onClick={() => cameraRef.current?.click()}>
+          <button className="tile lg" onClick={() => cameraRef.current?.click()}>
             <CameraIcon />
             מצלמה
           </button>
-          <button className="tile" onClick={() => uploadRef.current?.click()}>
+          <button className="tile lg" onClick={() => uploadRef.current?.click()}>
             <ImageIcon />
             קובץ
           </button>
-          <button
-            className={`tile ${urlOpen ? 'active' : ''}`}
-            onClick={() => setUrlOpen((o) => !o)}
-          >
-            <LinkIcon />
-            קישור
-          </button>
         </div>
 
-        {urlOpen && (
-          <form
-            className="field-row url-form inline"
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (url.trim()) {
-                setUrlOpen(false)
-                void onUrlSubmit(url.trim())
-              }
-            }}
-          >
-            <input
-              className="field mono"
-              type="url"
-              inputMode="url"
-              dir="ltr"
-              placeholder="https://..."
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              aria-label="קישור לקבלה"
-              autoFocus
-            />
-            <button className="icon-btn forward" type="submit" disabled={!url.trim()} aria-label="טעינת הקבלה">
-              <ArrowIcon />
-            </button>
-          </form>
-        )}
+        <form
+          className="field-row url-form inline"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (url.trim()) onScan('url')
+          }}
+        >
+          <input
+            className="field mono"
+            type="url"
+            inputMode="url"
+            dir="ltr"
+            placeholder="הדביקו קישור לקבלה"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            aria-label="קישור לקבלה"
+          />
+          <button className="icon-btn forward" type="submit" disabled={!url.trim()} aria-label="טעינת הקבלה">
+            <ArrowIcon />
+          </button>
+        </form>
       </section>
 
       <ul className="receipt-list">
         {receipts.map((r) => (
           <li key={r.id} className="receipt-row">
-            <button className="receipt-open" onClick={() => onOpen(r.id)}>
+            <button className="receipt-open" onClick={() => onOpen(r)}>
+              <span className="receipt-row-logo">
+                <img src={receiptOrigin(r.id).logo} alt={receiptOrigin(r.id).chain} />
+              </span>
               <div className="receipt-row-info">
                 <span className="receipt-row-name">{r.name}</span>
                 <span className="receipt-row-meta">
-                  {formatSavedDate(r.savedAt)} · {countOf(r.items)} מוצרים
+                  {receiptOrigin(r.id).chain} · {formatSavedDate(r.savedAt)}
                 </span>
               </div>
               <span className="receipt-row-total mono" dir="ltr">
@@ -370,25 +383,42 @@ function ReceiptListHome({
       <input
         ref={cameraRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*"
         capture="environment"
         hidden
-        onChange={(e) => {
-          const image = e.target.files?.[0]
-          if (image) void onImageSubmit(image)
-        }}
+        onChange={(e) => e.target.files?.length && onScan('file')}
       />
       <input
         ref={uploadRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/*,application/pdf"
         hidden
-        onChange={(e) => {
-          const image = e.target.files?.[0]
-          if (image) void onImageSubmit(image)
-        }}
+        onChange={(e) => e.target.files?.length && onScan('file')}
       />
     </>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Sign-in gate — shown after a signed-out user finishes a scan.       */
+/* ------------------------------------------------------------------ */
+
+function SignInGate({ onSignIn, onCancel }: { onSignIn: () => void; onCancel: () => void }) {
+  return (
+    <div className="gate-overlay">
+      <div className="gate-card">
+        <ReceiptGlyph className="gate-icon" />
+        <h2>הקבלה מוכנה!</h2>
+        <p className="gate-sub">התחברו כדי לראות את השוואת המחירים ולשמור את הקבלה</p>
+        <button className="btn btn-white btn-block google-btn" onClick={onSignIn}>
+          <GoogleIcon />
+          התחברות עם Google
+        </button>
+        <button className="gate-cancel" onClick={onCancel}>
+          ביטול
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -433,18 +463,6 @@ function ImageIcon() {
   )
 }
 
-function LinkIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true">
-      <path
-        d="M10 13a4 4 0 0 0 6 .5l2-2a4 4 0 0 0-5.7-5.7l-1 1M14 11a4 4 0 0 0-6-.5l-2 2A4 4 0 0 0 11.7 18l1-1"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
 
 function PlusIcon() {
   return (
@@ -472,6 +490,26 @@ function ArrowIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true">
       <path d="M14 6l6 6-6 6M20 12H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.2a5.3 5.3 0 0 1-2.3 3.5v2.9h3.7c2.2-2 3.4-5 3.4-8.6z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23.5c3.1 0 5.700-1 7.6-2.8l-3.7-2.9c-1 .7-2.3 1.1-3.9 1.1-3 0-5.5-2-6.4-4.7H1.8v3C3.7 21 7.6 23.5 12 23.5z"
+      />
+      <path fill="#FBBC05" d="M5.6 14.2a6.9 6.9 0 0 1 0-4.4v-3H1.8a11.5 11.5 0 0 0 0 10.4l3.8-3z" />
+      <path
+        fill="#EA4335"
+        d="M12 4.8c1.7 0 3.2.6 4.4 1.7l3.3-3.3C17.7 1.3 15.1.3 12 .3 7.6.3 3.7 2.8 1.8 6.5l3.8 3C6.5 6.8 9 4.8 12 4.8z"
+      />
     </svg>
   )
 }

@@ -1,7 +1,35 @@
 import { useEffect, useState } from 'react'
 import receiptJson from '../resources/receipt.json'
+import originJson from '../resources/origin.json'
 import type { ReceiptItem } from './types'
 import { supabase } from './supabase'
+
+export interface ReceiptOrigin {
+  chain: string
+  branch: string
+  logo: string
+}
+
+/** Chains we have logos for — used to give each saved receipt a branch badge. */
+const ORIGINS: ReceiptOrigin[] = [
+  { chain: originJson.brand, branch: originJson.branch, logo: originJson.logo },
+  { chain: 'טיב טעם', branch: 'רמת אביב', logo: '/static/logos/tivtaam.svg' },
+  { chain: 'קרפור', branch: 'איילון', logo: '/static/logos/carrefour.png' },
+  { chain: 'סופר יודה', branch: 'המרכז', logo: '/static/logos/superyuda.png' },
+]
+
+/**
+ * The store a receipt was bought at. Mock for now: derived deterministically
+ * from the receipt id so each saved receipt keeps a stable branch badge across
+ * reopens (a real backend would return this per receipt). A fresh, unsaved scan
+ * (`id === null`) uses the scanned origin.
+ */
+export function receiptOrigin(id: string | null): ReceiptOrigin {
+  if (!id) return ORIGINS[0]
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return ORIGINS[h % ORIGINS.length]
+}
 
 const SAVED_KEY = 'sali.savedReceipts'
 const ACTIVE_KEY = 'sali.activeReceipt'
@@ -169,11 +197,19 @@ export interface ActiveReceipt {
 }
 
 /**
- * Resolves the receipt the comparison screens should show: a saved one if an
- * id is active, otherwise the pending scan (or the mock scan as a fallback).
+ * Resolves the receipt the comparison screens should show. If `preloaded` is
+ * given (the caller already has the record, e.g. Home passing it via router
+ * state), it's used directly with no fetch. Otherwise a saved id is fetched,
+ * falling back to the pending scan / mock scan.
  */
-export function useActiveReceipt(userId: string | null): ActiveReceipt {
+export function useActiveReceipt(
+  userId: string | null,
+  preloaded?: SavedReceipt | null,
+): ActiveReceipt {
   const [state, setState] = useState<ActiveReceipt>(() => {
+    if (preloaded) {
+      return { id: preloaded.id, name: preloaded.name, items: preloaded.items, loading: false }
+    }
     const id = localStorage.getItem(ACTIVE_KEY)
     return {
       id,
@@ -184,22 +220,29 @@ export function useActiveReceipt(userId: string | null): ActiveReceipt {
   })
 
   const activeId = state.id
+  const needFetch = state.loading && !preloaded
 
   useEffect(() => {
-    if (!activeId) return
+    if (!activeId || !needFetch) return
     let cancelled = false
-    void getReceipt(userId, activeId).then((saved) => {
-      if (cancelled) return
-      setState(
-        saved
-          ? { id: saved.id, name: saved.name, items: saved.items, loading: false }
-          : { id: null, name: null, items: readPendingScan() ?? scannedItems, loading: false },
-      )
-    })
+    getReceipt(userId, activeId)
+      .then((saved) => {
+        if (cancelled) return
+        setState(
+          saved
+            ? { id: saved.id, name: saved.name, items: saved.items, loading: false }
+            : { id: null, name: null, items: readPendingScan() ?? scannedItems, loading: false },
+        )
+      })
+      // Never leave the screen stuck loading if the fetch fails.
+      .catch((err) => {
+        console.error('[sali] failed to load receipt:', err)
+        if (!cancelled) setState((s) => ({ ...s, loading: false }))
+      })
     return () => {
       cancelled = true
     }
-  }, [activeId, userId])
+  }, [activeId, userId, needFetch])
 
   return state
 }
