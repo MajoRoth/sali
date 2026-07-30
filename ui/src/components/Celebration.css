@@ -1,0 +1,101 @@
+.celebrate {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgba(7, 20, 14, 0.74);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: cel-fade 0.3s ease;
+}
+
+@keyframes cel-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* --- Fireworks --- */
+
+.fireworks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.firework {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.spark {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  margin: -4px;
+  border-radius: 50%;
+  background: hsl(var(--hue) 92% 62%);
+  box-shadow: 0 0 10px 1px hsl(var(--hue) 92% 62%);
+  opacity: 0;
+  animation: spark-burst 1.5s ease-out infinite;
+}
+
+@keyframes spark-burst {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(0) scale(0.3);
+  }
+  10% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(-24px) scale(1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(-104px) scale(0.7);
+  }
+}
+
+/* --- Text --- */
+
+.celebrate-text {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: #ffffff;
+  padding: 24px;
+  animation: cel-pop 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.5) 0.15s both;
+}
+
+@keyframes cel-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.celebrate-lead {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.celebrate-amount {
+  margin-top: 10px;
+  font-size: 54px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+  text-shadow: 0 4px 30px rgba(0, 184, 119, 0.6);
+}
