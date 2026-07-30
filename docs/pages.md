@@ -158,6 +158,24 @@ scan clears it. See `src/lib/receipts.ts`.
 
 ---
 
+## Screen 4 — Cart View (per store)
+
+**Route:** `/cart` — opened by tapping a store in Results (the green summary card → the
+origin store's exact prices; any alternative row → that store's estimated prices).
+
+Lists every receipt item at the chosen store: name, quantity, per-unit price, and line total.
+The **origin store shows exact receipt prices**; other stores show **mock estimates** scaled so
+line totals sum to that store's cart total (`src/lib/pricing.ts` — per-item prices are generated
+deterministically, since the data only has store-level totals).
+
+Each item has a **green→red scale**: the ends are that item's cheapest / most-expensive price
+across all stores, and a marker sits where this store's price falls (green = cheapest,
+red = priciest). The price text is toned to match.
+
+Reached only via navigation state (store + items); a direct load / refresh redirects home.
+
+---
+
 ## Mock Data
 
 - `src/resources/receipt.json` — the fake OCR result: store name, date, list of items (name, barcode, qty, unit price).
