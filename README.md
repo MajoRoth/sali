@@ -48,6 +48,41 @@ curl -X POST http://localhost:8000/api/receipts/extract-image-total \
   -F 'image=@/path/to/receipt.jpg;type=image/jpeg'
 ```
 
+### How URL extraction works
+
+`POST /api/receipts/extract` opens the link in a local headless browser, hands
+the model the page's markup, text, and a screenshot, and lets it call back for
+more — clicking a control or asking for the unreduced HTML — when what it was
+given is not enough. Receipt pages routinely keep their line items in a
+collapsed section, so the markup is deliberately read before the browser paints
+it. The extraction is then reconciled locally against the receipt's own
+arithmetic, and a rejected attempt is retried against the same captured page
+with more reasoning effort.
+
+This needs Playwright's Chromium, which `uv sync` installs:
+
+```bash
+uv run playwright install chromium
+```
+
+Hosted browsing remains as a fallback for when no local browser is available.
+It cannot open most merchant receipt links, which are short opaque tokens
+pointing at client-rendered pages.
+
+### Failures
+
+Every error response carries a `request_id`:
+
+```json
+{"error": {"code": "extraction_unavailable", "message": "…", "request_id": "8a41c2b0e7d5"}}
+```
+
+The same id is written to the server log with the failure code and the field
+paths that failed reconciliation, so a report can be traced without exposing
+receipt content to the caller. Model- and page-derived failure text is withheld
+from logs by default because it quotes the merchant page; set
+`SALI_LOG_FAILURE_DETAIL=1` to include it while debugging locally.
+
 ## UI
 
 Mobile-first React app in `ui/` (upload a receipt → compare the cart across nearby stores).

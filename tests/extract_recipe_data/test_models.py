@@ -273,3 +273,158 @@ def test_missing_top_level_components_are_derived_from_items() -> None:
         "derived: receipt.totals.subtotal from item gross_total values",
         "derived: receipt.totals.discounts from item signed adjustments",
     ]
+
+
+def _receipt_with_item(**item_overrides) -> NormalizedReceipt:
+    """One-item receipt whose money always balances, for isolating unit checks."""
+    item = {
+        "position": 1,
+        "code": None,
+        "name": "Peach",
+        "categories": [],
+        "quantity": "1",
+        "unit": "kg",
+        "unit_price": "10.00",
+        "gross_total": "10.00",
+        "adjustments": [],
+        "final_total": "10.00",
+    }
+    item.update(item_overrides)
+    return NormalizedReceipt.model_validate(
+        {
+            "merchant": {"name": "M", "branch_name": None, "branch_number": None},
+            "transaction": {
+                "receipt_id": None,
+                "purchased_at": None,
+                "transaction_number": None,
+                "type": "purchase",
+                "currency": "ILS",
+            },
+            "totals": {
+                "subtotal": item["gross_total"],
+                "discounts": "0",
+                "total": item["final_total"],
+            },
+            "items": [item],
+        }
+    )
+
+
+def test_grams_against_a_price_per_kilogram_are_rescaled_and_flagged() -> None:
+    """The real stopmarket case: '565 grams' beside '32.90 per kg'."""
+    receipt = _receipt_with_item(
+        name="אפרסק",
+        quantity="565",
+        unit="גרם",
+        unit_price="32.90",
+        gross_total="18.59",
+        final_total="18.59",
+    )
+
+    document = validate_and_reconcile(receipt)
+
+    assert document.receipt.items[0].quantity == "0.565"
+    assert any(
+        w.startswith("corrected:") and "rescaled" in w for w in document.warnings
+    )
+
+
+def test_a_rounded_printed_weight_warns_instead_of_rejecting_the_receipt() -> None:
+    """The real weezmo case: '54 X 0.16 kg = 8.86', where 0.16 is rounded.
+
+    No power of ten reconciles these, because the merchant rounded the weight
+    it printed. The receipt's money is still correct, so it must survive.
+    """
+    receipt = _receipt_with_item(
+        name="זית",
+        quantity="0.16",
+        unit="kg",
+        unit_price="54",
+        gross_total="8.86",
+        final_total="8.86",
+    )
+
+    document = validate_and_reconcile(receipt)
+
+    assert document.receipt.items[0].quantity == "0.16", "printed value is preserved"
+    assert any(w.startswith("unverified:") for w in document.warnings)
+
+
+def test_an_unbalanced_line_total_still_fails_closed() -> None:
+    receipt = _receipt_with_item(
+        gross_total="10.00",
+        adjustments=[{"description": "discount", "amount": "-2.00"}],
+        final_total="10.00",
+    )
+
+    with pytest.raises(SemanticValidationError) as raised:
+        validate_and_reconcile(receipt)
+
+    assert any("plus adjustments" in error for error in raised.value.errors)
+
+
+def test_items_that_do_not_sum_to_the_receipt_total_still_fail_closed() -> None:
+    receipt = _receipt_with_item()
+    receipt = receipt.model_copy(
+        update={"totals": receipt.totals.model_copy(update={"total": "99.00"})}
+    )
+
+    with pytest.raises(SemanticValidationError) as raised:
+        validate_and_reconcile(receipt)
+
+    assert any("must match receipt.totals.total" in e for e in raised.value.errors)
+
+
+def test_an_aggregate_savings_figure_is_corrected_from_the_item_adjustments() -> None:
+    """The page printed 'you saved 138.81' while the items summed to -137.14."""
+    receipt = _receipt_with_item(
+        gross_total="10.00",
+        adjustments=[{"description": "promo", "amount": "-2.00"}],
+        final_total="8.00",
+    )
+    receipt = receipt.model_copy(
+        update={
+            "totals": receipt.totals.model_copy(
+                update={"discounts": "-3.50", "total": "8.00"}
+            )
+        }
+    )
+
+    document = validate_and_reconcile(receipt)
+
+    assert document.receipt.totals.discounts == "-2.00"
+    assert any("corrected: receipt.totals.discounts" in w for w in document.warnings)
+
+
+def _receipt_named(name: str | None) -> NormalizedReceipt:
+    receipt = _receipt_with_item()
+    return receipt.model_copy(
+        update={"merchant": receipt.merchant.model_copy(update={"name": name})}
+    )
+
+
+def test_a_placeholder_merchant_name_is_replaced_by_an_honest_null() -> None:
+    """Observed in the wild: a receipt naming its shop only in a logo image.
+
+    `merchant.name` is nullable, so the model had an honest answer available
+    and returned "?" instead. A guess that reads like data is worse than a null.
+    """
+    document = validate_and_reconcile(_receipt_named("?"))
+
+    assert document.receipt.merchant.name is None
+    assert any("corrected: receipt.merchant.name" in w for w in document.warnings)
+    assert any("missing: receipt.merchant.name" in w for w in document.warnings)
+
+
+@pytest.mark.parametrize("placeholder", ["unknown", "N/A", " none ", "-"])
+def test_placeholder_spellings_are_all_treated_as_absent(placeholder: str) -> None:
+    document = validate_and_reconcile(_receipt_named(placeholder))
+
+    assert document.receipt.merchant.name is None
+
+
+def test_a_real_merchant_name_survives_reconciliation() -> None:
+    document = validate_and_reconcile(_receipt_named("סופר-פארם"))
+
+    assert document.receipt.merchant.name == "סופר-פארם"
+    assert not any("receipt.merchant.name" in w for w in document.warnings)

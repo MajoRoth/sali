@@ -50,6 +50,18 @@ def receipt_document():
     return validate_and_reconcile(receipt)
 
 
+def _error_without_id(response) -> dict[str, str]:
+    """The error body minus its correlation id, which is random per request."""
+    error = dict(response.json()["error"])
+    error.pop("request_id", None)
+    return error
+
+
+def _correlation_id(response) -> str:
+    """Every failure carries an id that ties it to one server-side log line."""
+    return response.json()["error"]["request_id"]
+
+
 def test_extract_returns_a_reconciled_receipt_document_without_persistence() -> None:
     requested: list[str] = []
 
@@ -75,12 +87,11 @@ def test_extract_rejects_an_invalid_url_with_a_safe_contract_error() -> None:
     )
 
     assert response.status_code == 422
-    assert response.json() == {
-        "error": {
-            "code": "invalid_url",
-            "message": "Use a public HTTPS link to a receipt.",
-        }
+    assert _error_without_id(response) == {
+        "code": "invalid_url",
+        "message": "Use a public HTTPS link to a receipt.",
     }
+    assert _correlation_id(response)
 
 
 def test_extract_hides_receipt_and_diagnostic_details_on_verification_failure() -> None:
@@ -97,12 +108,13 @@ def test_extract_hides_receipt_and_diagnostic_details_on_verification_failure() 
     )
 
     assert response.status_code == 422
-    assert response.json() == {
-        "error": {
-            "code": "blocked",
-            "message": "The receipt link could not be accessed.",
-        }
+    assert _error_without_id(response) == {
+        "code": "blocked",
+        "message": "The receipt link could not be accessed.",
     }
+    assert _correlation_id(response)
+    assert "private token" not in response.text
+    assert "internal web-search diagnostic" not in response.text
 
 
 def test_extract_reports_service_failures_without_internal_detail() -> None:
@@ -185,16 +197,15 @@ def test_extract_image_rejects_an_invalid_or_missing_upload() -> None:
         },
     )
 
-    assert missing.json() == {
-        "error": {"code": "invalid_request", "message": "A receipt image is required."}
+    assert _error_without_id(missing) == {
+        "code": "invalid_request",
+        "message": "A receipt image is required.",
     }
     for response in (unsupported, mismatched, oversized):
         assert response.status_code == 422
-        assert response.json() == {
-            "error": {
-                "code": "invalid_image",
-                "message": "Upload one JPEG, PNG, or WEBP receipt image no larger than 10 MiB.",
-            }
+        assert _error_without_id(response) == {
+            "code": "invalid_image",
+            "message": "Upload one JPEG, PNG, or WEBP receipt image no larger than 10 MiB.",
         }
 
 
@@ -224,8 +235,9 @@ def test_extract_image_hides_inspection_and_service_details() -> None:
         files={"image": ("receipt.webp", b"RIFF\x00\x00\x00\x00WEBP", "image/webp")},
     )
 
-    assert failed.json() == {
-        "error": {"code": "not_receipt", "message": "The image did not show a receipt."}
+    assert _error_without_id(failed) == {
+        "code": "not_receipt",
+        "message": "The image did not show a receipt.",
     }
     assert unavailable.status_code == 503
     assert "missing key" not in unavailable.text

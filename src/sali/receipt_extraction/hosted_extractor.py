@@ -138,24 +138,20 @@ class OpenAIReceiptExtractor:
 
     def extract(self, url: str) -> ReceiptDocument:
         if __package__:
+            from .agentic_extractor import BrowserReceiptExtractor
             from .fallback_extractor import AutoReceiptExtractor
-            from .rendered_evidence import (
-                BrowserReceiptRenderer,
-                RenderedEvidenceReceiptExtractor,
-            )
         else:
+            from agentic_extractor import BrowserReceiptExtractor
             from fallback_extractor import AutoReceiptExtractor
-            from rendered_evidence import (
-                BrowserReceiptRenderer,
-                RenderedEvidenceReceiptExtractor,
-            )
 
         api_key = self._api_key_provider.load()
-        with OpenAI(api_key=api_key, timeout=90.0, max_retries=0) as client:
+        with OpenAI(api_key=api_key, timeout=180.0, max_retries=0) as client:
             validator = ReceiptUrlValidator()
             extractor = AutoReceiptExtractor(
+                browser_extractor=BrowserReceiptExtractor(
+                    client,
+                    url_validator=validator,
+                ),
                 hosted_extractor=HostedReceiptExtractor(client, validator),
-                renderer=BrowserReceiptRenderer(url_validator=validator),
-                rendered_extractor=RenderedEvidenceReceiptExtractor(client),
             )
             return extractor.extract(url)

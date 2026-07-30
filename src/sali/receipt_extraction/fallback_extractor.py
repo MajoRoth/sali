@@ -1,4 +1,11 @@
-"""Merchant-agnostic routing between hosted and rendered receipt evidence."""
+"""Merchant-agnostic routing between browser and hosted receipt retrieval.
+
+The browser runs first. Hosted retrieval reads from a crawl cache, and receipt
+links are almost always short opaque tokens pointing at client-rendered pages,
+so hosted browsing routinely cannot fetch them at all — putting it first spent
+real latency on a request that was going to fail. It stays as the fallback for
+when no local browser is available.
+"""
 
 from __future__ import annotations
 
@@ -7,71 +14,48 @@ from typing import Protocol
 if __package__:
     from .errors import HostedReceiptError, ReceiptInspectionFailure
     from .models import ReceiptDocument
-    from .rendered_evidence import RenderedReceiptEvidence
 else:
     from errors import HostedReceiptError, ReceiptInspectionFailure
     from models import ReceiptDocument
-    from rendered_evidence import RenderedReceiptEvidence
 
-RENDERABLE_FAILURE_CODES = frozenset(
-    {
-        "unreachable",
-        "blocked",
-        "insufficient_evidence",
-    }
-)
+#: A verdict of "this is not a receipt" is definitive evidence about the page
+#: rather than a retrieval problem, so it is never given a second opinion.
+DEFINITIVE_FAILURE_CODES = frozenset({"not_receipt", "refused"})
 
 
 class _UrlReceiptExtractor(Protocol):
     def extract(self, url: str) -> ReceiptDocument: ...
 
 
-class _ReceiptRenderer(Protocol):
-    def render(self, url: str) -> RenderedReceiptEvidence: ...
-
-
-class _EvidenceReceiptExtractor(Protocol):
-    def extract(self, evidence: RenderedReceiptEvidence) -> ReceiptDocument: ...
-
-
 class AutoReceiptExtractor:
-    """Prefer hosted retrieval and retry eligible failures with rendered evidence."""
+    """Extract with a live browser, falling back to hosted retrieval."""
 
     def __init__(
         self,
         *,
+        browser_extractor: _UrlReceiptExtractor,
         hosted_extractor: _UrlReceiptExtractor,
-        renderer: _ReceiptRenderer,
-        rendered_extractor: _EvidenceReceiptExtractor,
     ) -> None:
+        self._browser_extractor = browser_extractor
         self._hosted_extractor = hosted_extractor
-        self._renderer = renderer
-        self._rendered_extractor = rendered_extractor
 
     def extract(self, url: str) -> ReceiptDocument:
         try:
-            return self._hosted_extractor.extract(url)
-        except ReceiptInspectionFailure as hosted_failure:
-            if hosted_failure.failure_code not in RENDERABLE_FAILURE_CODES:
+            return self._browser_extractor.extract(url)
+        except ReceiptInspectionFailure as browser_failure:
+            if browser_failure.failure_code in DEFINITIVE_FAILURE_CODES:
                 raise
-            hosted_failure_code = hosted_failure.failure_code
-            hosted_failure_reason = hosted_failure.failure_reason
-            hosted_failure_diagnostics = hosted_failure.diagnostics
+            first_failure: HostedReceiptError = browser_failure
+        except HostedReceiptError as browser_failure:
+            first_failure = browser_failure
 
         try:
-            evidence = self._renderer.render(url)
-            return self._rendered_extractor.extract(evidence)
-        except HostedReceiptError as fallback_failure:
-            hosted_details = (
-                "hosted extraction failed "
-                f"({hosted_failure_code}): "
-                f"{hosted_failure_reason}"
-            )
-            if hosted_failure_diagnostics:
-                hosted_details += f" [{hosted_failure_diagnostics}]"
+            return self._hosted_extractor.extract(url)
+        except HostedReceiptError as hosted_failure:
             raise HostedReceiptError(
-                f"{hosted_details}; rendered fallback failed: {fallback_failure}"
-            ) from fallback_failure
+                f"browser extraction failed: {first_failure}; "
+                f"hosted fallback failed: {hosted_failure}"
+            ) from hosted_failure
 
 
-__all__ = ["RENDERABLE_FAILURE_CODES", "AutoReceiptExtractor"]
+__all__ = ["DEFINITIVE_FAILURE_CODES", "AutoReceiptExtractor"]

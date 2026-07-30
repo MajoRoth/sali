@@ -13,7 +13,7 @@ if __package__:
         HOSTED_EXTRACTION_PROMPT,
         MODEL,
         OUTPUT_FILE,
-        RENDERED_EXTRACTION_PROMPT,
+        PAGE_EXTRACTION_PROMPT,
     )
     from .credentials import ApiKeyProvider
     from .document_writer import ReceiptDocumentWriter
@@ -33,7 +33,7 @@ else:
         HOSTED_EXTRACTION_PROMPT,
         MODEL,
         OUTPUT_FILE,
-        RENDERED_EXTRACTION_PROMPT,
+        PAGE_EXTRACTION_PROMPT,
     )
     from credentials import ApiKeyProvider
     from document_writer import ReceiptDocumentWriter
@@ -103,7 +103,7 @@ __all__ = [
     "HOSTED_EXTRACTION_PROMPT",
     "MODEL",
     "OUTPUT_FILE",
-    "RENDERED_EXTRACTION_PROMPT",
+    "PAGE_EXTRACTION_PROMPT",
     "ApiKeyProvider",
     "HostedReceiptError",
     "HostedReceiptExtractor",

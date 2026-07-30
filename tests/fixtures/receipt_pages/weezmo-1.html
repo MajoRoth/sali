@@ -1,0 +1,555 @@
+<!DOCTYPE html><html><head><style data-rc-order="prependQueue" data-rc-priority="-999" data-css-hash="oywp35" data-token-hash="16cazu1">:where(.css-1wesfl8) a{color:#1890ff;text-decoration:none;background-color:transparent;outline:none;cursor:pointer;transition:color 0.3s;-webkit-text-decoration-skip:objects;}:where(.css-1wesfl8) a:hover{color:#69c0ff;}:where(.css-1wesfl8) a:active{color:#096dd9;}:where(.css-1wesfl8) a:active,:where(.css-1wesfl8) a:hover{text-decoration:none;outline:0;}:where(.css-1wesfl8) a:focus{text-decoration:none;outline:0;}:where(.css-1wesfl8) a[disabled]{color:rgba(0, 0, 0, 0.25);cursor:not-allowed;}</style><style data-rc-order="prependQueue" data-rc-priority="-999" data-css-hash="4tp0ze" data-token-hash="16cazu1">:where(.css-1wesfl8)[class^="ant-modal"],:where(.css-1wesfl8)[class*=" ant-modal"]{font-family:inherit;font-size:14px;box-sizing:border-box;}:where(.css-1wesfl8)[class^="ant-modal"]::before,:where(.css-1wesfl8)[class*=" ant-modal"]::before,:where(.css-1wesfl8)[class^="ant-modal"]::after,:where(.css-1wesfl8)[class*=" ant-modal"]::after{box-sizing:border-box;}:where(.css-1wesfl8)[class^="ant-modal"] [class^="ant-modal"],:where(.css-1wesfl8)[class*=" ant-modal"] [class^="ant-modal"],:where(.css-1wesfl8)[class^="ant-modal"] [class*=" ant-modal"],:where(.css-1wesfl8)[class*=" ant-modal"] [class*=" ant-modal"]{box-sizing:border-box;}:where(.css-1wesfl8)[class^="ant-modal"] [class^="ant-modal"]::before,:where(.css-1wesfl8)[class*=" ant-modal"] [class^="ant-modal"]::before,:where(.css-1wesfl8)[class^="ant-modal"] [class*=" ant-modal"]::before,:where(.css-1wesfl8)[class*=" ant-modal"] [class*=" ant-modal"]::before,:where(.css-1wesfl8)[class^="ant-modal"] [class^="ant-modal"]::after,:where(.css-1wesfl8)[class*=" ant-modal"] [class^="ant-modal"]::after,:where(.css-1wesfl8)[class^="ant-modal"] [class*=" ant-modal"]::after,:where(.css-1wesfl8)[class*=" ant-modal"] [class*=" ant-modal"]::after{box-sizing:border-box;}:where(.css-1wesfl8).ant-modal-root .ant-modal-wrap-rtl{direction:rtl;}:where(.css-1wesfl8).ant-modal-root .ant-modal-centered{text-align:center;}:where(.css-1wesfl8).ant-modal-root .ant-modal-centered::before{display:inline-block;width:0;height:100%;vertical-align:middle;content:"";}:where(.css-1wesfl8).ant-modal-root .ant-modal-centered .ant-modal{top:0;display:inline-block;padding-bottom:0;text-align:start;vertical-align:middle;}@media (max-width: 767px){:where(.css-1wesfl8).ant-modal-root .ant-modal{max-width:calc(100vw - 16px);margin:8px auto;}:where(.css-1wesfl8).ant-modal-root .ant-modal-centered .ant-modal{flex:1;}}:where(.css-1wesfl8).ant-modal{box-sizing:border-box;margin:0 auto;padding:0;color:rgba(0, 0, 0, 0.85);font-size:14px;line-height:1.5714285714285714;list-style:none;font-family:inherit;pointer-events:none;position:relative;top:100px;width:auto;max-width:calc(100vw - 32px);padding-bottom:24px;}:where(.css-1wesfl8).ant-modal .ant-modal-title{margin:0;color:rgba(0, 0, 0, 0.85);font-weight:600;font-size:16px;line-height:1.5;word-wrap:break-word;}:where(.css-1wesfl8).ant-modal .ant-modal-content{position:relative;background-color:#ffffff;background-clip:padding-box;border:0;border-radius:2px;box-shadow:0 6px 16px 0 rgba(0, 0, 0, 0.08),0 3px 6px -4px rgba(0, 0, 0, 0.12),0 9px 28px 8px rgba(0, 0, 0, 0.05);pointer-events:auto;padding:0;}:where(.css-1wesfl8).ant-modal .ant-modal-close{position:absolute;top:12px;inset-inline-end:12px;z-index:1010;padding:0;color:rgba(0, 0, 0, 0.45);font-weight:600;line-height:1;text-decoration:none;background:transparent;border-radius:2px;width:32px;height:32px;border:0;outline:0;cursor:pointer;transition:color 0.2s,background-color 0.2s;}:where(.css-1wesfl8).ant-modal .ant-modal-close-x{display:flex;font-size:16px;font-style:normal;line-height:32px;justify-content:center;text-transform:none;text-rendering:auto;}:where(.css-1wesfl8).ant-modal .ant-modal-close:hover{color:rgba(0, 0, 0, 0.85);background-color:rgba(0, 0, 0, 0.04);text-decoration:none;}:where(.css-1wesfl8).ant-modal .ant-modal-close:active{background-color:rgba(0, 0, 0, 0.06);}:where(.css-1wesfl8).ant-modal .ant-modal-close:focus-visible{outline:4px solid #91d5ff;outline-offset:1px;transition:outline-offset 0s,outline 0s;}:where(.css-1wesfl8).ant-modal .ant-modal-header{color:rgba(0, 0, 0, 0.85);background:#ffffff;border-radius:2px 2px 0 0;margin-bottom:0;padding:16px 24px;border-bottom:1px solid rgba(5, 5, 5, 0.06);}:where(.css-1wesfl8).ant-modal .ant-modal-body{font-size:14px;line-height:1.5714285714285714;word-wrap:break-word;padding:24px;}:where(.css-1wesfl8).ant-modal .ant-modal-footer{text-align:end;background:transparent;margin-top:0;padding:8px 16px;border-top:1px solid rgba(5, 5, 5, 0.06);border-radius:0 0 2px 2px;}:where(.css-1wesfl8).ant-modal .ant-modal-footer >.ant-btn+.ant-btn{margin-inline-start:8px;}:where(.css-1wesfl8).ant-modal .ant-modal-open{overflow:hidden;}:where(.css-1wesfl8).ant-modal-pure-panel{top:auto;padding:0;display:flex;flex-direction:column;}:where(.css-1wesfl8).ant-modal-pure-panel .ant-modal-content,:where(.css-1wesfl8).ant-modal-pure-panel .ant-modal-body,:where(.css-1wesfl8).ant-modal-pure-panel .ant-modal-confirm-body-wrapper{display:flex;flex-direction:column;flex:auto;}:where(.css-1wesfl8).ant-modal-pure-panel .ant-modal-confirm-body{margin-bottom:auto;}:where(.css-1wesfl8).ant-modal-root .ant-modal-wrap-rtl{direction:rtl;}:where(.css-1wesfl8).ant-modal-root .ant-modal-wrap-rtl .ant-modal-confirm-body{direction:rtl;}:where(.css-1wesfl8).ant-modal-root .ant-modal.ant-zoom-enter,:where(.css-1wesfl8).ant-modal-root .ant-modal.ant-zoom-appear{transform:none;opacity:0;animation-duration:0.3s;user-select:none;}:where(.css-1wesfl8).ant-modal-root .ant-modal.ant-zoom-leave .ant-modal-content{pointer-events:none;}:where(.css-1wesfl8).ant-modal-root .ant-modal-mask{position:fixed;inset:0;z-index:1000;height:100%;background-color:rgba(0, 0, 0, 0.45);pointer-events:none;}:where(.css-1wesfl8).ant-modal-root .ant-modal-mask .ant-modal-hidden{display:none;}:where(.css-1wesfl8).ant-modal-root .ant-modal-wrap{position:fixed;inset:0;z-index:1000;overflow:auto;outline:0;-webkit-overflow-scrolling:touch;}:where(.css-1wesfl8).ant-modal-root .ant-fade-enter,:where(.css-1wesfl8).ant-modal-root .ant-fade-appear{animation-duration:0.2s;animation-fill-mode:both;animation-play-state:paused;}:where(.css-1wesfl8).ant-modal-root .ant-fade-leave{animation-duration:0.2s;animation-fill-mode:both;animation-play-state:paused;}:where(.css-1wesfl8).ant-modal-root .ant-fade-enter.ant-fade-enter-active,:where(.css-1wesfl8).ant-modal-root .ant-fade-appear.ant-fade-appear-active{animation-name:css-1wesfl8-antFadeIn;animation-play-state:running;}:where(.css-1wesfl8).ant-modal-root .ant-fade-leave.ant-fade-leave-active{animation-name:css-1wesfl8-antFadeOut;animation-play-state:running;pointer-events:none;}:where(.css-1wesfl8).ant-modal-root .ant-fade-enter,:where(.css-1wesfl8).ant-modal-root .ant-fade-appear{opacity:0;animation-timing-function:linear;}:where(.css-1wesfl8).ant-modal-root .ant-fade-leave{animation-timing-function:linear;}:where(.css-1wesfl8).ant-zoom-enter,:where(.css-1wesfl8).ant-zoom-appear{animation-duration:0.2s;animation-fill-mode:both;animation-play-state:paused;}:where(.css-1wesfl8).ant-zoom-leave{animation-duration:0.2s;animation-fill-mode:both;animation-play-state:paused;}:where(.css-1wesfl8).ant-zoom-enter.ant-zoom-enter-active,:where(.css-1wesfl8).ant-zoom-appear.ant-zoom-appear-active{animation-name:css-1wesfl8-antZoomIn;animation-play-state:running;}:where(.css-1wesfl8).ant-zoom-leave.ant-zoom-leave-active{animation-name:css-1wesfl8-antZoomOut;animation-play-state:running;pointer-events:none;}:where(.css-1wesfl8).ant-zoom-enter,:where(.css-1wesfl8).ant-zoom-appear{transform:scale(0);opacity:0;animation-timing-function:cubic-bezier(0.08, 0.82, 0.17, 1);}:where(.css-1wesfl8).ant-zoom-enter-prepare,:where(.css-1wesfl8).ant-zoom-appear-prepare{transform:none;}:where(.css-1wesfl8).ant-zoom-leave{animation-timing-function:cubic-bezier(0.78, 0.14, 0.15, 0.86);}</style><style data-rc-order="prependQueue" data-rc-priority="-999" data-css-hash="_effect-css-1wesfl8-antFadeIn">@keyframes css-1wesfl8-antFadeIn{0%{opacity:0;}100%{opacity:1;}}</style><style data-rc-order="prependQueue" data-rc-priority="-999" data-css-hash="_effect-css-1wesfl8-antFadeOut">@keyframes css-1wesfl8-antFadeOut{0%{opacity:1;}100%{opacity:0;}}</style><style data-rc-order="prependQueue" data-rc-priority="-999" data-css-hash="_effect-css-1wesfl8-antZoomIn">@keyframes css-1wesfl8-antZoomIn{0%{transform:scale(0.2);opacity:0;}100%{transform:scale(1);opacity:1;}}</style><style data-rc-order="prependQueue" data-rc-priority="-999" data-css-hash="_effect-css-1wesfl8-antZoomOut">@keyframes css-1wesfl8-antZoomOut{0%{transform:scale(1);}100%{transform:scale(0.2);opacity:0;}}</style><style data-rc-order="prependQueue" data-rc-priority="-999" data-css-hash="11a30lm" data-token-hash="16cazu1">:where(.css-1wesfl8).ant-wave{font-family:inherit;font-size:14px;box-sizing:border-box;}:where(.css-1wesfl8).ant-wave::before,:where(.css-1wesfl8).ant-wave::after{box-sizing:border-box;}:where(.css-1wesfl8).ant-wave [class^="ant-wave"],:where(.css-1wesfl8).ant-wave [class*=" ant-wave"]{box-sizing:border-box;}:where(.css-1wesfl8).ant-wave [class^="ant-wave"]::before,:where(.css-1wesfl8).ant-wave [class*=" ant-wave"]::before,:where(.css-1wesfl8).ant-wave [class^="ant-wave"]::after,:where(.css-1wesfl8).ant-wave [class*=" ant-wave"]::after{box-sizing:border-box;}:where(.css-1wesfl8).ant-wave{position:absolute;background:transparent;pointer-events:none;box-sizing:border-box;color:var(--wave-color, #1890ff);box-shadow:0 0 0 0 currentcolor;opacity:0.2;}:where(.css-1wesfl8).ant-wave.wave-motion-appear{transition:box-shadow 0.4s cubic-bezier(0.08, 0.82, 0.17, 1),opacity 2s cubic-bezier(0.08, 0.82, 0.17, 1);}:where(.css-1wesfl8).ant-wave.wave-motion-appear-active{box-shadow:0 0 0 6px currentcolor;opacity:0;}:where(.css-1wesfl8).ant-wave.wave-motion-appear.wave-quick{transition:box-shadow 0.3s cubic-bezier(0.645, 0.045, 0.355, 1),opacity 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);}</style><style data-rc-order="prependQueue" data-rc-priority="-999" data-css-hash="3247sa" data-token-hash="16cazu1">:where(.css-1wesfl8).ant-btn{font-family:inherit;font-size:14px;box-sizing:border-box;}:where(.css-1wesfl8).ant-btn::before,:where(.css-1wesfl8).ant-btn::after{box-sizing:border-box;}:where(.css-1wesfl8).ant-btn [class^="ant-btn"],:where(.css-1wesfl8).ant-btn [class*=" ant-btn"]{box-sizing:border-box;}:where(.css-1wesfl8).ant-btn [class^="ant-btn"]::before,:where(.css-1wesfl8).ant-btn [class*=" ant-btn"]::before,:where(.css-1wesfl8).ant-btn [class^="ant-btn"]::after,:where(.css-1wesfl8).ant-btn [class*=" ant-btn"]::after{box-sizing:border-box;}:where(.css-1wesfl8).ant-btn{outline:none;position:relative;display:inline-block;font-weight:400;white-space:nowrap;text-align:center;background-image:none;background:transparent;border:1px solid transparent;cursor:pointer;transition:all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);user-select:none;touch-action:manipulation;color:rgba(0, 0, 0, 0.85);}:where(.css-1wesfl8).ant-btn:disabled>*{pointer-events:none;}:where(.css-1wesfl8).ant-btn >span{display:inline-block;}:where(.css-1wesfl8).ant-btn .ant-btn-icon{line-height:0;}:where(.css-1wesfl8).ant-btn .ant-btn-icon-end{margin-inline-start:8px;}:where(.css-1wesfl8).ant-btn >.anticon+span,:where(.css-1wesfl8).ant-btn >span+.anticon{margin-inline-start:8px;}:where(.css-1wesfl8).ant-btn:not(.ant-btn-icon-only)>.ant-btn-icon.ant-btn-loading-icon,:where(.css-1wesfl8).ant-btn:not(.ant-btn-icon-only)>.ant-btn-icon:not(:last-child){margin-inline-end:8px;}:where(.css-1wesfl8).ant-btn:not(.ant-btn-icon-only)>.ant-btn-icon.ant-btn-loading-icon-end{margin-inline-start:8px;}:where(.css-1wesfl8).ant-btn >a{color:currentColor;}:where(.css-1wesfl8).ant-btn:not(:disabled):focus-visible{outline:4px solid #91d5ff;outline-offset:1px;transition:outline-offset 0s,outline 0s;}:where(.css-1wesfl8).ant-btn.ant-btn-two-chinese-chars::first-letter{letter-spacing:0.34em;}:where(.css-1wesfl8).ant-btn.ant-btn-two-chinese-chars>*:not(.anticon){margin-inline-end:-0.34em;letter-spacing:0.34em;}:where(.css-1wesfl8).ant-btn-icon-only.ant-btn-compact-item{flex:none;}:where(.css-1wesfl8).ant-btn{font-size:14px;line-height:1.5714285714285714;height:32px;padding:4px 15px;border-radius:2px;}:where(.css-1wesfl8).ant-btn.ant-btn-icon-only{display:inline-flex;align-items:center;justify-content:center;width:32px;padding-inline-start:0;padding-inline-end:0;}:where(.css-1wesfl8).ant-btn.ant-btn-icon-only.ant-btn-round{width:auto;}:where(.css-1wesfl8).ant-btn.ant-btn-icon-only .anticon{font-size:16px;}:where(.css-1wesfl8).ant-btn.ant-btn-loading{opacity:0.65;cursor:default;}:where(.css-1wesfl8).ant-btn .ant-btn-loading-icon{transition:width 0.3s cubic-bezier(0.645, 0.045, 0.355, 1),opacity 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);}:where(.css-1wesfl8).ant-btn.ant-btn-circle.ant-btn{min-width:32px;padding-inline-start:0;padding-inline-end:0;border-radius:50%;}:where(.css-1wesfl8).ant-btn.ant-btn-round.ant-btn{border-radius:32px;padding-inline-start:16px;padding-inline-end:16px;}:where(.css-1wesfl8).ant-btn-sm{font-size:14px;line-height:1.5714285714285714;height:24px;padding:0px 7px;border-radius:2px;}:where(.css-1wesfl8).ant-btn-sm.ant-btn-icon-only{display:inline-flex;align-items:center;justify-content:center;width:24px;padding-inline-start:0;padding-inline-end:0;}:where(.css-1wesfl8).ant-btn-sm.ant-btn-icon-only.ant-btn-round{width:auto;}:where(.css-1wesfl8).ant-btn-sm.ant-btn-icon-only .anticon{font-size:14px;}:where(.css-1wesfl8).ant-btn-sm.ant-btn-loading{opacity:0.65;cursor:default;}:where(.css-1wesfl8).ant-btn-sm .ant-btn-loading-icon{transition:width 0.3s cubic-bezier(0.645, 0.045, 0.355, 1),opacity 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);}:where(.css-1wesfl8).ant-btn.ant-btn-circle.ant-btn-sm{min-width:24px;padding-inline-start:0;padding-inline-end:0;border-radius:50%;}:where(.css-1wesfl8).ant-btn.ant-btn-round.ant-btn-sm{border-radius:24px;padding-inline-start:12px;padding-inline-end:12px;}:where(.css-1wesfl8).ant-btn-lg{font-size:16px;line-height:1.5;height:40px;padding:7px 15px;border-radius:2px;}:where(.css-1wesfl8).ant-btn-lg.ant-btn-icon-only{display:inline-flex;align-items:center;justify-content:center;width:40px;padding-inline-start:0;padding-inline-end:0;}:where(.css-1wesfl8).ant-btn-lg.ant-btn-icon-only.ant-btn-round{width:auto;}:where(.css-1wesfl8).ant-btn-lg.ant-btn-icon-only .anticon{font-size:18px;}:where(.css-1wesfl8).ant-btn-lg.ant-btn-loading{opacity:0.65;cursor:default;}:where(.css-1wesfl8).ant-btn-lg .ant-btn-loading-icon{transition:width 0.3s cubic-bezier(0.645, 0.045, 0.355, 1),opacity 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);}:where(.css-1wesfl8).ant-btn.ant-btn-circle.ant-btn-lg{min-width:40px;padding-inline-start:0;padding-inline-end:0;border-radius:50%;}:where(.css-1wesfl8).ant-btn.ant-btn-round.ant-btn-lg{border-radius:40px;padding-inline-start:20px;padding-inline-end:20px;}:where(.css-1wesfl8).ant-btn.ant-btn-block{width:100%;}:where(.css-1wesfl8).ant-btn-default{background:#ffffff;border-color:#d9d9d9;color:rgba(0, 0, 0, 0.85);box-shadow:0 2px 0 rgba(0, 0, 0, 0.02);}:where(.css-1wesfl8).ant-btn-default:disabled,:where(.css-1wesfl8).ant-btn-default.ant-btn-disabled{cursor:not-allowed;border-color:#d9d9d9;color:rgba(0, 0, 0, 0.25);background:rgba(0, 0, 0, 0.03);box-shadow:none;}:where(.css-1wesfl8).ant-btn-default:not(:disabled):not(.ant-btn-disabled):hover{color:#40a9ff;border-color:#40a9ff;background:#ffffff;}:where(.css-1wesfl8).ant-btn-default:not(:disabled):not(.ant-btn-disabled):active{color:#096dd9;border-color:#096dd9;background:#ffffff;}:where(.css-1wesfl8).ant-btn-default.ant-btn-background-ghost{color:#ffffff;background:transparent;border-color:#ffffff;box-shadow:none;}:where(.css-1wesfl8).ant-btn-default.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):hover{background:transparent;}:where(.css-1wesfl8).ant-btn-default.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):active{background:transparent;}:where(.css-1wesfl8).ant-btn-default.ant-btn-background-ghost:disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);border-color:#d9d9d9;}:where(.css-1wesfl8).ant-btn-default.ant-btn-dangerous{color:#ff4d4f;border-color:#ff4d4f;}:where(.css-1wesfl8).ant-btn-default.ant-btn-dangerous:not(:disabled):not(.ant-btn-disabled):hover{color:#ff7875;border-color:#ffa39e;}:where(.css-1wesfl8).ant-btn-default.ant-btn-dangerous:not(:disabled):not(.ant-btn-disabled):active{color:#d9363e;border-color:#d9363e;}:where(.css-1wesfl8).ant-btn-default.ant-btn-dangerous.ant-btn-background-ghost{color:#ff4d4f;background:transparent;border-color:#ff4d4f;box-shadow:none;}:where(.css-1wesfl8).ant-btn-default.ant-btn-dangerous.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):hover{background:transparent;}:where(.css-1wesfl8).ant-btn-default.ant-btn-dangerous.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):active{background:transparent;}:where(.css-1wesfl8).ant-btn-default.ant-btn-dangerous.ant-btn-background-ghost:disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);border-color:#d9d9d9;}:where(.css-1wesfl8).ant-btn-default.ant-btn-dangerous:disabled,:where(.css-1wesfl8).ant-btn-default.ant-btn-dangerous.ant-btn-disabled{cursor:not-allowed;border-color:#d9d9d9;color:rgba(0, 0, 0, 0.25);background:rgba(0, 0, 0, 0.03);box-shadow:none;}:where(.css-1wesfl8).ant-btn-primary{color:#fff;background:#1890ff;box-shadow:0 2px 0 rgba(5, 175, 255, 0.1);}:where(.css-1wesfl8).ant-btn-primary:disabled,:where(.css-1wesfl8).ant-btn-primary.ant-btn-disabled{cursor:not-allowed;border-color:#d9d9d9;color:rgba(0, 0, 0, 0.25);background:rgba(0, 0, 0, 0.03);box-shadow:none;}:where(.css-1wesfl8).ant-btn-primary:not(:disabled):not(.ant-btn-disabled):hover{color:#fff;background:#40a9ff;}:where(.css-1wesfl8).ant-btn-primary:not(:disabled):not(.ant-btn-disabled):active{color:#fff;background:#096dd9;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-background-ghost{color:#1890ff;background:transparent;border-color:#1890ff;box-shadow:none;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):hover{background:transparent;color:#40a9ff;border-color:#40a9ff;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):active{background:transparent;color:#096dd9;border-color:#096dd9;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-background-ghost:disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);border-color:#d9d9d9;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-dangerous{background:#ff4d4f;box-shadow:0 2px 0 rgba(255, 38, 5, 0.06);color:#fff;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-dangerous:not(:disabled):not(.ant-btn-disabled):hover{background:#ff7875;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-dangerous:not(:disabled):not(.ant-btn-disabled):active{background:#d9363e;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-dangerous.ant-btn-background-ghost{color:#ff4d4f;background:transparent;border-color:#ff4d4f;box-shadow:none;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-dangerous.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):hover{background:transparent;color:#ff7875;border-color:#ff7875;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-dangerous.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):active{background:transparent;color:#d9363e;border-color:#d9363e;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-dangerous.ant-btn-background-ghost:disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);border-color:#d9d9d9;}:where(.css-1wesfl8).ant-btn-primary.ant-btn-dangerous:disabled,:where(.css-1wesfl8).ant-btn-primary.ant-btn-dangerous.ant-btn-disabled{cursor:not-allowed;border-color:#d9d9d9;color:rgba(0, 0, 0, 0.25);background:rgba(0, 0, 0, 0.03);box-shadow:none;}:where(.css-1wesfl8).ant-btn-dashed{background:#ffffff;border-color:#d9d9d9;color:rgba(0, 0, 0, 0.85);box-shadow:0 2px 0 rgba(0, 0, 0, 0.02);border-style:dashed;}:where(.css-1wesfl8).ant-btn-dashed:disabled,:where(.css-1wesfl8).ant-btn-dashed.ant-btn-disabled{cursor:not-allowed;border-color:#d9d9d9;color:rgba(0, 0, 0, 0.25);background:rgba(0, 0, 0, 0.03);box-shadow:none;}:where(.css-1wesfl8).ant-btn-dashed:not(:disabled):not(.ant-btn-disabled):hover{color:#40a9ff;border-color:#40a9ff;background:#ffffff;}:where(.css-1wesfl8).ant-btn-dashed:not(:disabled):not(.ant-btn-disabled):active{color:#096dd9;border-color:#096dd9;background:#ffffff;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-background-ghost{color:#ffffff;background:transparent;border-color:#ffffff;box-shadow:none;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):hover{background:transparent;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):active{background:transparent;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-background-ghost:disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);border-color:#d9d9d9;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-dangerous{color:#ff4d4f;border-color:#ff4d4f;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-dangerous:not(:disabled):not(.ant-btn-disabled):hover{color:#ff7875;border-color:#ffa39e;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-dangerous:not(:disabled):not(.ant-btn-disabled):active{color:#d9363e;border-color:#d9363e;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-dangerous.ant-btn-background-ghost{color:#ff4d4f;background:transparent;border-color:#ff4d4f;box-shadow:none;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-dangerous.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):hover{background:transparent;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-dangerous.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):active{background:transparent;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-dangerous.ant-btn-background-ghost:disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);border-color:#d9d9d9;}:where(.css-1wesfl8).ant-btn-dashed.ant-btn-dangerous:disabled,:where(.css-1wesfl8).ant-btn-dashed.ant-btn-dangerous.ant-btn-disabled{cursor:not-allowed;border-color:#d9d9d9;color:rgba(0, 0, 0, 0.25);background:rgba(0, 0, 0, 0.03);box-shadow:none;}:where(.css-1wesfl8).ant-btn-link{color:#1890ff;}:where(.css-1wesfl8).ant-btn-link:not(:disabled):not(.ant-btn-disabled):hover{color:#69c0ff;background:transparent;}:where(.css-1wesfl8).ant-btn-link:not(:disabled):not(.ant-btn-disabled):active{color:#096dd9;}:where(.css-1wesfl8).ant-btn-link:disabled,:where(.css-1wesfl8).ant-btn-link.ant-btn-disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);}:where(.css-1wesfl8).ant-btn-link.ant-btn-dangerous{color:#ff4d4f;}:where(.css-1wesfl8).ant-btn-link.ant-btn-dangerous:not(:disabled):not(.ant-btn-disabled):hover{color:#ff7875;}:where(.css-1wesfl8).ant-btn-link.ant-btn-dangerous:not(:disabled):not(.ant-btn-disabled):active{color:#d9363e;}:where(.css-1wesfl8).ant-btn-link.ant-btn-dangerous:disabled,:where(.css-1wesfl8).ant-btn-link.ant-btn-dangerous.ant-btn-disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);}:where(.css-1wesfl8).ant-btn-text:not(:disabled):not(.ant-btn-disabled):hover{color:rgba(0, 0, 0, 0.85);background:rgba(0, 0, 0, 0.04);}:where(.css-1wesfl8).ant-btn-text:not(:disabled):not(.ant-btn-disabled):active{color:rgba(0, 0, 0, 0.85);background:rgba(0, 0, 0, 0.06);}:where(.css-1wesfl8).ant-btn-text:disabled,:where(.css-1wesfl8).ant-btn-text.ant-btn-disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);}:where(.css-1wesfl8).ant-btn-text.ant-btn-dangerous{color:#ff4d4f;}:where(.css-1wesfl8).ant-btn-text.ant-btn-dangerous:disabled,:where(.css-1wesfl8).ant-btn-text.ant-btn-dangerous.ant-btn-disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);}:where(.css-1wesfl8).ant-btn-text.ant-btn-dangerous:not(:disabled):not(.ant-btn-disabled):hover{color:#ff7875;background:#fff2f0;}:where(.css-1wesfl8).ant-btn-text.ant-btn-dangerous:not(:disabled):not(.ant-btn-disabled):active{color:#ff7875;background:#fff2f0;}:where(.css-1wesfl8).ant-btn-ghost.ant-btn-background-ghost{color:#ffffff;background:transparent;border-color:#ffffff;box-shadow:none;}:where(.css-1wesfl8).ant-btn-ghost.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):hover{background:transparent;}:where(.css-1wesfl8).ant-btn-ghost.ant-btn-background-ghost:not(:disabled):not(.ant-btn-disabled):active{background:transparent;}:where(.css-1wesfl8).ant-btn-ghost.ant-btn-background-ghost:disabled{cursor:not-allowed;color:rgba(0, 0, 0, 0.25);border-color:#d9d9d9;}:where(.css-1wesfl8).ant-btn-group{position:relative;display:inline-flex;}:where(.css-1wesfl8).ant-btn-group >span:not(:last-child),:where(.css-1wesfl8).ant-btn-group >.ant-btn:not(:last-child),:where(.css-1wesfl8).ant-btn-group >span:not(:last-child)>.ant-btn,:where(.css-1wesfl8).ant-btn-group >.ant-btn:not(:last-child)>.ant-btn{border-start-end-radius:0;border-end-end-radius:0;}:where(.css-1wesfl8).ant-btn-group >span:not(:first-child),:where(.css-1wesfl8).ant-btn-group >.ant-btn:not(:first-child){margin-inline-start:-1px;}:where(.css-1wesfl8).ant-btn-group >span:not(:first-child),:where(.css-1wesfl8).ant-btn-group >.ant-btn:not(:first-child),:where(.css-1wesfl8).ant-btn-group >span:not(:first-child)>.ant-btn,:where(.css-1wesfl8).ant-btn-group >.ant-btn:not(:first-child)>.ant-btn{border-start-start-radius:0;border-end-start-radius:0;}:where(.css-1wesfl8).ant-btn-group .ant-btn{position:relative;z-index:1;}:where(.css-1wesfl8).ant-btn-group .ant-btn:hover,:where(.css-1wesfl8).ant-btn-group .ant-btn:focus,:where(.css-1wesfl8).ant-btn-group .ant-btn:active{z-index:2;}:where(.css-1wesfl8).ant-btn-group .ant-btn[disabled]{z-index:0;}:where(.css-1wesfl8).ant-btn-group .ant-btn-icon-only{font-size:14px;}:where(.css-1wesfl8).ant-btn-group >span:not(:last-child):not(:disabled),:where(.css-1wesfl8).ant-btn-group >.ant-btn-primary:not(:last-child):not(:disabled),:where(.css-1wesfl8).ant-btn-group >span:not(:last-child)>.ant-btn-primary:not(:disabled),:where(.css-1wesfl8).ant-btn-group >.ant-btn-primary:not(:last-child)>.ant-btn-primary:not(:disabled){border-inline-end-color:#40a9ff;}:where(.css-1wesfl8).ant-btn-group >span:not(:first-child):not(:disabled),:where(.css-1wesfl8).ant-btn-group >.ant-btn-primary:not(:first-child):not(:disabled),:where(.css-1wesfl8).ant-btn-group >span:not(:first-child)>.ant-btn-primary:not(:disabled),:where(.css-1wesfl8).ant-btn-group >.ant-btn-primary:not(:first-child)>.ant-btn-primary:not(:disabled){border-inline-start-color:#40a9ff;}:where(.css-1wesfl8).ant-btn-group >span:not(:last-child):not(:disabled),:where(.css-1wesfl8).ant-btn-group >.ant-btn-danger:not(:last-child):not(:disabled),:where(.css-1wesfl8).ant-btn-group >span:not(:last-child)>.ant-btn-danger:not(:disabled),:where(.css-1wesfl8).ant-btn-group >.ant-btn-danger:not(:last-child)>.ant-btn-danger:not(:disabled){border-inline-end-color:#ff7875;}:where(.css-1wesfl8).ant-btn-group >span:not(:first-child):not(:disabled),:where(.css-1wesfl8).ant-btn-group >.ant-btn-danger:not(:first-child):not(:disabled),:where(.css-1wesfl8).ant-btn-group >span:not(:first-child)>.ant-btn-danger:not(:disabled),:where(.css-1wesfl8).ant-btn-group >.ant-btn-danger:not(:first-child)>.ant-btn-danger:not(:disabled){border-inline-start-color:#ff7875;}</style><style data-rc-order="prependQueue" data-css-hash="umq6rs" data-token-hash="101zqmp">.anticon{display:inline-flex;align-items:center;color:inherit;font-style:normal;line-height:0;text-align:center;text-transform:none;vertical-align:-0.125em;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}.anticon >*{line-height:1;}.anticon svg{display:inline-block;}.anticon .anticon .anticon-icon{display:block;}</style><style data-rc-order="prependQueue" data-css-hash="1r6rkoy" data-token-hash="16cazu1">.anticon{display:inline-flex;align-items:center;color:inherit;font-style:normal;line-height:0;text-align:center;text-transform:none;vertical-align:-0.125em;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}.anticon >*{line-height:1;}.anticon svg{display:inline-block;}.anticon .anticon .anticon-icon{display:block;}</style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="google-signin-client_id" content="300481702099-25bbgv65gf7kkhvrfgjjo4i7e2mcrqbo.apps.googleusercontent.com">
+    <meta content="noindex" name="robots">
+    <meta charset="utf-8">
+    <title>Weezmo</title>
+    <script type="text/javascript" async="" src="https://www.google-analytics.com/analytics.js"></script><script async="" src="https://www.google-analytics.com/analytics.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-PWPYN2KPX2&amp;cx=c&amp;gtm=4e67t0"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=UA-2839407-19&amp;cx=c&amp;gtm=4e67t0"></script><script src="https://connect.facebook.net/en_US/bundle/sdk.js/" async="" crossorigin="anonymous"></script><script async="" src="https://scripts.clarity.ms/0.8.67/clarity.js"></script><script type="text/javascript" async="" src="https://www.google-analytics.com/analytics.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-N0YQBY5W7Z&amp;cx=c&amp;gtm=4e67t0"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=UA-67065974-3&amp;cx=c&amp;gtm=4e67t0"></script><script async="" src="https://www.clarity.ms/tag/3wfi6vint7"></script><script async="" src="https://connect.facebook.net/en_US/fbevents.js"></script><script async="" src="//www.google-analytics.com/analytics.js"></script><script async="" src="https://www.googletagmanager.com/gtm.js?id=GTM-MTZV7CP"></script><script src="receipt_assets/js/jquery-3.6.1.min.js"></script>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <script>
+        var hasCookieConsent = new URLSearchParams(window.location.search).get('cookie');
+        if (hasCookieConsent === 'true') {
+            (function (w, d, s, l, i) {
+                w[l] = w[l] || []; w[l].push({
+                    'gtm.start':
+                        new Date().getTime(), event: 'gtm.js'
+                }); var f = d.getElementsByTagName(s)[0],
+                    j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                        'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+            })(window, document, 'script', 'dataLayer', 'GTM-MTZV7CP');
+
+            (function (p) {
+                var s = document.createElement("script");
+                s.async = true; s.src = p;
+                document.head.appendChild(s);
+            })('https://www.googletagmanager.com/gtag/js?id=UA-67065974-3')
+
+            window.dataLayer = window.dataLayer || [];
+            function gtag() { dataLayer.push(arguments); }
+            gtag('js', new Date());
+            gtag('config', 'UA-67065974-3');
+            gtag('config', 'G-N0YQBY5W7Z');
+        }
+    </script><script async="" src="https://www.googletagmanager.com/gtag/js?id=UA-67065974-3"></script>
+<link rel="stylesheet" type="text/css" href="https://receipts.weezmo.com/receipt_assets/js/react-build/build/static/js/../../static/css/receipt_builder-24.chunk.css"><link rel="stylesheet" type="text/css" href="https://receipts.weezmo.com/receipt_assets/js/react-build/build/static/js/../../static/css/receipt_builder-767.chunk.css"><style data-styled="active" data-styled-version="5.3.11"></style><style type="text/css" data-fbcssmodules="css:fb.css.base css:fb.css.dialog css:fb.css.iframewidget">.fb_hidden{position:absolute;top:-10000px;z-index:10001}.fb_reposition{overflow:hidden;position:relative}.fb_invisible{display:none}.fb_reset{background:none;border:0px;border-spacing:0;color:#000;cursor:auto;direction:ltr;font-family:lucida grande,tahoma,verdana,arial,sans-serif;font-size:11px;font-style:normal;font-variant:normal;font-weight:400;letter-spacing:normal;line-height:1;margin:0;overflow:visible;padding:0;text-align:left;text-decoration:none;text-indent:0;text-shadow:none;text-transform:none;visibility:visible;white-space:normal;word-spacing:normal}.fb_reset>div{overflow:hidden}@keyframes fb_transform{0%{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}.fb_animate{animation:fb_transform .3s forwards}
+
+.fb_dialog{background:#525252b3;position:absolute;top:-10000px;z-index:10001}.fb_dialog_advanced{border-radius:8px;padding:10px}.fb_dialog_content{background:#fff;color:#373737}.fb_dialog_close_icon{background:url(https://connect.facebook.net/rsrc.php/v4/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 0 transparent;cursor:pointer;display:block;height:15px;position:absolute;right:18px;top:17px;width:15px}.fb_dialog_mobile .fb_dialog_close_icon{left:5px;right:auto;top:5px}.fb_dialog_padding{background-color:transparent;position:absolute;width:1px;z-index:-1}.fb_dialog_close_icon:hover{background:url(https://connect.facebook.net/rsrc.php/v4/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 -15px transparent}.fb_dialog_close_icon:active{background:url(https://connect.facebook.net/rsrc.php/v4/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 -30px transparent}.fb_dialog_iframe{line-height:0}.fb_dialog_content .dialog_title{background:#6d84b4;border:1px solid #365899;color:#fff;font-size:14px;font-weight:700;margin:0}.fb_dialog_content .dialog_title>span{background:url(https://connect.facebook.net/rsrc.php/v4/yd/r/Cou7n-nqK52.gif) no-repeat 5px 50%;float:left;padding:5px 0 7px 26px}body.fb_hidden{height:100%;left:0;margin:0;overflow:visible;position:absolute;top:-10000px;transform:none;width:100%}.fb_dialog.fb_dialog_mobile.loading{background:url(https://connect.facebook.net/rsrc.php/v4/ya/r/3rhSv5V8j3o.gif) #fff no-repeat 50% 50%;min-height:100%;min-width:100%;overflow:hidden;position:absolute;top:0;z-index:10001}.fb_dialog.fb_dialog_mobile.loading.centered{background:none;height:auto;min-height:initial;min-width:initial;width:auto}.fb_dialog.fb_dialog_mobile.loading.centered #fb_dialog_loader_spinner{width:100%}.fb_dialog.fb_dialog_mobile.loading.centered .fb_dialog_content{background:none}.loading.centered #fb_dialog_loader_close{clear:both;color:#fff;display:block;font-size:18px;padding-top:20px}#fb-root #fb_dialog_ipad_overlay{background:#0006;inset:0;min-height:100%;position:absolute;width:100%;z-index:10000}#fb-root #fb_dialog_ipad_overlay.hidden{display:none}.fb_dialog.fb_dialog_mobile.loading iframe{visibility:hidden}.fb_dialog_mobile .fb_dialog_iframe{position:sticky;top:0}.fb_dialog_content .dialog_header{background:linear-gradient(from(#738aba),to(#2c4987));border-bottom:1px solid;border-color:#043b87;box-shadow:#fff 0 1px 1px -1px inset;color:#fff;font:700 14px Helvetica,sans-serif;text-overflow:ellipsis;text-shadow:rgba(0,30,84,.296875) 0px -1px 0px;vertical-align:middle;white-space:nowrap}.fb_dialog_content .dialog_header table{height:43px;width:100%}.fb_dialog_content .dialog_header td.header_left{font-size:12px;padding-left:5px;vertical-align:middle;width:60px}.fb_dialog_content .dialog_header td.header_right{font-size:12px;padding-right:5px;vertical-align:middle;width:60px}.fb_dialog_content .touchable_button{background:linear-gradient(from(#4267B2),to(#2a4887));background-clip:padding-box;border:1px solid #29487d;border-radius:3px;display:inline-block;line-height:18px;margin-top:3px;max-width:85px;padding:4px 12px;position:relative}.fb_dialog_content .dialog_header .touchable_button input{background:none;border:none;color:#fff;font:700 12px Helvetica,sans-serif;margin:2px -12px;padding:2px 6px 3px;text-shadow:rgba(0,30,84,.296875) 0px -1px 0px}.fb_dialog_content .dialog_header .header_center{color:#fff;font-size:16px;font-weight:700;line-height:18px;text-align:center;vertical-align:middle}.fb_dialog_content .dialog_content{background:url(https://connect.facebook.net/rsrc.php/v4/y9/r/jKEcVPZFk-2.gif) no-repeat 50% 50%;border:1px solid #4A4A4A;border-bottom:0;border-top:0;height:150px}.fb_dialog_content .dialog_footer{background:#f5f6f7;border:1px solid #4A4A4A;border-top-color:#ccc;height:40px}#fb_dialog_loader_close{float:left}.fb_dialog.fb_dialog_mobile .fb_dialog_close_icon{visibility:hidden}#fb_dialog_loader_spinner{animation:rotateSpinner 1.2s linear infinite;background-color:transparent;background-image:url(https://connect.facebook.net/rsrc.php/v4/y2/r/onuUJj0tCqE.png);background-position:50% 50%;background-repeat:no-repeat;height:24px;width:24px}@keyframes rotateSpinner{0%{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+.fb_iframe_widget{display:inline-block;position:relative}.fb_iframe_widget span{display:inline-block;position:relative;text-align:justify}.fb_iframe_widget iframe{position:absolute}.fb_iframe_widget_fluid_desktop,.fb_iframe_widget_fluid_desktop span,.fb_iframe_widget_fluid_desktop iframe{max-width:100%}.fb_iframe_widget_fluid_desktop iframe{min-width:220px;position:relative}.fb_iframe_widget_lift{z-index:1}.fb_iframe_widget_fluid{display:inline}.fb_iframe_widget_fluid span{width:100%}
+</style><style data-rc-order="append" rc-util-key="rc-util-locker-1785433150657_1">
+html body {
+  overflow-y: hidden;
+  
+}</style></head>
+<body id="body" document-ready="">
+    <noscript>
+        <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MTZV7CP" height="0" width="0" style="display:none;visibility:hidden"></iframe>
+    </noscript>
+    <div id="root"><div class="sc-gcUDKN dZmzyF"><div height="fit-content" class="sc-fPXMVe NqYAh"><div class="sc-ffZAAA blliOh"><div data="[object Object]" class="sc-bWJUgm bYmEGC sc-ha-dNcR dvtmFa" data-print-root="true" style="max-width: 500px;"><div class="sc-fuTSoq kDPoZe"><div style="width: 100%; background:  0% 0% / cover rgb(255, 255, 255); font-size: 16px; font-style: normal; font-weight: 400; font-family: &quot;FbExtaza Regular&quot;; text-align: right; direction: rtl; color: rgb(0, 0, 0);"><div style="display: block;"><div style="width: 100%; height: 20px; position: unset; display: grid; overflow: hidden; padding: 0px; margin: 0px; grid-template-columns: 1fr;"></div></div><div style="display: block;"><div style="height: auto; background-image: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(255, 255, 255); position: unset; overflow: hidden; border-radius: 10px; padding: 10px 10px 25px; margin: 10px 0px;"><div style="display: grid; grid-template-columns: 1fr;"><div class="sc-hzhJZQ eALepV logoHeader" style="width: 100%; display: unset;"><div></div><div style="display: grid;"><div data-testid="image-in-template" class="sc-iA-DsXs HczBb" style="width: 100%; text-align: center; font-size: 16px; font-style: normal; font-weight: 400; font-family: &quot;FbExtaza Regular&quot;; color: rgb(0, 0, 0);"><span><img store="[object Object]" parentwidth="480" src="/storage/images/abe935c3-b6f7-40c5-9890-657dba840370/Super_Pharm_Logo_Copy_Copy_Copy_Copy.svg" style="width: 140px; height: 100%;"></span></div></div></div></div><div style="display: grid; grid-template-columns: 1fr;"><div class="sc-hzhJZQ eALepV feedback" style="display: unset;"><div></div><div style="display: contents;"><div data-testid="custom-html-in-template" class="sc-cKXybt hljkko" style="width: 100%; font-size: 16px; font-style: normal; font-weight: 400; font-family: &quot;FbExtaza Regular&quot;; text-align: right; color: rgb(0, 0, 0);"><div class="sc-lgjHQU jTBQzo"><div origin="CUSTOM__HTML"><div id="details"><div style="text-align:center;margin:10px 0px;font-size:16px">סופר-פארם צייטלין ת"א - 239</div><div style="text-align:center;font-size:14px;margin-bottom:10px">מקור</div><div style="text-align:center;font-size:14px;margin-top:10px;margin-bottom:23px"><span class="title" style="font-size:14px">מס' עסקה: </span>1919417 <span style="padding-right:10px;font-size:14px" class="title">מועד הרכישה</span><span style="direction:ltr"> 07/07/2026・17:26</span></div></div>
+
+
+<div id="itemsTable" style="margin: auto; text-align: center;"><section class="itemBox"><header><div class="col itemHeader grow tRight">7290100875698</div><div class="col itemHeader center">מחיר יח'</div><div class="col itemHeader center">כמות</div><div class="col itemHeader">לתשלום</div></header><div class="row"><div class="col itemText grow tRight bold">LIFE POLYSKIN SOL20ML GSL</div><div class="col itemText center ltr bold"><span class="bold">₪ </span> 11</div><div class="col itemText center ltr bold">1</div><div class="col itemText ltr bold"><span class="bold">₪ </span> 11</div></div></section><section class="itemBox"><header><div class="col itemHeader grow tRight">7290118200352</div><div class="col itemHeader center">מחיר יח'</div><div class="col itemHeader center">כמות</div><div class="col itemHeader">לתשלום</div></header><div class="row"><div class="col itemText grow tRight bold">לייף שלישיית ספוגי רחצה- כחולי</div><div class="col itemText center ltr bold"><span class="bold">₪ </span> 9.9</div><div class="col itemText center ltr bold">1</div><div class="col itemText ltr bold"><span class="bold">₪ </span> 9.9</div></div></section><section class="itemBox"><header><div class="col itemHeader grow tRight">7290114964463</div><div class="col itemHeader center">מחיר יח'</div><div class="col itemHeader center">כמות</div><div class="col itemHeader">לתשלום</div></header><div class="row"><div class="col itemText grow tRight bold">לייף פד סטרילי דביק 7.2*5 סמ 1</div><div class="col itemText center ltr bold"><span class="bold">₪ </span> 18.9</div><div class="col itemText center ltr bold">1</div><div class="col itemText ltr bold"><span class="bold">₪ </span> 18.9</div></div></section></div>
+
+<div style="margin: 20px 20px 5px; border-top: 3px dotted rgb(192, 194, 203);"></div></div></div></div></div></div></div><div style="display: grid; grid-template-columns: 1fr;"><div class="sc-hzhJZQ eALepV" style="width: 100%; display: unset;"><div></div><div style="display: contents;"><div data-testid="custom-html-in-template" class="sc-cKXybt hljkko" style="width: 100%; font-size: 16px; font-style: normal; font-weight: 400; font-family: &quot;FbExtaza Regular&quot;; text-align: right; color: rgb(0, 0, 0);"><div class="sc-lgjHQU jTBQzo"><div origin="CUSTOM__HTML" style="display: none;">
+  <div id="useLink" style="text-align: center;"></div>
+  
+  
+  <div id="moneySavedContainer"></div></div></div></div></div></div></div><div style="display: grid; grid-template-columns: 1fr;"><div class="sc-hzhJZQ eALepV" style="width: 100%; display: unset; margin-top: 15px;"><div></div><div style="display: contents;"><div data-testid="custom-html-in-template" class="sc-cKXybt hljkko" style="font-size: 16px; font-style: normal; font-weight: 400; font-family: &quot;FbExtaza Regular&quot;; text-align: right; color: rgb(0, 0, 0);"><div class="sc-lgjHQU jTBQzo"><div origin="CUSTOM__HTML"><style>
+    tbody tr td:first-child {
+        width: 60%;
+
+    }
+
+    body * {
+        font-family: "FbExtaza Regular", sans-serif
+    }
+
+.ant-modal-mask{
+    background-color:#0A204ACC !important;
+}
+
+#itemsTable {
+    max-width:360px;
+}
+
+@media (min-width: 414px) {
+  #itemsTable {
+    max-width:420px;
+}
+}
+
+.marketingConsentBody{
+    line-height: 25px;
+}
+    tbody tr td {
+        vertical-align: top;
+    }
+
+    /* Helpers */
+    .is-hidden {
+        display: none;
+    }
+
+    #moneySavedContainer {
+        margin: 20px;
+    }
+
+    .itemBox {
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+
+        margin: 10px;
+       
+        background: #FFFFFF;
+        box-shadow: 0px 0px 11px rgba(177, 184, 202, 0.4);
+        border-radius: 10px;
+    }
+
+    .itemHeader {
+        color: #5E7197;
+        font-size: 14px;
+    }
+
+    .ptitle {
+        color: #1E3F9E;
+        font-size: 18px;
+    }
+
+    .itemText {
+        color: #1E3F9E;
+        font-size: 14px;
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .subTitle {
+        color: #555;
+        font-weight: 400;
+    }
+
+    .title {
+        color: #555;
+        font-weight: 700;
+        font-family: 'FbExtaza Bold';
+    }
+
+    .tLeft {
+        text-align: left;
+    }
+
+.tRight {
+        text-align: right;
+    }
+    
+    .bold {
+        font-weight: bold;
+        font-family: 'FbExtaza Bold';
+    }
+
+    
+
+    .center {
+        text-align: center;
+    }
+
+    header,
+    .row {
+        display: flex;
+        /* margin-bottom: 10px;*/
+        /* aligns all child elements (flex items) in a row */
+    }
+
+    .ltr {
+        direction: ltr
+    }
+
+    .discount {
+        color: #EA0029;
+        
+    }
+
+    .col {
+        flex: 1;
+        /* distributes space on the line equally among items */
+    }
+    
+    .refund
+    {
+        color: #24824D;
+    }
+
+.discountFlex {
+        flex-grow: 5 !important;
+        text-align: right;
+}
+
+.ant-modal{
+    padding-right: 40px;
+    padding-left: 40px;
+}
+
+.grow {
+    flex-grow: 3;
+}
+    .money-bg {
+        background-image: url("storage/images/abe935c3-b6f7-40c5-9890-657dba840370/background.png");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+
+        text-align: center;
+        padding: 10px;
+        direction: ltr;
+        color: #1E3F9E;
+    }
+</style>
+<div style="min-height: 20px; margin-right: 20px; margin-left: 30px;">
+    <div class="row">
+        <div class="col ptitle bold" id="totalTxt" style="flex: 4 1 0%;">סה"כ לתשלום</div>
+        <div class="col ptitle bold ltr" id="total" style="text-align: right;"><span class=""><span class="bold ltr">₪</span>39.80</span></div>
+    </div>
+</div>
+<div style="border-top: 1px solid rgb(192, 194, 203); margin: 10px 20px;"> </div>
+<div id="vatTbl" style="min-height: 20px; margin-right: 20px; margin-left: 30px;">
+    <div class="row">
+        <div class="col title" style="flex: 4 1 0%;">פירוט</div>
+        <div class="col title"></div>
+    </div>
+    <div class="row">
+        <div class="col subTitle" style="flex: 4 1 0%;">חייבים במע"מ</div>
+        <div class="col subTitle tRight ltr" id="TotalNoVat"><span class="bold ltr">₪ </span>33.73</div>
+    </div>
+    <div class="row">
+        <div class="col subTitle" style="flex: 4 1 0%;">מע"מ <span id="vat">18</span>%</div>
+        <div class="col subTitle tRight ltr" id="VatTotal"><span class="bold ltr">₪ </span>6.07</div>
+    </div>
+
+</div>
+<div style="border-top: 1px solid rgb(192, 194, 203); margin: 10px 20px;"> </div>
+<div id="payments" style="min-height: 20px; margin-right: 20px; margin-left: 30px;">
+
+<div class="row"><div class="col subTitle" style="flex:4"><img style="padding-left:5px;" src="storage/images/abe935c3-b6f7-40c5-9890-657dba840370/credit.svg">ישראכארט מגנטי </div><div class="col subTitle tRight ltr"><span class="bold">₪ </span>39.80</div></div></div>
+
+
+
+
+
+</div></div></div></div></div></div><div style="display: grid; grid-template-columns: 1fr;"><div id="downloadReceipt" class="sc-hzhJZQ eALepV" style="width: 100%; display: unset; padding-right: 20px; margin-top: 20px; margin-bottom: 20px;"><div></div><div style="display: grid;"><div data-testid="download-receipt-in-template" class="sc-djTQaJ kbMcCh" style="width: 100%; font-size: 16px; padding-top: 10px; padding-bottom: 10px; text-decoration: underline; color: rgb(30, 63, 158); font-style: normal; font-weight: 400; font-family: &quot;FbExtaza Regular&quot;; text-align: right;"><a href="#" data-action="DownloadReceipt" style="color: rgb(30, 63, 158);"><img style="padding-left:10px" src="storage/images/abe935c3-b6f7-40c5-9890-657dba840370/pdf.svg"><span>להורדת המסמך</span></a></div></div></div></div><div style="display: grid; grid-template-columns: 1fr;"><div></div></div><div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;"><div class="sc-hzhJZQ eALepV" style="width: 100%; display: unset;"><div></div><div style="display: grid;"><div data-testid="banner-in-template" class="sc-jsJBEP fHsKaj" style="width: 100%; text-align: left; font-size: 16px; font-style: normal; font-weight: 400; font-family: &quot;FbExtaza Regular&quot;; color: rgb(0, 0, 0);"><a href="#" data-action="Banner"><span><img src="/storage/images/abe935c3-b6f7-40c5-9890-657dba840370/youtube.svg" class="sc-eeDRCY jeNQyb" style="width: 32px; height: 100%;"></span></a></div></div></div><div class="sc-hzhJZQ eALepV" style="width: 100%; display: unset;"><div></div><div style="display: grid;"><div data-testid="banner-in-template" class="sc-jsJBEP fHsKaj" style="width: 100%; text-align: center; padding-right: 20px; font-size: 16px; font-style: normal; font-weight: 400; font-family: &quot;FbExtaza Regular&quot;; color: rgb(0, 0, 0);"><a href="#" data-action="Banner"><span><img src="/storage/images/abe935c3-b6f7-40c5-9890-657dba840370/telegram.svg" class="sc-eeDRCY jeNQyb" style="width: 32px; height: 100%;"></span></a></div></div></div><div class="sc-hzhJZQ eALepV" style="width: 100%; display: unset;"><div></div><div style="display: grid;"><div data-testid="banner-in-template" class="sc-jsJBEP fHsKaj" style="width: 100%; text-align: center; padding-left: 20px; font-size: 16px; font-style: normal; font-weight: 400; font-family: &quot;FbExtaza Regular&quot;; color: rgb(0, 0, 0);"><a href="#" data-action="Banner"><span><img src="/storage/images/abe935c3-b6f7-40c5-9890-657dba840370/instagram.svg" class="sc-eeDRCY jeNQyb" style="width: 32px; height: 100%;"></span></a></div></div></div><div class="sc-hzhJZQ eALepV" style="width: 100%; display: unset;"><div></div><div style="display: grid;"><div data-testid="banner-in-template" class="sc-jsJBEP fHsKaj" style="width: 100%; text-align: right; font-size: 16px; font-style: normal; font-weight: 400; font-family: &quot;FbExtaza Regular&quot;; color: rgb(0, 0, 0);"><a href="#" data-action="Banner"><span><img src="/storage/images/abe935c3-b6f7-40c5-9890-657dba840370/facebook.svg" class="sc-eeDRCY jeNQyb" style="width: 32px; height: 100%;"></span></a></div></div></div></div><div style="display: grid; grid-template-columns: 1fr 1fr;"><div class="sc-hzhJZQ eALepV" style="width: 100%; display: unset; padding-right: 25px; margin-top: 25px;"><div></div><div style="display: grid;"><div data-testid="text-block-in-template" class="sc-ciQpPG ibevYc" style="width: 100%;"><div class="tiptap-viewer" style="min-height: 25.14px; font-style: normal; font-weight: 400; text-decoration: none;"><p><a target="_blank" rel="noopener noreferrer nofollow" href="#"><span style="color: rgb(30, 63, 158);"><u>לאתר סופר-פארם</u></span></a></p></div></div></div></div><div id="branchPhone" class="sc-hzhJZQ eALepV" style="width: 100%; display: unset; margin-top: 25px;"><div></div><div style="display: grid;"><div data-testid="text-block-in-template" class="sc-ciQpPG ibevYc" style="width: 100%;"><div class="tiptap-viewer" style="min-height: 25.14px; font-style: normal; font-weight: 400; text-decoration: none;"><p><span style="color: rgb(74, 74, 74);">טלפון הסניף:</span> <a target="_blank" rel="noopener noreferrer nofollow" href="tel:&lt;interpolation&gt;&lt;interpolation&gt;0778882390&lt;interpolation&gt;&lt;interpolation&gt;"><span style="color: rgb(30, 63, 158);"><u><interpolation>0778882390<interpolation></interpolation></interpolation></u></span></a></p></div></div></div></div></div></div></div><div style="display: block;"><div style="width: 100%; position: unset; display: grid; overflow: hidden; padding: 0px; margin: 0px; grid-template-columns: 1fr;"><div id="returnTermsBtn" class="sc-hzhJZQ eALepV" style="width: 100%; display: unset; padding: 0px 35px 0px 0px; margin: 0px; grid-area: 1 / 1 / span 1 / span 1;"><div></div><div style="display: grid;"><div data-testid="text-block-in-template" class="sc-ciQpPG ibevYc" style="width: 100%;"><div class="tiptap-viewer" style="min-height: 25.14px; font-style: normal; font-weight: 400; text-decoration: none;"><p><span style="color: rgb(85, 85, 85);">מדיניות ביטול עסקה</span><img id="arrowIcon" style="padding-right:5px" src="storage/images/abe935c3-b6f7-40c5-9890-657dba840370/arrowDown.svg"></p></div></div></div></div></div></div><div style="display: block;"><div style="width: 100%; position: unset; display: grid; overflow: hidden; padding: 10px; margin: 0px; grid-template-columns: 1fr;"><div id="returnTerms" class="sc-hzhJZQ eALepV" style="width: 100%; display: none; padding: 0px 25px; margin: 0px; grid-area: 1 / 1 / span 1 / span 1;"><div></div><div style="display: grid;"><div data-testid="text-block-in-template" class="sc-ciQpPG ibevYc" style="width: 100%;"><div class="tiptap-viewer" style="min-height: 25.14px; font-style: normal; font-weight: 400; text-decoration: none;"><p dir="rtl" style="text-align: right;"><span style="color: rgb(85, 85, 85);">מדיניות ביטול עסקה תהא כפופה לחוק הגנת הצרכן, התשמ"א-1981) להלן: "חוק הגנת הצרכן") ול תקנות ביטול עסקה ברוכלות ועסקת מכר מרחוק על ידי צרכן שהוא אדם עם מוגבלות, אזרח ותיק או עולה חדש (תיקון מס' 47 (תשע" ו-2016 .ניתן לבטל עסקת קנייתו של מוצר מיום ההזמנה ועד 30 יום ממועד קבל ת המוצר בפועל או ממועד קבלת אישור העסקה – לפי המאוחר. על אף האמור לעיל, ביטול עסקת רכישה של מוצרי חשמל, מוצרי סלולר ומשקפי שמש ת תאפשר בתוך 14 יום בלבד מיום קבלת המוצר על-ידי הלקוח בהתאם למפורט כאמור. זכות הביטול אינה תקפה, בין היתר, במקרים הבאים: טובין שיוצרו במיוחד בעבור הלקוח, טובין פסידים (מוצרים מתקלקלים או מתכלים כגון מוצרי מזון שעבר תאריך תפוג תם ועוד), תרופות – הכל בכפוף לקבוע בתנאי השימוש</span></p></div></div></div></div></div></div><div style="display: block;"><div style="width: 100%; height: 40px; position: unset; overflow: hidden;"><div style="display: grid;"></div></div></div></div></div></div><footer class="sc-kdIgRK jFYzGt"><a href="#" rel="noreferrer" target="_blank"><span style="font-size: 12px; padding-top: 5px;">Powered By</span> <img src="https://receipts.weezmo.com/assets/img/weezmo.svg" alt="" style="width: 60px;"></a><a href="#" rel="noreferrer" target="_blank"><span style="font-size: 10px; padding-top: 5px;">ReadMe</span></a></footer></div></div></div></div>
+    <script src="receipt_assets/js/react-build/build/static/js/receipt_builder-main.js?v=53878"></script>
+    <!-- if you want add microfontend for receipt uncomment next line -->
+    <!-- <script src="receipt_assets/js/react-build/build/receiptBuilder.js?v=53878"></script> -->
+    <script src="receipt_assets/js/modules/common.js"></script>
+    <script src="receipt_assets/js/modules/pixel.js"></script>
+    <script src="receipt_assets/js/receipts-generic-scripts.js?v=1601131056122"></script>
+    <script>
+        window.onload = function () {
+            window.addEventListener('message', event => {
+                if (event.data === 'print') {
+                    window.print();
+                }
+            })
+        };
+    </script>
+
+<div style="display: none; visibility: hidden;">
+<script>!function(b,e,f,g,a,c,d){b.fbq||(a=b.fbq=function(){a.callMethod?a.callMethod.apply(a,arguments):a.queue.push(arguments)},b._fbq||(b._fbq=a),a.push=a,a.loaded=!0,a.version="2.0",a.queue=[],c=e.createElement(f),c.async=!0,c.src=g,d=e.getElementsByTagName(f)[0],d.parentNode.insertBefore(c,d))}(window,document,"script","https://connect.facebook.net/en_US/fbevents.js");</script>
+
+
+</div><div style="display: none; visibility: hidden;"><script type="text/javascript">(function(a,b,c,f,g,d,e){a[c]=a[c]||function(){(a[c].q=a[c].q||[]).push(arguments)};d=b.createElement(f);d.async=1;d.src="https://www.clarity.ms/tag/"+g;e=b.getElementsByTagName(f)[0];e.parentNode.insertBefore(d,e)})(window,document,"clarity","script","3wfi6vint7");function getParameterByName(a){var b=window.location.href;a=a.replace(/[\[\]]/g,"\\$\x26");a=new RegExp("[?\x26]"+a+"(\x3d([^\x26#]*)|\x26|#|$)");return(b=a.exec(b))?b[2]?decodeURIComponent(b[2].replace(/\+/g," ")):"":null}
+try{var param=getParameterByName("b");console.log(param);clarity("set","BizID",param)}catch(a){};</script></div><script id="facebook-jssdk" async="" defer="" crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script><div id="fb-root" class=" fb_reset"><div style="position: absolute; top: -10000px; width: 0px; height: 0px;"><div></div></div></div><script async="" src="https://www.googletagmanager.com/gtag/js?id=UA-2839407-19" origin="CUSTOM__HTML"></script><script origin="CUSTOM__HTML">
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'UA-2839407-19', { send_page_view: false });
+    gtag('config', 'G-PWPYN2KPX2', { 'send_page_view': false });
+</script><script origin="CUSTOM__HTML">
+    function getPaymentImage(paymentType) {
+        let url = "storage/images/abe935c3-b6f7-40c5-9890-657dba840370/";
+        switch (paymentType) {
+            case "Credit": url += "credit.svg"; break;
+            case "Redund": url += "refund.svg"; break;
+            case "Gift": url += "gift.svg"; break;
+            default: url += "cash.svg"; break;
+        }
+        return url;
+    }
+    let sign = "<span class=\"bold\">₪ </span>";
+    function createItemBoxSection(headers, rows, discount) {
+
+        container = $("#itemsTable");
+        const $section = $('<section>').addClass('itemBox');
+        const $header = $('<header>');
+        let count = 0;
+        headers.forEach(headerText => {
+            if (count !== 0 && count !== 3) {
+                $header.append(
+                    $('<div>').addClass('col itemHeader center').text(headerText)
+                );
+            }
+            else if(count == 0){
+                 $header.append(
+                    $('<div>').addClass('col itemHeader grow tRight').text(headerText)
+                );
+            }
+            else {
+                $header.append(
+                    $('<div>').addClass('col itemHeader').text(headerText)
+                );
+            }
+            count++;
+        });
+        $section.append($header);
+
+        if (rows && rows.length > 0) {
+            count = 0;
+            const $row = $('<div>').addClass('row');
+            rows.forEach(cellText => {
+                let extra = "";
+                //;
+                if (count !== 0 && count !== 3) {
+                    extra += ' center ';
+                }
+                if (count > 0) {
+                    extra += ' ltr ';
+                }
+                if(count === 0)
+                    extra += ' grow tRight ';
+                if(!discount)
+                    extra += ' bold '
+                if (discount && count > 0)
+                    extra += ' discount ';
+                if (discount && count === 0)
+                    extra += ' subTitle discountFlex ';
+                    
+                if(refund && count > 2)
+                    extra += ' refund ';
+
+                $row.append(
+                    $('<div>').addClass('col itemText' + extra).html(cellText)
+                );
+
+                count++;
+            });
+            $section.append($row);
+        }
+        container.append($section);
+        return $section;
+    }
+
+    let refund = false;
+    window.custom = function (receipt) {
+
+        waitForElm('.ant-modal-title').then((elm) => {
+            $('[data-testid="custom-html-in-template"]').parent().css("display", "contents");
+            $(".ant-modal-title").css("text-align", "center");
+            $(".ant-modal-title").css("color", "#1E3F9E");
+            $(".ant-modal-title > div").css("font-size", "16px");
+
+            $(".ant-modal-footer").find("button").first().detach().appendTo(".ant-modal-footer");
+
+            $(".ant-modal-footer").find("button").first().after("<br/>");
+            $(".ant-modal-footer").find("button").first().css("margin-bottom", "20px");
+            $(".ant-modal-footer").find("button").css("width", "90%");
+            $(".ant-modal-footer").find("button").css("height", "54px");
+            $(".ant-modal-footer").find("button").css("font-size", "16px");
+            $(".ant-modal-footer").find("button").css("font-weight", "bold");
+
+            $(".ant-modal-footer").find("button").last().css("color", "#1E3F9E");
+            $(".ant-modal-footer").find("button").last().css("border", "1px solid #1E3F9E");
+            $(".ant-modal-footer").find("button").first().css("background-color", "#1E3F9E");
+
+            $(".ant-modal-footer").css("text-align", "center")
+            $(".ant-modal-content").css("border-radius", "20px");
+        });
+
+
+        $("#returnTerms").hide();
+
+        $("#returnTermsBtn").find("p").append("<img id=\"arrowIcon\" style=\"padding-right:5px\" src=\"storage/images/abe935c3-b6f7-40c5-9890-657dba840370/arrowDown.svg\" />")
+        $("#returnTermsBtn").click(function () {
+            $("#returnTerms").toggle("slow");
+            let source = $("#arrowIcon").attr("src");
+            if (source.indexOf("arrowDown") > -1)
+                $("#arrowIcon").attr("src", "storage/images/abe935c3-b6f7-40c5-9890-657dba840370/arrowUp.svg");
+            else
+                $("#arrowIcon").attr("src", "storage/images/abe935c3-b6f7-40c5-9890-657dba840370/arrowDown.svg")
+        })
+
+       waitForElm('#checkboxTerms').then((elm) => {
+            const html = $("#checkboxTerms").html();
+            $("#Consent_NewDesign_ConsentConsentTags").find("span")[2].innerHTML = html;
+            $("#Consent_NewDesign_ConsentConsentTags").find("p").css("line-height", "20px");
+
+            $("#checkboxTerms").html("")
+            
+            $("#formTitle").find("strong").parent().prepend("<img style=\"width: 24px;margin-left: 5px;padding-bottom: 5px;\" src=\"/storage/images/abe935c3-b6f7-40c5-9890-657dba840370/speaker.png\" />");
+            $("#formTitle").find("strong").css("font-family", "'FbExtaza Bold'")
+       });
+        
+        if(receipt.receiptType === "Refund")
+        {
+            $("#totalTxt").text("סה\"כ זיכוי");
+            refund = true;
+            //#24824D
+        }
+
+        for (var i = 0; i < receipt.items.length; i++) {
+            let item = receipt.items[i];
+            
+            if (item.price < 0) {
+                debugger
+                let price = item.total < 0 ? item.total : item.price;
+                createItemBoxSection([], [item.name, sign + ' ' + price], true);
+            }
+            else if (item.total)
+                createItemBoxSection([item.itemCode, "מחיר יח'", 'כמות', 'לתשלום'], [item.name, sign + ' ' + item.price, item.quantity, sign + ' ' + item.total]);
+            else
+                createItemBoxSection([item.itemCode, "מחיר יח'", 'כמות', 'לתשלום'], [item.name, sign + ' ' + (item.price / item.quantity), item.quantity, sign + ' ' + item.price]);
+        }
+
+
+        $("#downloadReceipt").find("a").first().prepend("<img style='padding-left:10px' src='storage/images/abe935c3-b6f7-40c5-9890-657dba840370/pdf.svg' />");
+        
+        var branchName = receipt.tBranch.branchName;
+        if(receipt.branchID == "87b27baa-a7c7-4285-8e44-f899729b3f82"){
+            branchName = "אתר סופר-פארם גלרי";
+        }
+        else if(receipt.branchID == "a0381b6f-53f5-4293-a025-7ac7f0a716aa"){
+            branchName = "אתר סופר-פארם אונליין";
+        }
+            
+        $("#details").append('<div style="text-align:center;margin:10px 0px;font-size:16px">' + branchName + '</div>');
+        
+        $("#details").append('<div style="text-align:center;font-size:14px;margin-bottom:10px">מקור</div>');
+
+        if (receipt.transactionNumber && receipt.createdDate) {
+            const isoStr = receipt.createdDate; const date = new Date(isoStr);
+
+            const hh = String(date.getHours()).padStart(2, '0'); const min = String(date.getMinutes()).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); const mm = String(date.getMonth() + 1).padStart(2, '0'); // Months start at 0 
+            const yyyy = date.getFullYear();
+
+            const result = dd + "/" + mm + "/" + yyyy + "・" + hh + ":" + min;
+
+            $("#details").append("<div style=\"text-align:center;font-size:14px;margin-top:10px;margin-bottom:23px\"><span class=\"title\" style=\"font-size:14px\">מס' עסקה: </span>" + receipt.transactionNumber + " <span style=\"padding-right:10px;font-size:14px\" class=\"title\">מועד הרכישה</span><span style=\"direction:ltr\"> " + result + "</span></div>");
+        }
+
+
+        if (!receipt.tBranch.branchPhone) {
+            $("#branchPhone").hide();
+        }
+        if (!receipt.tBranch.isOnline) {
+            gtag('event', 'weezmo', {
+                'event_category': 'receipt_open',
+                'store_name': receipt.tBranch.branchName,
+                'value': receipt.total
+            });
+        }
+
+        var link = receipt.additionalData.filter(function (value) { return value && value.key == "contacts_url"; });
+        if (link.length > 0 && link[0].value !== "0" && link[0].value != "") {
+            $("#qr").show();
+            $("#useLink").html("<a href=\"" + link[0].value + "\">להוראות שימוש ואזהרות בטיחות בעדשות מגע</a>")
+
+        }
+        if (receipt.payments && receipt.payments.length > 0) {
+            for (var p = 0; p < receipt.payments.length; p++) {
+                var payment = receipt.payments[p];
+
+                var number_payments = "";
+
+                if (payment.additionalData) {
+                    var payments = payment.additionalData.filter(item => item.key == "payments");
+                    if (payments.length > 0 && payments[0].value !== "0") {
+                        number_payments = "(" + payments[0].value + " תשלומים)";
+                    }
+                }
+
+                var line = "<div class=\"row\"><div class=\"col subTitle\" style=\"flex:4\"><img style=\"padding-left:5px;\" src=\"" + getPaymentImage(receipt.paymentType) + "\" />" + payment.name + " " + number_payments + "</div><div class=\"col subTitle tRight ltr\"><span class=\"bold\">₪ </span>" + payment.amount.toFixed(2) + "</div></div>";
+                $("#payments").append(line);
+            }
+        }
+        else{
+             var line = "<div class=\"row\"><div class=\"col subTitle\" style=\"flex:4\"><img style=\"padding-left:5px;width:30px\" src=\"storage/images/abe935c3-b6f7-40c5-9890-657dba840370/online.png\" />חיוב אונליין</div><div class=\"col subTitle tRight ltr\"><span class=\"bold\">₪ </span>" + receipt.total.toFixed(2) + "</div></div>";
+                $("#payments").append(line);
+        }
+
+
+
+        //$(".feedback").hide();
+        var isDailys = false;
+        var isGallery = false;
+        if (receipt.tBranch.branchName.indexOf("450") > -1) {
+            if (receipt.tPOS.description == "1" || receipt.tPOS.description == "44" || receipt.tPOS.description == "45" || receipt.tPOS.description == "46")
+                isDailys = true;
+        }
+        else if (receipt.tBranch.branchName.indexOf("261") > -1) {
+            if (receipt.tPOS.description == "3" || receipt.tPOS.description == "46")
+                isDailys = true;
+        }
+        else if (receipt.tBranch.branchName.indexOf("142") > -1) {
+            if (receipt.tPOS.description == "2" || receipt.tPOS.description == "47")
+                isDailys = true;
+        }
+
+        if (isDailys) {
+            $(".logoHeader").find("img").attr("src", "storage/images/abe935c3-b6f7-40c5-9890-657dba840370/DailysLogo.png");
+        }
+        else if (receipt.tPOS.description == "gallery") {
+            $(".phone").hide();
+            $(".root").parent().parent().parent().css("background-color", "gray");
+            $(".logoHeader").find("img").attr("src", "storage/images/abe935c3-b6f7-40c5-9890-657dba840370/Gallery-Logo.png");
+        }
+        let refundColor = refund ? 'refund' : '';
+        $("#total").html("<span class=\""+refundColor+"\"><span class=\"bold ltr\">₪</span>" + receipt.total.toFixed(2) + "</span>");
+        if (receipt.vatTotal != "0") {
+            $("#vatTbl").show();
+
+            $("#vat").text(receipt.vat != 0 ? receipt.vat : "18");
+            $("#VatTotal").html("<span class=\"bold ltr\">₪ </span>" + receipt.vatTotal);
+            $("#TotalNoVat").html("<span class=\"bold ltr\">₪ </span>" + receipt.totalNoVat);
+        }
+
+        //debugger;
+        //if(receipt.additionalData){
+        //    var isLifeStyle = receipt.additionalData.filter(item => item.key == "IsLifeStyle");
+        //    if(isLifeStyle.length == 0 || isLifeStyle[0].value == "True"){
+        //        $("#lifeStyle").hide();     
+        //    }
+        //}
+
+        if (receipt.moneySaved) {
+            $("#moneySavedContainer").html("<div class=\"money-bg\"><span class=\"bold ltr\">₪ " + receipt.moneySaved + "</span><span> חסכת בקניה</span><img style=\"padding-left:5px\" src=\"storage/images/abe935c3-b6f7-40c5-9890-657dba840370/checkbox.svg\" /></div>")
+        }
+        else {
+            $("#moneySavedContainer").parent().hide();
+        }
+
+        //debugger;
+
+        var storeName = receipt.additionalData.filter(item => item.key == "BranchName")[0];
+        if (storeName) {
+            gtag('event', 'page_view', {
+                page_title: 'Reciept_' + storeName.value,
+                page_path: '/stores/receipt/' + storeName.value
+            });
+
+            gtag('event', 'Reciept', {
+                'event_category': 'Stores',
+                'event_label': storeName.value
+            });
+        }
+
+    }
+</script><script confirmation-code="">
+    if (window.jQuery) $(document).ready(() => document.body.setAttribute("document-ready", ""));
+    else console.error("jQuery library is missing");
+  </script><div><div class="ant-modal-root css-1wesfl8"><div class="ant-modal-mask" style="z-index: 3000;"></div><div tabindex="-1" class="ant-modal-wrap marketingConsentWrap" style="z-index: 3000;"><div role="dialog" aria-labelledby=":r1:" aria-modal="true" class="ant-modal css-1wesfl8" style="width: 520px;"><div tabindex="0" aria-hidden="true" style="width: 0px; height: 0px; overflow: hidden; outline: none;"></div><div tabindex="-1" style="outline: none;"><div class="ant-modal-content" style="border-radius: 20px;"><div class="ant-modal-header"><div class="ant-modal-title" id=":r1:" style="text-align: center; color: rgb(30, 63, 158);"><div style="direction: rtl; font-size: 16px;">לצפייה בחשבונית</div></div></div><div class="ant-modal-body"><div class="marketingConsentBody" style="direction: rtl;"><div style="font-family: &quot;FbExtaza Regular&quot;; color: #000000; font-size: 16px; text-align: right;"><p dir="rtl" style="text-align: center;"><span style="color: rgb(30, 63, 158); font-size: 24px; font-family: &quot;FbExtaza Regular&quot;;">באפשרותך לצפות בפירוט החשבונית בלבד או להציגה עם מבצעים והטבות נוספות</span></p></div></div></div><div class="ant-modal-footer" style="text-align: center;"><button type="button" class="ant-btn css-1wesfl8 ant-btn-primary Button_button__TWm+P undefined" style="background-color: rgb(30, 63, 158); border-color: transparent; color: white; margin-bottom: 20px; width: 90%; height: 54px; font-size: 16px; font-weight: bold;"><span>לצפייה בחשבונית עם מבצעים</span></button><br><button type="button" class="ant-btn css-1wesfl8 ant-btn-default Button_button__TWm+P undefined" style="width: 90%; height: 54px; font-size: 16px; font-weight: bold; color: rgb(30, 63, 158); border: 1px solid rgb(30, 63, 158);"><span>לצפייה ללא מבצעים</span></button></div></div></div><div tabindex="0" aria-hidden="true" style="width: 0px; height: 0px; overflow: hidden; outline: none;"></div></div></div></div></div></body></html>

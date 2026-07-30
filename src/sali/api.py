@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 import os
+import uuid
 from collections.abc import Callable
 from typing import Annotated
 
@@ -47,10 +49,14 @@ class ReceiptExtractionRequest(BaseModel):
 class ApiError(BaseModel):
     code: str
     message: str
+    request_id: str
 
 
 class ApiErrorResponse(BaseModel):
     error: ApiError
+
+
+logger = logging.getLogger("sali.api")
 
 
 def _cors_origins() -> list[str]:
@@ -58,11 +64,66 @@ def _cors_origins() -> list[str]:
     return [origin.strip() for origin in configured.split(",") if origin.strip()]
 
 
-def _error(status_code: int, code: str, message: str) -> JSONResponse:
+def _logs_failure_detail() -> bool:
+    """Whether to log model- and page-derived failure text.
+
+    Off by default: `failure_reason` quotes the merchant page, so it can carry
+    receipt content that this service promises not to retain.
+    """
+    return os.environ.get("SALI_LOG_FAILURE_DETAIL", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
+def _error(status_code: int, code: str, message: str, request_id: str) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
-        content={"error": {"code": code, "message": message}},
+        content={"error": {"code": code, "message": message, "request_id": request_id}},
     )
+
+
+def _log_failure(
+    request: Request,
+    request_id: str,
+    code: str,
+    exc: BaseException | None = None,
+) -> None:
+    """Record why a request failed without writing receipt content to the log.
+
+    Reconciliation errors name field paths (`receipt.items[3].gross_total`) and
+    never carry values, so they are safe to log and are what actually explains a
+    rejected extraction.
+    """
+    details: list[str] = []
+    current: BaseException | None = exc
+    seen = 0
+    while current is not None and seen < 6:
+        errors = getattr(current, "errors", None)
+        if isinstance(errors, tuple | list):
+            details.extend(str(error) for error in errors)
+        diagnostics = getattr(current, "diagnostics", None)
+        if diagnostics:
+            details.append(str(diagnostics))
+        if _logs_failure_detail():
+            details.append(f"{type(current).__name__}: {current}")
+        else:
+            details.append(type(current).__name__)
+        current = current.__cause__ or current.__context__
+        seen += 1
+
+    logger.warning(
+        "receipt request failed id=%s path=%s code=%s detail=%s",
+        request_id,
+        request.url.path,
+        code,
+        " | ".join(dict.fromkeys(details)) or "none",
+    )
+
+
+def _request_id() -> str:
+    return uuid.uuid4().hex[:12]
 
 
 def _safe_failure_message(code: str, *, is_image: bool) -> str:
@@ -127,13 +188,18 @@ def create_app(
             if request.url.path.startswith("/api/receipts/extract-image")
             else "A receipt URL is required."
         )
-        return _error(422, "invalid_request", message)
+        return _error(422, "invalid_request", message, _request_id())
 
     @app.exception_handler(InvalidReceiptUrlError)
     async def invalid_url(
         _request: Request, _exc: InvalidReceiptUrlError
     ) -> JSONResponse:
-        return _error(422, "invalid_url", "Use a public HTTPS link to a receipt.")
+        return _error(
+            422,
+            "invalid_url",
+            "Use a public HTTPS link to a receipt.",
+            _request_id(),
+        )
 
     @app.exception_handler(InvalidReceiptImageError)
     async def invalid_image(
@@ -144,6 +210,7 @@ def create_app(
             422,
             "invalid_image",
             "Upload one JPEG, PNG, or WEBP receipt image no larger than 10 MiB.",
+            _request_id(),
         )
 
     @app.exception_handler(ReceiptInspectionFailure)
@@ -151,6 +218,8 @@ def create_app(
         request: Request,
         exc: ReceiptInspectionFailure,
     ) -> JSONResponse:
+        request_id = _request_id()
+        _log_failure(request, request_id, exc.failure_code, exc)
         return _error(
             422,
             exc.failure_code,
@@ -158,17 +227,21 @@ def create_app(
                 exc.failure_code,
                 is_image=request.url.path.startswith("/api/receipts/extract-image"),
             ),
+            request_id,
         )
 
     @app.exception_handler(HostedReceiptError)
     async def extraction_unavailable(
-        _request: Request,
-        _exc: HostedReceiptError,
+        request: Request,
+        exc: HostedReceiptError,
     ) -> JSONResponse:
+        request_id = _request_id()
+        _log_failure(request, request_id, "extraction_unavailable", exc)
         return _error(
             503,
             "extraction_unavailable",
             "Receipt extraction is temporarily unavailable. Please try again.",
+            request_id,
         )
 
     @app.get("/health", include_in_schema=False)

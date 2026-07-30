@@ -37,7 +37,18 @@ class _StrictModel(BaseModel):
 
 
 class Merchant(_StrictModel):
-    name: NonEmptyText | None
+    name: Annotated[
+        NonEmptyText | None,
+        Field(
+            description=(
+                "The trading name of the business, copied from text on the page. "
+                "Many receipts show the name only inside a logo image; when the "
+                "page never states it in text, return null rather than reading it "
+                "off a picture or inferring it from the branch or the URL. Never "
+                "return a placeholder such as '?' or 'unknown'."
+            )
+        ),
+    ]
     branch_name: NonEmptyText | None
     branch_number: NonEmptyText | None
 
@@ -51,17 +62,31 @@ class Transaction(_StrictModel):
 
 
 class Totals(_StrictModel):
-    subtotal: DecimalString | None
+    subtotal: Annotated[
+        DecimalString | None,
+        Field(description="Sum of every item's gross_total, before adjustments."),
+    ]
     discounts: Annotated[
         DecimalString | None,
         Field(
             description=(
-                "Signed aggregate discount amount; discounts are negative and "
-                "surcharges are positive."
+                "Signed sum of every item adjustment; discounts are negative and "
+                "surcharges are positive. Derive this from the item adjustments "
+                "you extracted. Do not copy an aggregate 'you saved' figure "
+                "printed on the page: those often include savings that are not "
+                "itemised and disagree with the receipt's own arithmetic."
             )
         ),
     ]
-    total: DecimalString
+    total: Annotated[
+        DecimalString,
+        Field(
+            description=(
+                "The final amount actually paid, as printed on the receipt. Must "
+                "equal the sum of every item's final_total."
+            )
+        ),
+    ]
 
 
 class Adjustment(_StrictModel):
@@ -82,17 +107,58 @@ class Item(_StrictModel):
     code: NonEmptyText | None
     name: NonEmptyText
     categories: list[NonEmptyText]
-    quantity: DecimalString | None
-    unit: NonEmptyText | None
-    unit_price: DecimalString | None
+    quantity: Annotated[
+        DecimalString | None,
+        Field(
+            description=(
+                "How much was bought, expressed in the same unit that unit_price "
+                "is quoted per, so that quantity times unit_price equals "
+                "gross_total. When the page prints a weight in grams beside a "
+                "price per kilogram, convert it: 565 grams at 32.90 per kg is a "
+                "quantity of 0.565, not 565."
+            )
+        ),
+    ]
+    unit: Annotated[
+        NonEmptyText | None,
+        Field(
+            description=(
+                "The unit that unit_price is quoted per, such as kg, L, or unit."
+            )
+        ),
+    ]
+    unit_price: Annotated[
+        DecimalString | None,
+        Field(description="Price of a single `unit`, before adjustments."),
+    ]
     gross_total: Annotated[
         DecimalString | None,
-        Field(description="Line total before signed adjustments."),
+        Field(
+            description=(
+                "Line total before signed adjustments. This is the amount printed "
+                "on the item's own line, even when a discount row appears beneath "
+                "it and even when the column is headed 'to pay'."
+            )
+        ),
     ]
-    adjustments: list[Adjustment]
+    adjustments: Annotated[
+        list[Adjustment],
+        Field(
+            description=(
+                "Discount or surcharge rows printed for this specific line, "
+                "usually immediately beneath it. Empty when the line has none."
+            )
+        ),
+    ]
     final_total: Annotated[
         DecimalString,
-        Field(description="Line total after all signed adjustments."),
+        Field(
+            description=(
+                "Line total after all signed adjustments: gross_total plus the "
+                "sum of this line's adjustments. For an 18.59 line carrying a "
+                "-9.33 discount row, final_total is 9.26."
+            )
+        ),
     ]
 
 
@@ -133,9 +199,15 @@ def validate_and_reconcile(receipt: NormalizedReceipt) -> ReceiptDocument:
     warnings: list[str] = []
     reconciled_items: list[Item] = []
 
+    merchant = receipt.merchant
+    if _is_placeholder(merchant.name):
+        merchant = merchant.model_copy(update={"name": None})
+        warnings.append(
+            "corrected: receipt.merchant.name was a placeholder, not a name"
+        )
     _warn_if_missing(
         warnings,
-        receipt.merchant.name,
+        merchant.name,
         "receipt.merchant.name",
     )
     _warn_if_missing(
@@ -212,18 +284,23 @@ def validate_and_reconcile(receipt: NormalizedReceipt) -> ReceiptDocument:
         if unit_price is None:
             warnings.append(f"missing: {path}.unit_price")
 
-        if (
-            quantity is not None
-            and unit_price is not None
-            and not _within_tolerance(
-                quantity * unit_price,
-                gross_total,
-            )
-        ):
-            errors.append(
-                f"{path}.quantity times unit_price must match gross_total "
-                f"within {RECONCILIATION_TOLERANCE}"
-            )
+        if quantity is not None and unit_price is not None:
+            repaired = _repair_quantity_scale(quantity, unit_price, gross_total)
+            if repaired is None:
+                # Merchants print weights rounded to two decimals, so a receipt
+                # can be internally correct and still fail this product. The
+                # money invariants below are what actually guard the total, so
+                # this stays a warning and never rejects the receipt.
+                warnings.append(
+                    f"unverified: {path}.quantity times unit_price does not match "
+                    "gross_total"
+                )
+            elif repaired != quantity:
+                quantity = repaired
+                updates["quantity"] = _format_decimal(repaired)
+                warnings.append(
+                    f"corrected: {path}.quantity rescaled to the unit of unit_price"
+                )
 
         reconciled_items.append(item.model_copy(update=updates) if updates else item)
 
@@ -298,6 +375,7 @@ def validate_and_reconcile(receipt: NormalizedReceipt) -> ReceiptDocument:
     )
     reconciled_receipt = receipt.model_copy(
         update={
+            "merchant": merchant,
             "items": reconciled_items,
             "totals": reconciled_totals,
         },
@@ -306,6 +384,18 @@ def validate_and_reconcile(receipt: NormalizedReceipt) -> ReceiptDocument:
         receipt=reconciled_receipt,
         warnings=_deduplicate(warnings),
     )
+
+
+#: Values a model reaches for when a field is required by the shape of the task
+#: but unanswerable from the page. Observed in the wild: a receipt whose only
+#: statement of the merchant is a logo image came back as "?".
+_PLACEHOLDER_NAMES = frozenset(
+    {"?", "??", "-", "--", "n/a", "na", "none", "null", "unknown", "unnamed"}
+)
+
+
+def _is_placeholder(value: str | None) -> bool:
+    return value is not None and value.strip().casefold() in _PLACEHOLDER_NAMES
 
 
 def _warn_if_missing(
@@ -325,6 +415,42 @@ def _format_decimal(value: Decimal) -> str:
     if value == 0:
         return "0"
     return format(value, "f")
+
+
+#: Powers of ten tried when a line's quantity is quoted in a different metric
+#: unit from its price, such as grams against a price per kilogram. Ordered so
+#: an unchanged quantity always wins, then the common gram/kilogram slip.
+_QUANTITY_SCALE_CANDIDATES = (
+    Decimal(1),
+    Decimal("0.001"),
+    Decimal(1000),
+    Decimal("0.01"),
+    Decimal(100),
+    Decimal("0.1"),
+    Decimal(10),
+)
+
+
+def _repair_quantity_scale(
+    quantity: Decimal,
+    unit_price: Decimal,
+    gross_total: Decimal,
+) -> Decimal | None:
+    """Return a quantity whose product with `unit_price` matches `gross_total`.
+
+    `gross_total` is corroborated by the line's own final total and by the
+    receipt total, so it is treated as the anchor and the quantity is the value
+    allowed to move. Only powers of ten are considered, which makes a repair
+    provable rather than guessed: a rescaled quantity is accepted only when it
+    reproduces the printed line total.
+
+    Returns `None` when no power of ten reconciles the three values.
+    """
+    for scale in _QUANTITY_SCALE_CANDIDATES:
+        candidate = quantity * scale
+        if _within_tolerance(candidate * unit_price, gross_total):
+            return candidate
+    return None
 
 
 def _exact_decimal_divide(
