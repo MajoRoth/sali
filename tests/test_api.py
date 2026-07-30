@@ -3,6 +3,8 @@
 from fastapi.testclient import TestClient
 
 from sali.api import create_app
+from sali.cart_comparison.catalog import CatalogUnavailableError
+from sali.cart_comparison.models import CartComparison, StoreCart
 from sali.receipt_extraction.errors import (
     HostedReceiptError,
     ReceiptInspectionFailure,
@@ -241,6 +243,138 @@ def test_extract_image_hides_inspection_and_service_details() -> None:
     }
     assert unavailable.status_code == 503
     assert "missing key" not in unavailable.text
+
+
+def cart_comparison(store_total: str = "15.00") -> CartComparison:
+    return CartComparison(
+        currency="ILS",
+        receipt_total="10.00",
+        matched=[],
+        unmatched=[],
+        complete_carts=[
+            StoreCart(
+                store_id="s1",
+                store_name="נס ציונה",
+                city="נס ציונה",
+                address="החרש 9",
+                chain_id="7290875100001",
+                chain_name="שופרסל",
+                complete=True,
+                priced_items=1,
+                total_items=1,
+                total=store_total,
+                missing=[],
+                chain_level_estimate=False,
+            )
+        ],
+        partial_carts=[],
+        warnings=[],
+    )
+
+
+def test_compare_ranks_stores_for_an_already_extracted_receipt() -> None:
+    seen: list[tuple[str, str | None]] = []
+
+    def compare(document, city):
+        seen.append((document.receipt.items[0].name, city))
+        return cart_comparison()
+
+    response = TestClient(create_app(compare_cart=compare)).post(
+        "/api/carts/compare",
+        json={
+            "document": receipt_document().model_dump(mode="json"),
+            "city": "נס ציונה",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["complete_carts"][0]["total"] == "15.00"
+    assert seen == [("Example product", "נס ציונה")]
+
+
+def test_compare_url_extracts_then_prices_the_cart_in_one_call() -> None:
+    extracted: list[str] = []
+
+    def extract(url: str):
+        extracted.append(url)
+        return receipt_document()
+
+    response = TestClient(
+        create_app(extract, compare_cart=lambda _document, _city: cart_comparison())
+    ).post(
+        "/api/carts/compare-url",
+        json={"url": "https://receipt.example/order/1"},
+    )
+
+    assert response.status_code == 200
+    assert extracted == ["https://receipt.example/order/1"]
+    assert response.json()["complete_carts"][0]["chain_name"] == "שופרסל"
+
+
+def test_compare_url_rejects_an_untrusted_link_before_extracting_it() -> None:
+    def extract(_url: str):
+        raise AssertionError("a rejected URL must never be opened")
+
+    response = TestClient(create_app(extract)).post(
+        "/api/carts/compare-url",
+        json={"url": "http://localhost/receipt"},
+    )
+
+    assert response.status_code == 422
+    assert _error_without_id(response) == {
+        "code": "invalid_url",
+        "message": "Use a public HTTPS link to a receipt.",
+    }
+
+
+def test_compare_image_extracts_the_upload_then_prices_the_cart() -> None:
+    response = TestClient(
+        create_app(
+            extract_receipt_image=lambda _image: receipt_document(),
+            compare_cart=lambda _document, city: cart_comparison(
+                "20.00" if city == "חיפה" else "15.00"
+            ),
+        )
+    ).post(
+        "/api/carts/compare-image",
+        files={"image": ("receipt.jpg", b"\xff\xd8\xff" + b"0" * 64, "image/jpeg")},
+        data={"city": "חיפה"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["complete_carts"][0]["total"] == "20.00"
+
+
+def test_compare_reports_an_unreachable_price_database_without_internal_detail() -> (
+    None
+):
+    def compare(_document, _city):
+        raise CatalogUnavailableError(
+            "http://34.165.235.189:8000 refused the connection"
+        )
+
+    response = TestClient(create_app(compare_cart=compare)).post(
+        "/api/carts/compare",
+        json={"document": receipt_document().model_dump(mode="json")},
+    )
+
+    assert response.status_code == 503
+    assert _error_without_id(response) == {
+        "code": "price_database_unavailable",
+        "message": "The price database is temporarily unavailable. Please try again.",
+    }
+    assert "34.165.235.189" not in response.text
+    assert _correlation_id(response)
+
+
+def test_compare_rejects_a_body_without_a_receipt_document() -> None:
+    response = TestClient(create_app()).post("/api/carts/compare", json={})
+
+    assert response.status_code == 422
+    assert _error_without_id(response) == {
+        "code": "invalid_request",
+        "message": "A Receipt Document is required.",
+    }
 
 
 def test_api_allows_the_local_vite_origin_only() -> None:

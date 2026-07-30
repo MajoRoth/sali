@@ -527,6 +527,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "openai" },
     { name = "playwright" },
     { name = "pydantic" },
@@ -543,6 +544,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115.0" },
+    { name = "httpx", specifier = ">=0.28.0" },
     { name = "openai", specifier = ">=2.0.0" },
     { name = "playwright", specifier = ">=1.50.0" },
     { name = "pydantic", specifier = ">=2.10.0" },

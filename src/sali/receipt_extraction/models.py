@@ -104,7 +104,19 @@ class Adjustment(_StrictModel):
 
 class Item(_StrictModel):
     position: ItemPosition
-    code: NonEmptyText | None
+    code: Annotated[
+        NonEmptyText | None,
+        Field(
+            description=(
+                "The product code printed beside the line, copied digit for "
+                "digit. Prefer the barcode when the receipt prints one: a 12 to "
+                "14 digit number such as 7290000060200 identifies the exact "
+                "product in a price catalogue, which a merchant's own short "
+                "code does not. When only a short internal code is printed, "
+                "return that. Never invent or pad a code."
+            )
+        ),
+    ]
     name: NonEmptyText
     categories: list[NonEmptyText]
     quantity: Annotated[

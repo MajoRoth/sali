@@ -8,12 +8,15 @@ import uuid
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
+from sali.cart_comparison.catalog import CatalogUnavailableError
+from sali.cart_comparison.models import CartComparison
+from sali.cart_comparison.service import CartComparisonService
 from sali.receipt_extraction.errors import (
     HostedReceiptError,
     InvalidReceiptImageError,
@@ -36,6 +39,7 @@ from sali.receipt_extraction.url_validation import ReceiptUrlValidator
 type ExtractReceipt = Callable[[str], ReceiptDocument]
 type ExtractReceiptImage = Callable[[ReceiptImage], ReceiptDocument]
 type ExtractReceiptImageTotal = Callable[[ReceiptImage], ReceiptImageTotalDocument]
+type CompareCart = Callable[[ReceiptDocument, str | None], CartComparison]
 
 
 class ReceiptExtractionRequest(BaseModel):
@@ -44,6 +48,21 @@ class ReceiptExtractionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
     url: str
+
+
+class CartComparisonRequest(BaseModel):
+    """A Receipt Document to price, optionally narrowed to one city."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    document: ReceiptDocument
+    city: str | None = None
+
+
+class CartComparisonUrlRequest(ReceiptExtractionRequest):
+    """Extract a Digital Receipt and price its cart in one call."""
+
+    city: str | None = None
 
 
 class ApiError(BaseModel):
@@ -126,6 +145,13 @@ def _request_id() -> str:
     return uuid.uuid4().hex[:12]
 
 
+def _reads_an_image(request: Request) -> bool:
+    """Whether the failing route took an upload, so errors name the right input."""
+    return request.url.path.endswith("-image") or request.url.path.endswith(
+        "-image-total"
+    )
+
+
 def _safe_failure_message(code: str, *, is_image: bool) -> str:
     messages = (
         {
@@ -156,6 +182,7 @@ def create_app(
     extract_receipt: ExtractReceipt | None = None,
     extract_receipt_image: ExtractReceiptImage | None = None,
     extract_receipt_image_total: ExtractReceiptImageTotal | None = None,
+    compare_cart: CompareCart | None = None,
 ) -> FastAPI:
     """Create an API app; injection keeps contract tests independent of OpenAI."""
     extractor = extract_receipt or OpenAIReceiptExtractor().extract
@@ -163,12 +190,16 @@ def create_app(
     image_total_extractor = (
         extract_receipt_image_total or OpenAIReceiptImageTotalExtractor().extract
     )
+    cart_comparer = compare_cart or (
+        lambda document, city: CartComparisonService().compare(document, city=city)
+    )
     app = FastAPI(
         title="sali Receipt API",
-        version="0.1.0",
+        version="0.2.0",
         description=(
             "Extract a reconciled Receipt Document from one public HTTPS URL "
-            "or one uploaded Receipt Image."
+            "or one uploaded Receipt Image, and price its cart across the "
+            "supermarkets that stock every item."
         ),
     )
     app.add_middleware(
@@ -183,11 +214,12 @@ def create_app(
     async def invalid_request(
         request: Request, _exc: RequestValidationError
     ) -> JSONResponse:
-        message = (
-            "A receipt image is required."
-            if request.url.path.startswith("/api/receipts/extract-image")
-            else "A receipt URL is required."
-        )
+        if request.url.path == "/api/carts/compare":
+            message = "A Receipt Document is required."
+        elif _reads_an_image(request):
+            message = "A receipt image is required."
+        else:
+            message = "A receipt URL is required."
         return _error(422, "invalid_request", message, _request_id())
 
     @app.exception_handler(InvalidReceiptUrlError)
@@ -223,10 +255,7 @@ def create_app(
         return _error(
             422,
             exc.failure_code,
-            _safe_failure_message(
-                exc.failure_code,
-                is_image=request.url.path.startswith("/api/receipts/extract-image"),
-            ),
+            _safe_failure_message(exc.failure_code, is_image=_reads_an_image(request)),
             request_id,
         )
 
@@ -241,6 +270,20 @@ def create_app(
             503,
             "extraction_unavailable",
             "Receipt extraction is temporarily unavailable. Please try again.",
+            request_id,
+        )
+
+    @app.exception_handler(CatalogUnavailableError)
+    async def catalog_unavailable(
+        request: Request,
+        exc: CatalogUnavailableError,
+    ) -> JSONResponse:
+        request_id = _request_id()
+        _log_failure(request, request_id, "price_database_unavailable", exc)
+        return _error(
+            503,
+            "price_database_unavailable",
+            "The price database is temporarily unavailable. Please try again.",
             request_id,
         )
 
@@ -286,6 +329,38 @@ def create_app(
     ) -> ReceiptImageTotalDocument:
         """Extract a verified Receipt Image Total without retaining the upload."""
         return image_total_extractor(await validated_receipt_image(image))
+
+    @app.post(
+        "/api/carts/compare",
+        response_model=CartComparison,
+        responses={422: {"model": ApiErrorResponse}, 503: {"model": ApiErrorResponse}},
+    )
+    def compare(request: CartComparisonRequest) -> CartComparison:
+        """Price an already-extracted Receipt Document across stores."""
+        return cart_comparer(request.document, request.city)
+
+    @app.post(
+        "/api/carts/compare-url",
+        response_model=CartComparison,
+        responses={422: {"model": ApiErrorResponse}, 503: {"model": ApiErrorResponse}},
+    )
+    def compare_url(request: CartComparisonUrlRequest) -> CartComparison:
+        """Extract a Digital Receipt and rank stores for its cart in one call."""
+        ReceiptUrlValidator().validate(request.url)
+        return cart_comparer(extractor(request.url), request.city)
+
+    @app.post(
+        "/api/carts/compare-image",
+        response_model=CartComparison,
+        responses={422: {"model": ApiErrorResponse}, 503: {"model": ApiErrorResponse}},
+    )
+    async def compare_image(
+        image: Annotated[UploadFile, File(...)],
+        city: Annotated[str | None, Form()] = None,
+    ) -> CartComparison:
+        """Extract a Receipt Image and rank stores for its cart in one call."""
+        document = image_extractor(await validated_receipt_image(image))
+        return cart_comparer(document, city)
 
     return app
 
