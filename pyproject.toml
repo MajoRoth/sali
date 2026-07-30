@@ -4,7 +4,11 @@ version = "0.1.0"
 description = "Analyze and compare supermarket prices, and recommend cheaper alternatives."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "attrs>=26.1.0",
+    "httpx>=0.28.1",
+    "open-supermarkets-api-client",
+]
 
 [project.scripts]
 sali = "sali.main:main"
@@ -15,6 +19,15 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sali"]
+
+[tool.uv.workspace]
+members = [
+    "src/supermarket-api-client",
+]
+
+[tool.uv.sources]
+open-supermarkets-api-client = { workspace = true }
+
 
 [dependency-groups]
 dev = [
