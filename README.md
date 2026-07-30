@@ -34,3 +34,18 @@ npm run dev --prefix ui
 ```
 
 Then open http://localhost:5173.
+
+### Auth & saved receipts (Supabase)
+
+The UI runs without Supabase — sign-in is faked and receipts stay in `localStorage`.
+To enable real Google sign-in and cloud-persisted receipts:
+
+1. Copy `ui/.env.example` to `ui/.env.local` and fill in `VITE_SUPABASE_URL` and
+   `VITE_SUPABASE_ANON_KEY` (Supabase → Settings → API). Only publishable keys belong
+   here — anything `VITE_*` ships inside the browser bundle.
+2. Run `docs/supabase-setup.sql` in the Supabase SQL editor to create the `receipts`
+   table and its row-level-security policy.
+3. Supabase → Authentication → Providers → enable **Google**, using a Google Cloud
+   OAuth client whose redirect URI is the one Supabase shows on that page.
+4. Supabase → Authentication → URL Configuration → add `http://localhost:5173` to the
+   allowed redirect URLs for local development.

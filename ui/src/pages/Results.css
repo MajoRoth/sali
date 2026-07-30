@@ -28,6 +28,55 @@
   font-weight: 700;
 }
 
+.results-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title-edit {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--text-dim);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.title-edit:active {
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+}
+
+/* The name field lives in the title slot; it fills the row beside the back button. */
+.title-name-form {
+  flex: 1;
+  min-width: 0;
+}
+
+.title-name-form .field {
+  height: 42px;
+}
+
+.title-name-form .btn {
+  height: 42px;
+  padding: 0 16px;
+}
+
+.save-error {
+  margin: 0;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+  background: rgba(229, 72, 77, 0.08);
+  text-align: center;
+}
+
 .results-scroll {
   flex: 1;
   overflow-y: auto;
@@ -45,18 +94,7 @@
   box-shadow: 0 8px 26px rgba(0, 184, 119, 0.16);
 }
 
-.receipt-badge {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 5px 11px;
-  border-radius: 9px;
-  background: var(--accent);
-  color: #ffffff;
-}
-
 .receipt-total {
-  margin-top: 10px;
   font-size: 34px;
   font-weight: 700;
   line-height: 1.1;

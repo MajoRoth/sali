@@ -101,25 +101,15 @@
   background: linear-gradient(transparent, var(--bg) 30px);
 }
 
-.sheet-hint {
-  padding: 0 18px 10px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-dim);
-}
-
-.sheet-hint strong {
-  color: var(--accent-dark);
-}
-
 .sheet-subhead {
   display: flex;
   align-items: center;
   gap: 7px;
   padding: 12px 18px 6px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--online);
+  flex-shrink: 0;
 }
 
 .online-dot {
@@ -128,6 +118,28 @@
   border-radius: 50%;
   background: var(--online);
   box-shadow: 0 0 0 3px var(--online-soft);
+}
+
+/* Origin store — the shop the receipt was bought at (neutral slate accent). */
+.store-card.origin {
+  background: var(--origin-soft);
+  border-color: rgba(100, 116, 139, 0.28);
+}
+
+.store-card.origin.selected {
+  border-color: var(--origin);
+  box-shadow: 0 8px 26px rgba(100, 116, 139, 0.22);
+}
+
+.origin-tag {
+  margin-inline-start: auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--origin);
+  color: #ffffff;
+  white-space: nowrap;
 }
 
 .store-cards {
@@ -352,6 +364,20 @@
   box-shadow: 0 2px 6px rgba(0, 184, 119, 0.4);
 }
 
+.store-pin.origin {
+  border-color: rgba(100, 116, 139, 0.4);
+}
+
+.store-pin.origin.selected {
+  border-color: var(--origin);
+  box-shadow: 0 4px 18px rgba(100, 116, 139, 0.45);
+}
+
+.pin-best.origin {
+  background: var(--origin);
+  box-shadow: 0 2px 6px rgba(100, 116, 139, 0.4);
+}
+
 .pin-logo {
   height: 26px;
   padding-inline: 4px;
@@ -390,5 +416,4 @@
   font-family: var(--mono);
   font-size: 10px;
   color: var(--text-dim);
-  text-decoration: line-through;
 }
