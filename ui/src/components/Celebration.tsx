@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { formatPrice } from '../lib/geo'
 import './Celebration.css'
 
@@ -13,14 +13,18 @@ const BURSTS = [
 const SPARKS = 16
 
 export default function Celebration({ amount, onDone }: { amount: number; onDone: () => void }) {
-  // Auto-dismiss; tapping also dismisses.
+  // Keep the latest onDone in a ref so the auto-dismiss timer effect can run
+  // ONCE (stable, empty deps). Otherwise onDone changes every parent render and
+  // the effect churns cleanup+setup, which can dismiss the celebration early.
+  const doneRef = useRef(onDone)
+  doneRef.current = onDone
   useEffect(() => {
-    const t = setTimeout(onDone, 3200)
+    const t = setTimeout(() => doneRef.current(), 3200)
     return () => clearTimeout(t)
-  }, [onDone])
+  }, [])
 
   return (
-    <div className="celebrate" onClick={onDone}>
+    <div className="celebrate" onClick={() => doneRef.current()}>
       <div className="fireworks">
         {BURSTS.map((b, i) => (
           <div

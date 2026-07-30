@@ -2,6 +2,12 @@
 
 Analyze and compare supermarket prices. Compare shopping carts across stores and get recommendations for cheaper alternatives.
 
+## Screenshots
+
+| Home | Price comparison | Map |
+|:---:|:---:|:---:|
+| ![Home — saved receipts and a new-receipt panel over a map](static/screenshot1.png) | ![Receipt comparison — savings per store, cheapest crowned](static/screenshot2.png) | ![Map — nearby stores with cart prices](static/screenshot3.png) |
+
 ## Data source
 
 Prices are published under Israel's price transparency regulations:

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AccountMenu from '../components/AccountMenu'
+import HomeMapBackground from '../components/HomeMapBackground'
 import { useAuth } from '../lib/auth'
 import { formatPrice } from '../lib/geo'
 import {
@@ -9,6 +10,7 @@ import {
   deleteReceipt,
   formatSavedDate,
   listReceipts,
+  receiptOrigin,
   scannedItems,
   setActiveReceipt,
   setPendingScan,
@@ -20,6 +22,10 @@ import './Home.css'
 const FILE_STAGES = ['קוראים את הקבלה…', 'מזהים מוצרים…', 'מחפשים סופרים קרובים…']
 const URL_STAGES = ['טוענים את הקבלה מהקישור…', ...FILE_STAGES]
 const STAGE_MS = 750
+/** Set when a signed-out scan awaits sign-in; survives the OAuth redirect. */
+const RESUME_KEY = 'sali.resumeAfterAuth'
+/** Signals Results to play the savings celebration on its next mount. */
+const CELEBRATE_KEY = 'sali.celebrateOnce'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -64,23 +70,35 @@ export default function Home() {
     }
     const t = setTimeout(() => {
       setStages(null)
-      if (user) navigate('/results', { state: { celebrate: true } })
-      else setGateOpen(true)
+      if (user) {
+        localStorage.setItem(CELEBRATE_KEY, '1')
+        navigate('/results')
+      } else {
+        // Persist the intent: Google sign-in redirects away and reloads the app,
+        // wiping React state, so we can't rely on `gateOpen` to resume afterwards.
+        localStorage.setItem(RESUME_KEY, '1')
+        setGateOpen(true)
+      }
     }, STAGE_MS)
     return () => clearTimeout(t)
   }, [stages, stage, navigate, user])
 
-  // Once signed in at the gate, continue to the results we already "scanned".
+  // Resume the scanned receipt once signed in — covers both the instant local
+  // sign-in and returning from the Google OAuth redirect (fresh page load).
   useEffect(() => {
-    if (gateOpen && user) {
+    if (user && localStorage.getItem(RESUME_KEY)) {
+      localStorage.removeItem(RESUME_KEY)
+      localStorage.setItem(CELEBRATE_KEY, '1')
       setGateOpen(false)
-      navigate('/results', { state: { celebrate: true } })
+      navigate('/results')
     }
-  }, [gateOpen, user, navigate])
+  }, [user, navigate])
 
-  const openReceipt = (id: string) => {
-    setActiveReceipt(id)
-    navigate('/results')
+  const openReceipt = (r: SavedReceipt) => {
+    // Pass the record along so Results shows it instantly without a refetch.
+    localStorage.removeItem(CELEBRATE_KEY) // opening a saved receipt never celebrates
+    setActiveReceipt(r.id)
+    navigate('/results', { state: { receipt: r } })
   }
 
   const removeReceipt = async (id: string) => {
@@ -89,6 +107,7 @@ export default function Home() {
   }
 
   const createEmpty = async () => {
+    localStorage.removeItem(CELEBRATE_KEY) // an empty cart has nothing to celebrate
     const now = new Date()
     const record = await createReceipt(user?.id ?? null, `קבלה חדשה ${now.getDate()}.${now.getMonth() + 1}`, [])
     setActiveReceipt(record.id)
@@ -107,18 +126,21 @@ export default function Home() {
 
   return (
     <div className="home">
-      {showList ? (
-        <ReceiptListHome
-          user={user}
-          receipts={receipts}
-          onOpen={openReceipt}
-          onDelete={removeReceipt}
-          onCreateEmpty={createEmpty}
-          onScan={startScan}
-        />
-      ) : (
-        <UploadHome onScan={startScan} />
-      )}
+      <HomeMapBackground />
+      <div className="home-content">
+        {showList ? (
+          <ReceiptListHome
+            user={user}
+            receipts={receipts}
+            onOpen={openReceipt}
+            onDelete={removeReceipt}
+            onCreateEmpty={createEmpty}
+            onScan={startScan}
+          />
+        ) : (
+          <UploadHome onScan={startScan} />
+        )}
+      </div>
 
       {stages && (
         <div className="loading-overlay">
@@ -134,7 +156,13 @@ export default function Home() {
       )}
 
       {gateOpen && (
-        <SignInGate onSignIn={signInWithGoogle} onCancel={() => setGateOpen(false)} />
+        <SignInGate
+          onSignIn={signInWithGoogle}
+          onCancel={() => {
+            localStorage.removeItem(RESUME_KEY)
+            setGateOpen(false)
+          }}
+        />
       )}
     </div>
   )
@@ -179,20 +207,18 @@ function UploadHome({ onScan }: UploadProps) {
           onScan('file')
         }}
       >
-        <div className="scanline" />
         <ReceiptGlyph className="receipt-icon" />
         <h1 className="upload-title">העלו את הקבלה שלכם</h1>
-        <p className="upload-sub">קבלה מודפסת או קבלה דיגיטלית — שתיהן עובדות 😊</p>
-        <p className="upload-hint">מצלמים את הקבלה מהסופר, או מעלים צילום מסך / PDF שקיבלתם במייל</p>
+        <p className="upload-sub">קבלה מודפסת או דיגיטלית — שתיהן עובדות 😊</p>
 
-        <div className="tile-grid lg upload-actions">
-          <button className="tile lg" onClick={() => cameraRef.current?.click()}>
+        <div className="tile-grid upload-actions">
+          <button className="tile" onClick={() => cameraRef.current?.click()}>
             <CameraIcon />
             מצלמה
           </button>
-          <button className="tile lg" onClick={() => uploadRef.current?.click()}>
+          <button className="tile" onClick={() => uploadRef.current?.click()}>
             <ImageIcon />
-            העלאת קובץ
+            קובץ
           </button>
         </div>
 
@@ -239,7 +265,6 @@ function UploadHome({ onScan }: UploadProps) {
         />
       </main>
 
-      <footer className="home-footer">נמצא לכם את הסל הזול ביותר בסביבה</footer>
     </>
   )
 }
@@ -251,7 +276,7 @@ function UploadHome({ onScan }: UploadProps) {
 interface ListProps {
   user: { name: string | null }
   receipts: SavedReceipt[]
-  onOpen: (id: string) => void
+  onOpen: (r: SavedReceipt) => void
   onDelete: (id: string) => void
   onCreateEmpty: () => void
   onScan: (from: 'file' | 'url') => void
@@ -330,11 +355,14 @@ function ReceiptListHome({
       <ul className="receipt-list">
         {receipts.map((r) => (
           <li key={r.id} className="receipt-row">
-            <button className="receipt-open" onClick={() => onOpen(r.id)}>
+            <button className="receipt-open" onClick={() => onOpen(r)}>
+              <span className="receipt-row-logo">
+                <img src={receiptOrigin(r.id).logo} alt={receiptOrigin(r.id).chain} />
+              </span>
               <div className="receipt-row-info">
                 <span className="receipt-row-name">{r.name}</span>
                 <span className="receipt-row-meta">
-                  {formatSavedDate(r.savedAt)} · {countOf(r.items)} מוצרים
+                  {receiptOrigin(r.id).chain} · {formatSavedDate(r.savedAt)}
                 </span>
               </div>
               <span className="receipt-row-total mono" dir="ltr">
