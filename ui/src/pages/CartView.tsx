@@ -51,6 +51,11 @@ export default function CartView() {
   const totalSave = store.isOrigin ? totalDiff < 0.005 : totalDiff >= -0.005
   const totalLabel = store.isOrigin ? 'יכולת לחסוך' : totalSave ? 'חוסכים' : 'יקר יותר'
 
+  // Explains what the per-item difference badge means, at the top of the list.
+  const listNote = store.isOrigin
+    ? 'ההפרש מציג כמה יקר כל מוצר מהמחיר הזול ביותר שנמצא'
+    : 'ההפרש מציג את החיסכון על כל מוצר לעומת המחיר בחנות המקורית'
+
   return (
     <div className="cartview">
       <header className="cartview-header">
@@ -77,17 +82,20 @@ export default function CartView() {
       </header>
 
       <div className="cartview-list">
+        <p className="cartview-note">{listNote}</p>
         {rows.map(({ it, i, price, lineTotal, amount, save }) => (
           <div className="citem" key={`${it.barcode}-${i}`}>
             <div className="citem-top">
               <span className="citem-name">{it.name}</span>
-              <SavingBadge amount={amount} save={save} size="sm" />
+              <div className="citem-vals">
+                <span className="citem-price mono" dir="ltr">
+                  {formatPrice(lineTotal)}
+                </span>
+                <SavingBadge amount={amount} save={save} size="sm" />
+              </div>
             </div>
             <div className="citem-meta">
-              {it.qty} × {formatPrice(price)} ={' '}
-              <span className="mono" dir="ltr">
-                {formatPrice(lineTotal)}
-              </span>
+              {it.qty} × {formatPrice(price)} ליחידה
               {store.isOrigin && !save && ' · יקר מהזול ביותר'}
             </div>
           </div>
