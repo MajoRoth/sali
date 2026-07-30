@@ -25,6 +25,8 @@ export default function Results() {
   const [savedId, setSavedId] = useState<string | null>(active.id)
   const [draftName, setDraftName] = useState('')
   const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const receiptTotal = totalOf(active.items)
   const receiptItemCount = countOf(active.items)
@@ -46,16 +48,25 @@ export default function Results() {
 
   const commitSave = async () => {
     const chosen = draftName.trim()
-    if (!chosen) return
-    if (receiptId) {
-      await renameReceipt(user?.id ?? null, receiptId, chosen)
-    } else {
-      const record = await createReceipt(user?.id ?? null, chosen, active.items)
-      setActiveReceipt(record.id)
-      setSavedId(record.id)
+    if (!chosen || saving) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      if (receiptId) {
+        await renameReceipt(user?.id ?? null, receiptId, chosen)
+      } else {
+        const record = await createReceipt(user?.id ?? null, chosen, active.items)
+        setActiveReceipt(record.id)
+        setSavedId(record.id)
+      }
+      setSavedName(chosen)
+      setEditing(false)
+    } catch (err) {
+      console.error('[sali] save failed:', err)
+      setSaveError('שמירת הקבלה נכשלה — בדקו שטבלת receipts קיימת ב־Supabase.')
+    } finally {
+      setSaving(false)
     }
-    setSavedName(chosen)
-    setEditing(false)
   }
 
   const startEdit = () => {
@@ -87,8 +98,8 @@ export default function Results() {
               maxLength={40}
               autoFocus={editing}
             />
-            <button className="btn btn-primary" type="submit" disabled={!draftName.trim()}>
-              שמירה
+            <button className="btn btn-primary" type="submit" disabled={!draftName.trim() || saving}>
+              {saving ? '…' : 'שמירה'}
             </button>
           </form>
         ) : (
@@ -100,6 +111,8 @@ export default function Results() {
           </>
         )}
       </header>
+
+      {saveError && <p className="save-error">{saveError}</p>}
 
       <div className="results-scroll">
         {/* The receipt itself — the baseline everything else is compared to. */}

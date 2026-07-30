@@ -67,6 +67,16 @@
   padding: 0 16px;
 }
 
+.save-error {
+  margin: 0;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+  background: rgba(229, 72, 77, 0.08);
+  text-align: center;
+}
+
 .results-scroll {
   flex: 1;
   overflow-y: auto;
