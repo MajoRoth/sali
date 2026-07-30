@@ -31,25 +31,29 @@ uv run sali-api
 It exposes `POST /api/receipts/extract` with a JSON body such as
 `{"url":"https://merchant.example/receipt/public-token"}`, plus
 `POST /api/receipts/extract-image` with one `multipart/form-data` field named
-`image`. Both return a reconciled Receipt Document. The image endpoint accepts
-JPEG, PNG, and WEBP receipt images up to 10 MiB; it does not support PDFs,
-HEIC, GIF, or multi-image receipts. The service does not store receipt URLs,
-images, or extraction results. By default, browser requests are allowed only
-from `http://localhost:5173`; set
+`image`, which returns a reconciled Receipt Document only when all line items
+can be read. `POST /api/receipts/extract-image-total` accepts the same upload
+but returns only a verified final total when a complete cart is unreadable. The
+image endpoints accept JPEG, PNG, and WEBP receipt images up to 10 MiB; they do
+not support PDFs, HEIC, GIF, or multi-image receipts. The service does not
+store receipt URLs, images, or extraction results. By default, browser requests
+are allowed only from `http://localhost:5173`; set
 `SALI_CORS_ORIGINS` to a comma-separated allowlist when using another trusted
 UI origin.
 
 For example:
 
 ```bash
-curl -X POST http://localhost:8000/api/receipts/extract-image \
+curl -X POST http://localhost:8000/api/receipts/extract-image-total \
   -F 'image=@/path/to/receipt.jpg;type=image/jpeg'
 ```
 
 ## UI
 
 Mobile-first React app in `ui/` (upload a receipt → compare the cart across nearby stores).
-Receipt OCR is mocked for now — any image you pick loads the sample cart in `ui/src/resources/`.
+Selecting or dropping a supported receipt image calls the local total-only API
+and shows the extracted receipt total. Cart comparison still uses the sample
+cart in `ui/src/resources/`.
 
 ```bash
 npm install --prefix ui
@@ -61,9 +65,7 @@ npm run dev --prefix ui
 
 Then open http://localhost:5173.
 
-For local URL extraction, set `VITE_API_BASE_URL=http://localhost:8000` in
-`ui/.env.local`. Camera and file extraction are not part of this URL-only API
-yet, so those controls are intentionally disabled.
+For local receipt extraction, run the API at `http://localhost:8000`.
 
 ### Auth & saved receipts (Supabase)
 

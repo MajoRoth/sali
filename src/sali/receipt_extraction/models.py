@@ -109,6 +109,14 @@ class ReceiptDocument(_StrictModel):
     warnings: list[str]
 
 
+class ReceiptImageTotalDocument(_StrictModel):
+    """A verified Receipt Image Total without an extractable complete cart."""
+
+    total: DecimalString
+    currency: CurrencyCode | None
+    warnings: list[str]
+
+
 class SemanticValidationError(ValueError):
     """A structurally valid model extraction that fails local receipt checks."""
 
@@ -362,6 +370,7 @@ __all__ = [
     "Merchant",
     "NormalizedReceipt",
     "ReceiptDocument",
+    "ReceiptImageTotalDocument",
     "SemanticValidationError",
     "Totals",
     "Transaction",

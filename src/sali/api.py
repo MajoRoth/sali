@@ -20,16 +20,20 @@ from sali.receipt_extraction.errors import (
 )
 from sali.receipt_extraction.hosted_extractor import OpenAIReceiptExtractor
 from sali.receipt_extraction.image_extractor import OpenAIReceiptImageExtractor
+from sali.receipt_extraction.image_total_extractor import (
+    OpenAIReceiptImageTotalExtractor,
+)
 from sali.receipt_extraction.image_validation import (
     MAX_RECEIPT_IMAGE_BYTES,
     ReceiptImageValidator,
 )
-from sali.receipt_extraction.models import ReceiptDocument
+from sali.receipt_extraction.models import ReceiptDocument, ReceiptImageTotalDocument
 from sali.receipt_extraction.receipt_image import ReceiptImage
 from sali.receipt_extraction.url_validation import ReceiptUrlValidator
 
 type ExtractReceipt = Callable[[str], ReceiptDocument]
 type ExtractReceiptImage = Callable[[ReceiptImage], ReceiptDocument]
+type ExtractReceiptImageTotal = Callable[[ReceiptImage], ReceiptImageTotalDocument]
 
 
 class ReceiptExtractionRequest(BaseModel):
@@ -90,10 +94,14 @@ def _safe_failure_message(code: str, *, is_image: bool) -> str:
 def create_app(
     extract_receipt: ExtractReceipt | None = None,
     extract_receipt_image: ExtractReceiptImage | None = None,
+    extract_receipt_image_total: ExtractReceiptImageTotal | None = None,
 ) -> FastAPI:
     """Create an API app; injection keeps contract tests independent of OpenAI."""
     extractor = extract_receipt or OpenAIReceiptExtractor().extract
     image_extractor = extract_receipt_image or OpenAIReceiptImageExtractor().extract
+    image_total_extractor = (
+        extract_receipt_image_total or OpenAIReceiptImageTotalExtractor().extract
+    )
     app = FastAPI(
         title="sali Receipt API",
         version="0.1.0",
@@ -116,7 +124,7 @@ def create_app(
     ) -> JSONResponse:
         message = (
             "A receipt image is required."
-            if request.url.path == "/api/receipts/extract-image"
+            if request.url.path.startswith("/api/receipts/extract-image")
             else "A receipt URL is required."
         )
         return _error(422, "invalid_request", message)
@@ -148,7 +156,7 @@ def create_app(
             exc.failure_code,
             _safe_failure_message(
                 exc.failure_code,
-                is_image=request.url.path == "/api/receipts/extract-image",
+                is_image=request.url.path.startswith("/api/receipts/extract-image"),
             ),
         )
 
@@ -177,6 +185,15 @@ def create_app(
         ReceiptUrlValidator().validate(request.url)
         return extractor(request.url)
 
+    async def validated_receipt_image(
+        image: UploadFile,
+    ) -> ReceiptImage:
+        try:
+            data = await image.read(MAX_RECEIPT_IMAGE_BYTES + 1)
+            return ReceiptImageValidator().validate(data, image.content_type)
+        finally:
+            await image.close()
+
     @app.post(
         "/api/receipts/extract-image",
         response_model=ReceiptDocument,
@@ -184,12 +201,18 @@ def create_app(
     )
     async def extract_image(image: Annotated[UploadFile, File(...)]) -> ReceiptDocument:
         """Extract one Receipt Image without retaining the upload or output."""
-        try:
-            data = await image.read(MAX_RECEIPT_IMAGE_BYTES + 1)
-            receipt_image = ReceiptImageValidator().validate(data, image.content_type)
-            return image_extractor(receipt_image)
-        finally:
-            await image.close()
+        return image_extractor(await validated_receipt_image(image))
+
+    @app.post(
+        "/api/receipts/extract-image-total",
+        response_model=ReceiptImageTotalDocument,
+        responses={422: {"model": ApiErrorResponse}, 503: {"model": ApiErrorResponse}},
+    )
+    async def extract_image_total(
+        image: Annotated[UploadFile, File(...)],
+    ) -> ReceiptImageTotalDocument:
+        """Extract a verified Receipt Image Total without retaining the upload."""
+        return image_total_extractor(await validated_receipt_image(image))
 
     return app
 

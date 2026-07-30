@@ -20,6 +20,11 @@ A Receipt Image whose readable visual evidence supports extraction of its
 transaction, total, and line-item facts.
 _Avoid_: Plausible receipt photo, assumed receipt
 
+**Receipt Image Total**:
+The final paid amount and currency read from a Receipt Image when the image
+supports the total but not a complete set of purchasable line items.
+_Avoid_: Reconciled Receipt, complete cart
+
 **Verified Digital Receipt**:
 A Digital Receipt whose accessible evidence establishes that it is
 merchant-issued purchase evidence and supports extraction of its transaction,
@@ -42,3 +47,8 @@ The versioned, API-ready JSON representation of a Reconciled Receipt, written
 by the POC only beneath its dedicated git-ignored local output directory and
 intended to become a future API response body.
 _Avoid_: CSV export, model response
+
+**Receipt Image Total Document**:
+An API response that represents a Receipt Image Total and explicitly warns that
+it does not contain a complete cart.
+_Avoid_: Receipt Document, normalized receipt

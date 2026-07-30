@@ -8,13 +8,21 @@ from sali.receipt_extraction.errors import (
     ReceiptInspectionFailure,
 )
 from sali.receipt_extraction.image_validation import MAX_RECEIPT_IMAGE_BYTES
-from sali.receipt_extraction.models import NormalizedReceipt, validate_and_reconcile
+from sali.receipt_extraction.models import (
+    NormalizedReceipt,
+    ReceiptImageTotalDocument,
+    validate_and_reconcile,
+)
 
 
 def receipt_document():
     receipt = NormalizedReceipt.model_validate(
         {
-            "merchant": {"name": "Example Market", "branch_name": None, "branch_number": None},
+            "merchant": {
+                "name": "Example Market",
+                "branch_name": None,
+                "branch_number": None,
+            },
             "transaction": {
                 "receipt_id": None,
                 "purchased_at": None,
@@ -68,7 +76,10 @@ def test_extract_rejects_an_invalid_url_with_a_safe_contract_error() -> None:
 
     assert response.status_code == 422
     assert response.json() == {
-        "error": {"code": "invalid_url", "message": "Use a public HTTPS link to a receipt."}
+        "error": {
+            "code": "invalid_url",
+            "message": "Use a public HTTPS link to a receipt.",
+        }
     }
 
 
@@ -87,13 +98,18 @@ def test_extract_hides_receipt_and_diagnostic_details_on_verification_failure() 
 
     assert response.status_code == 422
     assert response.json() == {
-        "error": {"code": "blocked", "message": "The receipt link could not be accessed."}
+        "error": {
+            "code": "blocked",
+            "message": "The receipt link could not be accessed.",
+        }
     }
 
 
 def test_extract_reports_service_failures_without_internal_detail() -> None:
     response = TestClient(
-        create_app(lambda _url: (_ for _ in ()).throw(HostedReceiptError("missing key")))
+        create_app(
+            lambda _url: (_ for _ in ()).throw(HostedReceiptError("missing key"))
+        )
     ).post("/api/receipts/extract", json={"url": "https://receipt.example/order/1"})
 
     assert response.status_code == 503
@@ -117,6 +133,32 @@ def test_extract_image_returns_the_same_receipt_document_without_persistence() -
     assert response.json()["receipt"]["items"][0]["name"] == "Example product"
     assert requested[0].media_type == "image/jpeg"
     assert requested[0].data == b"\xff\xd8\xff\xdb"
+    assert "receipt.jpg" not in response.text
+
+
+def test_extract_image_total_returns_a_partial_total_without_persistence() -> None:
+    requested = []
+
+    def extract(image):
+        requested.append(image)
+        return ReceiptImageTotalDocument(
+            total="268.54",
+            currency="ILS",
+            warnings=["partial: receipt line items were not extracted"],
+        )
+
+    response = TestClient(create_app(extract_receipt_image_total=extract)).post(
+        "/api/receipts/extract-image-total",
+        files={"image": ("receipt.jpg", b"\xff\xd8\xff\xdb", "image/jpeg")},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "total": "268.54",
+        "currency": "ILS",
+        "warnings": ["partial: receipt line items were not extracted"],
+    }
+    assert requested[0].media_type == "image/jpeg"
     assert "receipt.jpg" not in response.text
 
 
