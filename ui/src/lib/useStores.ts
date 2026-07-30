@@ -1,13 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import receipt from '../resources/receipt.json'
 import supermarkets from '../resources/supermarkets.json'
 import type { StoreOnMap, Supermarket } from './types'
 import { FALLBACK_LOCATION, distanceMeters } from './geo'
 
 const all = supermarkets as Supermarket[]
-
-export const receiptTotal = receipt.items.reduce((sum, i) => sum + i.qty * i.unitPrice, 0)
-export const receiptItemCount = receipt.items.reduce((n, i) => n + i.qty, 0)
 
 /** Locates the user, falling back silently to mock coords on deny/timeout. */
 export function useUserPosition(): [number, number] | null {

@@ -1,0 +1,204 @@
+/*
+ * Shared control language.
+ *
+ * Every interactive surface in the app — upload options, the new-receipt
+ * panel, sign-in / sign-out, the receipt name field — is built from these
+ * primitives so they read as one system:
+ *
+ *   .panel      dashed-accent container with a small caption
+ *   .tile       icon-above-label choice button (the "options" concept)
+ *   .field      text input
+ *   .btn        text button (primary / white / danger)
+ *   .icon-btn   square icon-only button, pairs with .field in a .field-row
+ */
+
+/* --- Panel ------------------------------------------------------------ */
+
+.panel {
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1.5px dashed rgba(0, 184, 119, 0.45);
+  background: var(--bg-elev);
+  box-shadow: var(--shadow-soft);
+}
+
+.panel-title {
+  padding-bottom: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+/* --- Tiles ------------------------------------------------------------ */
+
+.tile-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 4px;
+  border-radius: 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--accent-soft);
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.tile svg {
+  color: var(--accent-dark);
+  transition: color 0.15s ease;
+}
+
+.tile:active {
+  transform: scale(0.95);
+}
+
+.tile.active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.tile.active svg {
+  color: #ffffff;
+}
+
+/* Roomier variant for the full-size upload zone. */
+.tile-grid.lg {
+  gap: 10px;
+}
+
+.tile.lg {
+  gap: 9px;
+  padding: 18px 8px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+/* --- Fields ----------------------------------------------------------- */
+
+.field {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 13px;
+  border: 1.5px solid rgba(23, 37, 29, 0.14);
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field::placeholder {
+  color: var(--text-dim);
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.field.mono {
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.field-row {
+  display: flex;
+  gap: 8px;
+}
+
+.field-row .field {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --- Buttons ---------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 13px;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 184, 119, 0.3);
+}
+
+.btn-white {
+  background: #ffffff;
+  color: var(--text);
+  border: 1.5px solid rgba(23, 37, 29, 0.16);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-danger {
+  background: rgba(229, 72, 77, 0.08);
+  color: var(--danger);
+}
+
+.btn:disabled {
+  background: rgba(23, 37, 29, 0.14);
+  color: var(--text-dim);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.icon-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 184, 119, 0.3);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.icon-btn:disabled {
+  background: rgba(23, 37, 29, 0.14);
+  color: var(--text-dim);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* The submit arrow points "forward" — mirror it in this RTL layout. */
+.icon-btn.forward svg {
+  transform: scaleX(-1);
+}

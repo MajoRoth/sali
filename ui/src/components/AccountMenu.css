@@ -1,0 +1,122 @@
+.account {
+  position: relative;
+}
+
+.account-btn {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  color: var(--text-dim);
+  background: var(--bg-elev);
+  border: 1px solid rgba(23, 37, 29, 0.12);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.15s ease;
+}
+
+.account-btn:active {
+  transform: scale(0.94);
+}
+
+.account-btn.signed-in {
+  border-color: var(--accent);
+  color: #ffffff;
+  background: var(--accent);
+}
+
+.account-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-initial {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* --- Popover --- */
+
+.account-popover {
+  position: absolute;
+  top: 52px;
+  inset-inline-start: 0;
+  z-index: 60;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  text-align: start;
+  background: var(--bg-elev);
+  border: 1px solid rgba(23, 37, 29, 0.1);
+  box-shadow: 0 14px 36px rgba(23, 37, 29, 0.18);
+  animation: account-in 0.14s ease;
+}
+
+@keyframes account-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.account-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--accent);
+}
+
+.account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.account-name {
+  font-size: 15px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-email {
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: start;
+}
+
+.account-pitch {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
