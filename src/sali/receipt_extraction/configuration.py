@@ -3,9 +3,9 @@
 from pathlib import Path
 
 MODEL = "gpt-5.6-luna"
-REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 ENV_FILE = REPOSITORY_ROOT / ".env"
-OUTPUT_DIRECTORY = Path(__file__).with_name("output")
+OUTPUT_DIRECTORY = REPOSITORY_ROOT / "scripts" / "extract_recipe_data" / "output"
 OUTPUT_FILE = OUTPUT_DIRECTORY / "hosted_receipt.json"
 MAX_OUTPUT_TOKENS = 12_000
 MAX_URL_CHARS = 8_192

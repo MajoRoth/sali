@@ -5,13 +5,16 @@ description = "Analyze and compare supermarket prices, and recommend cheaper alt
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "fastapi>=0.115.0",
     "openai>=2.0.0",
     "playwright>=1.50.0",
     "pydantic>=2.10.0",
+    "uvicorn[standard]>=0.30.0",
 ]
 
 [project.scripts]
 sali = "sali.main:main"
+sali-api = "sali.api:main"
 
 [build-system]
 requires = ["hatchling"]

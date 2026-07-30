@@ -1,0 +1,132 @@
+"""HTTP API for extracting a verified Digital Receipt from a public URL."""
+
+from __future__ import annotations
+
+import os
+from collections.abc import Callable
+
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict
+
+from sali.receipt_extraction.errors import (
+    HostedReceiptError,
+    InvalidReceiptUrlError,
+    ReceiptInspectionFailure,
+)
+from sali.receipt_extraction.hosted_extractor import OpenAIReceiptExtractor
+from sali.receipt_extraction.models import ReceiptDocument
+from sali.receipt_extraction.url_validation import ReceiptUrlValidator
+
+type ExtractReceipt = Callable[[str], ReceiptDocument]
+
+
+class ReceiptExtractionRequest(BaseModel):
+    """The untrusted receipt URL supplied by the browser."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    url: str
+
+
+class ApiError(BaseModel):
+    code: str
+    message: str
+
+
+class ApiErrorResponse(BaseModel):
+    error: ApiError
+
+
+def _cors_origins() -> list[str]:
+    configured = os.environ.get("SALI_CORS_ORIGINS", "http://localhost:5173")
+    return [origin.strip() for origin in configured.split(",") if origin.strip()]
+
+
+def _error(status_code: int, code: str, message: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={"error": {"code": code, "message": message}},
+    )
+
+
+def _safe_failure_message(code: str) -> str:
+    messages = {
+        "blocked": "The receipt link could not be accessed.",
+        "insufficient_evidence": "The link did not contain enough receipt information.",
+        "not_receipt": "The link did not lead to a Digital Receipt.",
+        "refused": "The receipt link could not be processed.",
+        "unreachable": "The receipt link could not be reached.",
+    }
+    return messages.get(code, "The receipt link could not be verified.")
+
+
+def create_app(extract_receipt: ExtractReceipt | None = None) -> FastAPI:
+    """Create an API app; injection keeps contract tests independent of OpenAI."""
+    extractor = extract_receipt or OpenAIReceiptExtractor().extract
+    app = FastAPI(
+        title="sali Digital Receipt API",
+        version="0.1.0",
+        description="Extract a reconciled Receipt Document from one public HTTPS URL.",
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins(),
+        allow_credentials=False,
+        allow_methods=["POST"],
+        allow_headers=["Content-Type"],
+    )
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(_request: Request, _exc: RequestValidationError) -> JSONResponse:
+        return _error(422, "invalid_request", "A receipt URL is required.")
+
+    @app.exception_handler(InvalidReceiptUrlError)
+    async def invalid_url(_request: Request, _exc: InvalidReceiptUrlError) -> JSONResponse:
+        return _error(422, "invalid_url", "Use a public HTTPS link to a receipt.")
+
+    @app.exception_handler(ReceiptInspectionFailure)
+    async def inspection_failed(
+        _request: Request,
+        exc: ReceiptInspectionFailure,
+    ) -> JSONResponse:
+        return _error(422, exc.failure_code, _safe_failure_message(exc.failure_code))
+
+    @app.exception_handler(HostedReceiptError)
+    async def extraction_unavailable(
+        _request: Request,
+        _exc: HostedReceiptError,
+    ) -> JSONResponse:
+        return _error(
+            503,
+            "extraction_unavailable",
+            "Receipt extraction is temporarily unavailable. Please try again.",
+        )
+
+    @app.get("/health", include_in_schema=False)
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
+
+    @app.post(
+        "/api/receipts/extract",
+        response_model=ReceiptDocument,
+        responses={422: {"model": ApiErrorResponse}, 503: {"model": ApiErrorResponse}},
+    )
+    def extract(request: ReceiptExtractionRequest) -> ReceiptDocument:
+        """Synchronously extract one receipt without retaining its URL or output."""
+        ReceiptUrlValidator().validate(request.url)
+        return extractor(request.url)
+
+    return app
+
+
+app = create_app()
+
+
+def main() -> None:
+    """Run the trusted local development server."""
+    import uvicorn
+
+    uvicorn.run("sali.api:app", host="127.0.0.1", port=8000, reload=True)

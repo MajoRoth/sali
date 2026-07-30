@@ -44,3 +44,4 @@ docs/*
 !docs/adr/
 !docs/adr/*.md
 scripts/extract_recipe_data/output/
+.wayfinder/

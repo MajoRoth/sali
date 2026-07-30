@@ -20,6 +20,22 @@ cp .env.example .env
 uv run sali
 ```
 
+## Digital Receipt API
+
+Run the local FastAPI service in a separate terminal:
+
+```bash
+uv run sali-api
+```
+
+It exposes `POST /api/receipts/extract` with a JSON body such as
+`{"url":"https://merchant.example/receipt/public-token"}` and returns a
+reconciled Receipt Document. The service accepts public HTTPS receipt URLs only
+and does not store receipt URLs or extraction results. By default, browser
+requests are allowed only from `http://localhost:5173`; set
+`SALI_CORS_ORIGINS` to a comma-separated allowlist when using another trusted
+UI origin.
+
 ## UI
 
 Mobile-first React app in `ui/` (upload a receipt → compare the cart across nearby stores).
@@ -34,6 +50,10 @@ npm run dev --prefix ui
 ```
 
 Then open http://localhost:5173.
+
+For local URL extraction, set `VITE_API_BASE_URL=http://localhost:8000` in
+`ui/.env.local`. Camera and file extraction are not part of this URL-only API
+yet, so those controls are intentionally disabled.
 
 ### Auth & saved receipts (Supabase)
 

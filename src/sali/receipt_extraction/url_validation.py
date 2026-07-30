@@ -8,10 +8,10 @@ from urllib.parse import urlsplit, urlunsplit
 
 if __package__:
     from .configuration import MAX_URL_CHARS
-    from .errors import HostedReceiptError
+    from .errors import InvalidReceiptUrlError
 else:
     from configuration import MAX_URL_CHARS
-    from errors import HostedReceiptError
+    from errors import InvalidReceiptUrlError
 
 UNSAFE_URL_CHARS_RE = re.compile(r"[\x00-\x20\x7f\\]")
 
@@ -24,16 +24,16 @@ class ReceiptUrlValidator:
 
     def validate(self, url: str) -> tuple[str, str]:
         if not isinstance(url, str) or not url or len(url) > self._max_url_chars:
-            raise HostedReceiptError("Digital Receipt URL is invalid")
+            raise InvalidReceiptUrlError("Digital Receipt URL is invalid")
         if url != url.strip() or UNSAFE_URL_CHARS_RE.search(url):
-            raise HostedReceiptError("Digital Receipt URL is invalid")
+            raise InvalidReceiptUrlError("Digital Receipt URL is invalid")
 
         try:
             parsed = urlsplit(url)
             hostname = parsed.hostname
             port = parsed.port
         except ValueError as exc:
-            raise HostedReceiptError("Digital Receipt URL is invalid") from exc
+            raise InvalidReceiptUrlError("Digital Receipt URL is invalid") from exc
 
         if (
             parsed.scheme.casefold() != "https"
@@ -43,7 +43,7 @@ class ReceiptUrlValidator:
             or "@" in parsed.netloc
             or port not in (None, 443)
         ):
-            raise HostedReceiptError("Digital Receipt URL must be public HTTPS")
+            raise InvalidReceiptUrlError("Digital Receipt URL must be public HTTPS")
 
         normalized_host = self._normalize_hostname(hostname)
         if (
@@ -53,7 +53,9 @@ class ReceiptUrlValidator:
             or normalized_host == "localhost"
             or normalized_host.endswith((".localhost", ".local"))
         ):
-            raise HostedReceiptError("Digital Receipt URL must use a public hostname")
+            raise InvalidReceiptUrlError(
+                "Digital Receipt URL must use a public hostname"
+            )
 
         normalized_url = urlunsplit(
             (
@@ -74,5 +76,5 @@ class ReceiptUrlValidator:
             try:
                 return hostname.rstrip(".").encode("idna").decode("ascii").casefold()
             except UnicodeError as exc:
-                raise HostedReceiptError("Digital Receipt URL is invalid") from exc
-        raise HostedReceiptError("Digital Receipt URL must use a public hostname")
+                raise InvalidReceiptUrlError("Digital Receipt URL is invalid") from exc
+        raise InvalidReceiptUrlError("Digital Receipt URL must use a public hostname")

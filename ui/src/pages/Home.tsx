@@ -20,6 +20,7 @@ import './Home.css'
 const FILE_STAGES = ['קוראים את הקבלה…', 'מזהים מוצרים…', 'מחפשים סופרים קרובים…']
 const URL_STAGES = ['טוענים את הקבלה מהקישור…', ...FILE_STAGES]
 const STAGE_MS = 750
+const RECEIPT_API_URL = 'http://localhost:8000/api/receipts/extract'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -47,13 +48,33 @@ export default function Home() {
     }
   }, [user, authLoading])
 
-  // Mock OCR: the file or link is ignored — we play the loading stages,
-  // then either continue or stop at the sign-in gate.
+  // Mock OCR: file scans retain the current placeholder behavior.
   const startScan = (from: 'file' | 'url') => {
     setActiveReceipt(null)
     setPendingScan(scannedItems)
     setStage(0)
     setStages(from === 'url' ? URL_STAGES : FILE_STAGES)
+  }
+
+  const alertReceiptTotal = async (url: string) => {
+    try {
+      const response = await fetch(RECEIPT_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      })
+      if (!response.ok) throw new Error('receipt extraction failed')
+      const receipt = await response.json() as {
+        receipt: { totals: { total: string }, transaction: { currency: string | null } }
+      }
+      const currency = receipt.receipt.transaction.currency
+      const amount = currency === 'ILS'
+        ? `₪${receipt.receipt.totals.total}`
+        : `${receipt.receipt.totals.total}${currency ? ` ${currency}` : ''}`
+      window.alert(`סך הכול בקבלה: ${amount}`)
+    } catch {
+      window.alert('לא הצלחנו לחלץ את סכום הקבלה.')
+    }
   }
 
   useEffect(() => {
@@ -115,9 +136,10 @@ export default function Home() {
           onDelete={removeReceipt}
           onCreateEmpty={createEmpty}
           onScan={startScan}
+          onUrlSubmit={alertReceiptTotal}
         />
       ) : (
-        <UploadHome onScan={startScan} />
+        <UploadHome onScan={startScan} onUrlSubmit={alertReceiptTotal} />
       )}
 
       {stages && (
@@ -146,9 +168,10 @@ export default function Home() {
 
 interface UploadProps {
   onScan: (from: 'file' | 'url') => void
+  onUrlSubmit: (url: string) => Promise<void>
 }
 
-function UploadHome({ onScan }: UploadProps) {
+function UploadHome({ onScan, onUrlSubmit }: UploadProps) {
   const [dragOver, setDragOver] = useState(false)
   const [url, setUrl] = useState('')
   const cameraRef = useRef<HTMLInputElement>(null)
@@ -204,7 +227,7 @@ function UploadHome({ onScan }: UploadProps) {
           className="field-row url-form"
           onSubmit={(e) => {
             e.preventDefault()
-            if (url.trim()) onScan('url')
+            if (url.trim()) void onUrlSubmit(url.trim())
           }}
         >
           <input
@@ -255,6 +278,7 @@ interface ListProps {
   onDelete: (id: string) => void
   onCreateEmpty: () => void
   onScan: (from: 'file' | 'url') => void
+  onUrlSubmit: (url: string) => Promise<void>
 }
 
 function ReceiptListHome({
@@ -264,6 +288,7 @@ function ReceiptListHome({
   onDelete,
   onCreateEmpty,
   onScan,
+  onUrlSubmit,
 }: ListProps) {
   const [urlOpen, setUrlOpen] = useState(false)
   const [url, setUrl] = useState('')
@@ -319,7 +344,7 @@ function ReceiptListHome({
               e.preventDefault()
               if (url.trim()) {
                 setUrlOpen(false)
-                onScan('url')
+                void onUrlSubmit(url.trim())
               }
             }}
           >

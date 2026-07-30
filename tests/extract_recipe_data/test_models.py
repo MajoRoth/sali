@@ -7,7 +7,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from scripts.extract_recipe_data.models import (
+from sali.receipt_extraction.models import (
     NormalizedReceipt,
     SemanticValidationError,
     validate_and_reconcile,

@@ -9,8 +9,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from scripts.extract_recipe_data import extract_receipt_via_openai as hosted
-from scripts.extract_recipe_data.models import NormalizedReceipt
+from sali.receipt_extraction import extract_receipt_via_openai as hosted
+from sali.receipt_extraction.models import NormalizedReceipt
 
 
 def valid_receipt(*, total: str = "10.00") -> NormalizedReceipt:

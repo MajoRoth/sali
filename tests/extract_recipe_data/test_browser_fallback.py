@@ -7,14 +7,14 @@ from unittest.mock import Mock
 
 import pytest
 
-from scripts.extract_recipe_data.errors import (
+from sali.receipt_extraction.errors import (
     HostedReceiptError,
     ReceiptInspectionFailure,
 )
-from scripts.extract_recipe_data.fallback_extractor import AutoReceiptExtractor
-from scripts.extract_recipe_data.hosted_extractor import HostedReceiptInspection
-from scripts.extract_recipe_data.models import NormalizedReceipt, validate_and_reconcile
-from scripts.extract_recipe_data.rendered_evidence import (
+from sali.receipt_extraction.fallback_extractor import AutoReceiptExtractor
+from sali.receipt_extraction.hosted_extractor import HostedReceiptInspection
+from sali.receipt_extraction.models import NormalizedReceipt, validate_and_reconcile
+from sali.receipt_extraction.rendered_evidence import (
     BrowserReceiptRenderer,
     PublicNetworkPolicy,
     RenderedEvidenceReceiptExtractor,
@@ -181,7 +181,7 @@ def test_browser_network_policy_rejects_private_and_insecure_destinations(
         return [(None, None, None, None, ("127.0.0.1", 443))]
 
     monkeypatch.setattr(
-        "scripts.extract_recipe_data.rendered_evidence.socket.getaddrinfo",
+        "sali.receipt_extraction.rendered_evidence.socket.getaddrinfo",
         private_address,
     )
     policy = PublicNetworkPolicy()
@@ -199,7 +199,7 @@ def test_browser_network_policy_accepts_public_https(
         return [(None, None, None, None, ("93.184.216.34", 443))]
 
     monkeypatch.setattr(
-        "scripts.extract_recipe_data.rendered_evidence.socket.getaddrinfo",
+        "sali.receipt_extraction.rendered_evidence.socket.getaddrinfo",
         public_address,
     )
 

@@ -8,11 +8,11 @@ from pathlib import Path
 
 import pytest
 
-from scripts.extract_recipe_data.credentials import ApiKeyProvider
-from scripts.extract_recipe_data.document_writer import ReceiptDocumentWriter
-from scripts.extract_recipe_data.errors import HostedReceiptError, OutputExistsError
-from scripts.extract_recipe_data.models import NormalizedReceipt, validate_and_reconcile
-from scripts.extract_recipe_data.url_validation import ReceiptUrlValidator
+from sali.receipt_extraction.credentials import ApiKeyProvider
+from sali.receipt_extraction.document_writer import ReceiptDocumentWriter
+from sali.receipt_extraction.errors import HostedReceiptError, OutputExistsError
+from sali.receipt_extraction.models import NormalizedReceipt, validate_and_reconcile
+from sali.receipt_extraction.url_validation import ReceiptUrlValidator
 
 
 def receipt_document():

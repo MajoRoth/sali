@@ -7,6 +7,10 @@ class HostedReceiptError(RuntimeError):
     """A safe failure from the hosted-browsing receipt experiment."""
 
 
+class InvalidReceiptUrlError(HostedReceiptError):
+    """The caller supplied a URL outside the public Digital Receipt policy."""
+
+
 FailureCode = Literal[
     "none",
     "unreachable",
@@ -48,6 +52,7 @@ class OutputExistsError(FileExistsError):
 __all__ = [
     "FailureCode",
     "HostedReceiptError",
+    "InvalidReceiptUrlError",
     "OutputExistsError",
     "ReceiptInspectionFailure",
 ]
