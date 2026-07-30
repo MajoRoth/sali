@@ -1,3 +1,5 @@
+"""Tests for normalized receipt models and reconciliation."""
+
 from __future__ import annotations
 
 import json
