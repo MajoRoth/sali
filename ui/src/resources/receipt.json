@@ -1,0 +1,19 @@
+{
+  "store": "Scanned receipt",
+  "date": "2026-07-30",
+  "currency": "ILS",
+  "items": [
+    { "name": "Milk 3% 1L", "barcode": "7290000042563", "qty": 2, "unitPrice": 6.9 },
+    { "name": "White bread", "barcode": "7290000123456", "qty": 1, "unitPrice": 8.5 },
+    { "name": "Eggs L (12)", "barcode": "7290000987654", "qty": 1, "unitPrice": 13.9 },
+    { "name": "Tomatoes 1kg", "barcode": "7290001111111", "qty": 1, "unitPrice": 7.9 },
+    { "name": "Cucumbers 1kg", "barcode": "7290002222222", "qty": 1, "unitPrice": 6.4 },
+    { "name": "Chicken breast 1kg", "barcode": "7290003333333", "qty": 1, "unitPrice": 39.9 },
+    { "name": "Basmati rice 1kg", "barcode": "7290004444444", "qty": 1, "unitPrice": 12.9 },
+    { "name": "Olive oil 750ml", "barcode": "7290005555555", "qty": 1, "unitPrice": 34.9 },
+    { "name": "Cottage cheese 5%", "barcode": "7290006666666", "qty": 2, "unitPrice": 5.9 },
+    { "name": "Greek yogurt", "barcode": "7290007777777", "qty": 3, "unitPrice": 4.5 },
+    { "name": "Bananas 1kg", "barcode": "7290008888888", "qty": 1, "unitPrice": 7.9 },
+    { "name": "Penne pasta 500g", "barcode": "7290009999999", "qty": 2, "unitPrice": 6.2 }
+  ]
+}
