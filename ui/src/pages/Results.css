@@ -1,0 +1,273 @@
+.results {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.results.loading-state {
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* --- Header --- */
+
+.results-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: max(16px, env(safe-area-inset-top)) 18px 12px;
+  border-bottom: 1px solid rgba(23, 37, 29, 0.07);
+}
+
+.results-header h1 {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.results-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px 8px;
+}
+
+/* --- Scanned receipt (the baseline) --- */
+
+.receipt-card {
+  position: relative;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: linear-gradient(150deg, #ffffff, var(--accent-soft));
+  border: 2px solid var(--accent);
+  box-shadow: 0 8px 26px rgba(0, 184, 119, 0.16);
+}
+
+.receipt-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.receipt-total {
+  margin-top: 10px;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.receipt-meta {
+  margin-top: 2px;
+  font-size: 13.5px;
+  color: var(--text-dim);
+}
+
+.receipt-saving {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(0, 184, 119, 0.4);
+  font-size: 14px;
+  color: var(--accent-dark);
+}
+
+.receipt-saving strong {
+  font-size: 15px;
+}
+
+/* --- List --- */
+
+.list-subhead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 20px 2px 10px;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.subhead-note {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.store-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+}
+
+.store-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 11px;
+  border-radius: 16px;
+  background: var(--bg-elev);
+  border: 1.5px solid rgba(23, 37, 29, 0.08);
+  box-shadow: var(--shadow-soft);
+}
+
+.store-row.best {
+  border-color: var(--accent);
+  box-shadow: 0 6px 20px rgba(0, 184, 119, 0.18);
+}
+
+.store-row.online {
+  background: var(--online-soft);
+  border-color: rgba(59, 111, 246, 0.22);
+}
+
+.row-rank {
+  width: 14px;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.row-logo {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(23, 37, 29, 0.08);
+  overflow: hidden;
+}
+
+.row-logo img {
+  max-width: 34px;
+  max-height: 28px;
+  object-fit: contain;
+}
+
+.row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.row-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.row-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* "470 m" reads LTR, "משלוח ₪29.00" reads RTL — let each string decide. */
+.row-where {
+  unicode-bidi: plaintext;
+}
+
+.online-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--online);
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.best-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.row-diff {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.row-diff.cheaper {
+  color: var(--accent-dark);
+}
+
+.row-diff.pricier {
+  color: var(--danger);
+}
+
+.row-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+  min-width: 98px;
+}
+
+.price-best {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.price-true {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.price-swaps {
+  font-size: 11px;
+  color: var(--text-dim);
+  opacity: 0.8;
+}
+
+/* --- CTA --- */
+
+.results-cta {
+  padding: 12px 18px max(14px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(23, 37, 29, 0.07);
+  background: var(--bg-elev);
+}
+
+.map-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 15px;
+  border-radius: 16px;
+  font-size: 16.5px;
+  font-weight: 700;
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(0, 184, 119, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.map-btn:active {
+  transform: scale(0.98);
+}
