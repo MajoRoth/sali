@@ -1,0 +1,3 @@
+[submodule "embed-description"]
+	path = embed-description
+	url = https://github.com/maximchernitsky/embed-description
