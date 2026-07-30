@@ -189,19 +189,57 @@ receipt resolves nothing, because those SKUs are not in a supermarket catalogue.
 
 ### Price database
 
-Cart comparison reads from the Open Supermarkets API, configured with
-`SALI_PRICES_API_URL` (default `http://34.165.235.189:8000`).
+Two deployments of the Open Supermarkets API exist, and **neither can answer the
+question alone** — each has exactly what the other is missing:
 
-**That database currently contains no price listings.** Its product catalogue,
-58 chains, and 1,735 stores are real and matching works against them, but every
-chain reports `currentProductListings: 0`, so `complete_carts` and
-`partial_carts` come back empty and the response carries:
+| | `data.openisraelisupermarkets.co.il` | `34.165.235.189:8000` |
+| --- | --- | --- |
+| Auth | bearer token | none |
+| Price listings | yes (when up) | **none** — `/health/pipeline` reports `totalChains: 0` |
+| Store coordinates | **none** | yes, on every store |
+| Coordinate search | — | `/stores/nearby?lat&lng&radius`, answers in milliseconds |
+
+So the app reads **prices** from the first (`SALI_PRICES_API_URL`) and **map
+pins** from the second (`SALI_GEOCODING_API_URL`), joining a branch across the
+two on `(chainCode, storeNumber)` — the chain's GLN plus the branch number the
+chain itself assigns. Both publish those, and together they identify a branch
+independently of either one's internal ids. See `src/sali/nearby/stores.py`.
+
+The join is partial: a branch the pricing instance does not list is still drawn
+on the map, just without prices. That is the intended degradation — an unpriced
+map is useful, an empty one is not.
+
+#### Upstream reliability
+
+The pricing instance is slow and frequently down. A single barcode lookup takes
+about five seconds when healthy, and there is no bulk endpoint, so the client:
+
+* runs lookups concurrently and caches them for the process,
+* retries once, then tolerates a failure rather than failing the whole cart,
+* and trips a **circuit breaker** after `CIRCUIT_BREAKER_THRESHOLD` consecutive
+  failures, so a fifty-line receipt against a dead host costs one fast failure
+  instead of fifty timeouts.
+
+When nothing can be priced the response says so explicitly:
 
 ```
 "no store prices: the price database has no current listings for any matched product"
 ```
 
-Ranking is exercised by the tests in `tests/cart_comparison/test_ranking.py`
+#### Simulated prices (development only)
+
+Because the price database is often unable to price anything at all, the
+comparison screens can be run against **simulated** figures by setting
+`SALI_FALLBACK_PRICES=1`. See `src/sali/nearby/fallback.py`.
+
+**These are not real prices.** They are derived from the shopper's own receipt,
+varied per store by a deterministic hash, purely so the screens have
+plausibly-shaped data to lay out. This is off unless explicitly enabled; every
+response it touches carries a `demo prices:` warning and every store it builds
+is flagged `simulated: true`, and the UI renders a non-dismissible banner and
+suppresses the savings celebration whenever it sees them.
+
+Ranking against real data is exercised by `tests/cart_comparison/test_ranking.py`
 and starts returning stores as soon as listings land — no code change needed.
 
 ### How URL extraction works
@@ -259,7 +297,11 @@ populated, because they are answers a shopper can act on.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | — | Required for every extraction endpoint; read from the process or `.env` |
-| `SALI_PRICES_API_URL` | `http://34.165.235.189:8000` | The Open Supermarkets instance cart comparison reads |
+| `SALI_PRICES_API_URL` | `https://data.openisraelisupermarkets.co.il` | The Open Supermarkets instance prices are read from |
+| `SALI_GEOCODING_API_URL` | `http://34.165.235.189:8000` | The instance store coordinates are read from |
+| `SUPERMARKET_API_KEY` | bundled public token | Bearer token for the pricing instance |
+| `SALI_FALLBACK_PRICES` | unset | Set to `1` to simulate prices when the database is down — **development only, not real prices** |
+| `SALI_STORE_DIRECTORY_TTL_SECONDS` | `21600` | How long the cross-instance pricing index is cached |
 | `SALI_CORS_ORIGINS` | `http://localhost:5173` | Comma-separated browser origins allowed to call the API |
 | `SALI_LOG_FAILURE_DETAIL` | unset | Set to `1` to log model- and page-derived failure text while debugging |
 

@@ -1,5 +1,6 @@
 import os
 import sys
+
 import pytest
 
 # Ensure Hebrew characters can be printed on Windows
@@ -8,9 +9,9 @@ if sys.stdout.encoding != 'utf-8':
 
 from open_supermarkets_api_client import AuthenticatedClient, Client
 from open_supermarkets_api_client.api.products import (
-    search_products,
+    compare_product_prices,
     get_product_by_barcode,
-    compare_product_prices
+    search_products,
 )
 from open_supermarkets_api_client.api.stores import list_stores
 

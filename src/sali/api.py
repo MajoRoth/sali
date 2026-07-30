@@ -8,7 +8,7 @@ import uuid
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import FastAPI, File, Form, Request, UploadFile
+from fastapi import FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -17,6 +17,14 @@ from pydantic import BaseModel, ConfigDict
 from sali.cart_comparison.catalog import CatalogUnavailableError
 from sali.cart_comparison.models import CartComparison
 from sali.cart_comparison.service import CartComparisonService
+from sali.nearby.models import (
+    GeoPoint,
+    NearbyRequest,
+    NearbyResponse,
+    NearbyUrlRequest,
+)
+from sali.nearby.service import NearbyService
+from sali.nearby.stores import default_directory
 from sali.receipt_extraction.errors import (
     HostedReceiptError,
     InvalidReceiptImageError,
@@ -40,6 +48,33 @@ type ExtractReceipt = Callable[[str], ReceiptDocument]
 type ExtractReceiptImage = Callable[[ReceiptImage], ReceiptDocument]
 type ExtractReceiptImageTotal = Callable[[ReceiptImage], ReceiptImageTotalDocument]
 type CompareCart = Callable[[ReceiptDocument, str | None], CartComparison]
+type PriceNearby = Callable[[ReceiptDocument, GeoPoint, int, int, bool], NearbyResponse]
+type ListNearbyStores = Callable[[float, float, int, int], "NearbyStoreList"]
+
+
+class NearbyStoreSummary(BaseModel):
+    """One real branch near the shopper, with no claim about prices."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    store_id: str
+    chain_id: str
+    chain: str
+    branch: str
+    city: str | None
+    address: str | None
+    lat: float
+    lng: float
+    distance_m: float
+
+
+class NearbyStoreList(BaseModel):
+    """The branches around a point — true whether or not any price is known."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    stores: list[NearbyStoreSummary]
+    total_in_radius: int
 
 
 class ReceiptExtractionRequest(BaseModel):
@@ -178,11 +213,55 @@ def _safe_failure_message(code: str, *, is_image: bool) -> str:
     )
 
 
+def _default_price_nearby(
+    document: ReceiptDocument,
+    location: GeoPoint,
+    radius_m: int,
+    limit: int,
+    include_online: bool,
+) -> NearbyResponse:
+    return NearbyService().price(
+        document,
+        location=location,
+        radius_m=radius_m,
+        limit=limit,
+        include_online=include_online,
+    )
+
+
+def _default_list_nearby_stores(
+    lat: float,
+    lng: float,
+    radius_m: int,
+    limit: int,
+) -> NearbyStoreList:
+    found = default_directory().nearby((lat, lng), radius_m)
+    return NearbyStoreList(
+        stores=[
+            NearbyStoreSummary(
+                store_id=record.store.store_id,
+                chain_id=record.store.chain_id,
+                chain=record.store.chain_name,
+                branch=record.store.store_name,
+                city=record.store.city,
+                address=record.store.address,
+                lat=record.store.lat,  # type: ignore[arg-type]
+                lng=record.store.lng,  # type: ignore[arg-type]
+                distance_m=round(record.distance_m, 1),
+            )
+            for record in found[:limit]
+        ],
+        total_in_radius=len(found),
+    )
+
+
 def create_app(
     extract_receipt: ExtractReceipt | None = None,
     extract_receipt_image: ExtractReceiptImage | None = None,
     extract_receipt_image_total: ExtractReceiptImageTotal | None = None,
     compare_cart: CompareCart | None = None,
+    price_nearby: PriceNearby | None = None,
+    list_nearby_stores: ListNearbyStores | None = None,
 ) -> FastAPI:
     """Create an API app; injection keeps contract tests independent of OpenAI."""
     extractor = extract_receipt or OpenAIReceiptExtractor().extract
@@ -193,6 +272,8 @@ def create_app(
     cart_comparer = compare_cart or (
         lambda document, city: CartComparisonService().compare(document, city=city)
     )
+    nearby_pricer = price_nearby or _default_price_nearby
+    store_lister = list_nearby_stores or _default_list_nearby_stores
     app = FastAPI(
         title="sali Receipt API",
         version="0.2.0",
@@ -206,7 +287,7 @@ def create_app(
         CORSMiddleware,
         allow_origins=_cors_origins(),
         allow_credentials=False,
-        allow_methods=["POST"],
+        allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
 
@@ -214,7 +295,16 @@ def create_app(
     async def invalid_request(
         request: Request, _exc: RequestValidationError
     ) -> JSONResponse:
-        if request.url.path == "/api/carts/compare":
+        path = request.url.path
+        if path == "/api/stores/nearby":
+            message = "A lat and lng are required."
+        elif path == "/api/carts/nearby":
+            message = "A Receipt Document and a location are required."
+        elif path == "/api/carts/nearby-url":
+            message = "A receipt URL and a location are required."
+        elif path == "/api/carts/nearby-image":
+            message = "A receipt image and a location are required."
+        elif path == "/api/carts/compare":
             message = "A Receipt Document is required."
         elif _reads_an_image(request):
             message = "A receipt image is required."
@@ -361,6 +451,75 @@ def create_app(
         """Extract a Receipt Image and rank stores for its cart in one call."""
         document = image_extractor(await validated_receipt_image(image))
         return cart_comparer(document, city)
+
+    # -- Nearby: the app's own view, in `docs/nearby-schema.md` terms ---------
+    #
+    # These are camelCase on the wire while everything above is snake_case. See
+    # `sali.nearby.models` for why that split is deliberate and contained.
+
+    @app.get(
+        "/api/stores/nearby",
+        response_model=NearbyStoreList,
+        responses={422: {"model": ApiErrorResponse}, 503: {"model": ApiErrorResponse}},
+    )
+    def stores_nearby(
+        lat: Annotated[float, Query(ge=-90.0, le=90.0)],
+        lng: Annotated[float, Query(ge=-180.0, le=180.0)],
+        radius_m: Annotated[int, Query(gt=0, le=50_000)] = 5_000,
+        limit: Annotated[int, Query(gt=0, le=200)] = 50,
+    ) -> NearbyStoreList:
+        """The real branches around a point, whether or not prices are known."""
+        return store_lister(lat, lng, radius_m, limit)
+
+    @app.post(
+        "/api/carts/nearby",
+        response_model=NearbyResponse,
+        responses={422: {"model": ApiErrorResponse}, 503: {"model": ApiErrorResponse}},
+    )
+    def nearby(request: NearbyRequest) -> NearbyResponse:
+        """Price an extracted receipt against the stores around the shopper."""
+        return nearby_pricer(
+            request.document,
+            request.location,
+            request.radius_m,
+            request.limit,
+            request.include_online,
+        )
+
+    @app.post(
+        "/api/carts/nearby-url",
+        response_model=NearbyResponse,
+        responses={422: {"model": ApiErrorResponse}, 503: {"model": ApiErrorResponse}},
+    )
+    def nearby_url(request: NearbyUrlRequest) -> NearbyResponse:
+        """Extract a Digital Receipt and price it nearby, in one call."""
+        ReceiptUrlValidator().validate(request.url)
+        return nearby_pricer(
+            extractor(request.url),
+            request.location,
+            request.radius_m,
+            request.limit,
+            request.include_online,
+        )
+
+    @app.post(
+        "/api/carts/nearby-image",
+        response_model=NearbyResponse,
+        responses={422: {"model": ApiErrorResponse}, 503: {"model": ApiErrorResponse}},
+    )
+    async def nearby_image(
+        image: Annotated[UploadFile, File(...)],
+        lat: Annotated[float, Form(ge=-90.0, le=90.0)],
+        lng: Annotated[float, Form(ge=-180.0, le=180.0)],
+        radius_m: Annotated[int, Form(gt=0, le=50_000)] = 5_000,
+        limit: Annotated[int, Form(gt=0, le=200)] = 30,
+        include_online: Annotated[bool, Form()] = False,
+    ) -> NearbyResponse:
+        """Extract a Receipt Image and price it nearby, in one call."""
+        document = image_extractor(await validated_receipt_image(image))
+        return nearby_pricer(
+            document, GeoPoint(lat=lat, lng=lng), radius_m, limit, include_online
+        )
 
     return app
 

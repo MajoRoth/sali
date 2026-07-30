@@ -7,7 +7,10 @@ if sys.stdout.encoding != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
 
 from open_supermarkets_api_client import AuthenticatedClient, Client
-from open_supermarkets_api_client.api.products import get_product_by_barcode, compare_product_prices
+from open_supermarkets_api_client.api.products import (
+    compare_product_prices,
+    get_product_by_barcode,
+)
 
 BASE_URL = "https://data.openisraelisupermarkets.co.il/"
 

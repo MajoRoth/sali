@@ -417,3 +417,59 @@
   box-shadow: 0 2px 6px rgba(245, 180, 0, 0.5);
   transform: rotate(20deg);
 }
+
+/* ------------------------------------------------------------------ */
+/* Real branches we could not price.                                   */
+/* ------------------------------------------------------------------ */
+
+/* A quiet dot, deliberately unlike a priced pin: it marks a shop that is
+   really there while claiming nothing about what a cart costs in it. */
+.branch-pin {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1.5px solid rgba(23, 37, 29, 0.18);
+  box-shadow: 0 2px 6px rgba(23, 37, 29, 0.18);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  opacity: 0.9;
+}
+
+.leaflet-container .leaflet-marker-pane .branch-pin img {
+  width: auto;
+  height: auto;
+  max-width: 16px !important;
+  max-height: 14px !important;
+  object-fit: contain;
+}
+
+.branch-pin .pin-logo {
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* Monogram inside any map pin. */
+.pin-logo.mono {
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1;
+  min-width: 26px;
+  display: grid;
+  place-items: center;
+}
+
+.branch-pin .pin-logo.mono {
+  font-size: 10px;
+  min-width: 0;
+}
+
+/* An unpriced branch card: same frame as a store card, no price furniture. */
+.store-card.branch-only {
+  cursor: default;
+  opacity: 0.92;
+}

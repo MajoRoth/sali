@@ -1,17 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AccountMenu from '../components/AccountMenu'
+import ChainMark from '../components/ChainMark'
 import HomeMapBackground from '../components/HomeMapBackground'
 import { useAuth } from '../lib/auth'
 import { formatPrice } from '../lib/geo'
 import {
-  countOf,
+  extractFromImage,
+  extractFromUrl,
+  extractImageTotal,
+  isApiError,
+  type ReceiptDocument,
+} from '../lib/api'
+import {
   createReceipt,
   deleteReceipt,
   formatSavedDate,
+  itemsFromDocument,
   listReceipts,
-  receiptOrigin,
-  scannedItems,
+  originFromDocument,
   setActiveReceipt,
   setPendingScan,
   totalOf,
@@ -19,13 +26,20 @@ import {
 } from '../lib/receipts'
 import './Home.css'
 
-const FILE_STAGES = ['קוראים את הקבלה…', 'מזהים מוצרים…', 'מחפשים סופרים קרובים…']
-const URL_STAGES = ['טוענים את הקבלה מהקישור…', ...FILE_STAGES]
-const STAGE_MS = 750
+/**
+ * Extraction is one long call, not four steps, so these rotate while it runs
+ * rather than reporting progress. They are honest about the order the server
+ * does the work in, and the last one holds until the answer comes back.
+ */
+const FILE_STAGES = ['קוראים את הקבלה…', 'מזהים מוצרים…', 'עוד רגע…']
+const URL_STAGES = ['פותחים את הקישור…', 'קוראים את הקבלה…', 'מזהים מוצרים…', 'עוד רגע…']
+const STAGE_MS = 2500
 /** Set when a signed-out scan awaits sign-in; survives the OAuth redirect. */
 const RESUME_KEY = 'sali.resumeAfterAuth'
 /** Signals Results to play the savings celebration on its next mount. */
 const CELEBRATE_KEY = 'sali.celebrateOnce'
+
+type Scan = { kind: 'url'; url: string } | { kind: 'file'; file: File }
 
 export default function Home() {
   const navigate = useNavigate()
@@ -34,6 +48,9 @@ export default function Home() {
   const [receipts, setReceipts] = useState<SavedReceipt[] | null>(null)
   const [stages, setStages] = useState<string[] | null>(null)
   const [stage, setStage] = useState(0)
+  /** Item count of the finished extraction, revealed under the spinner. */
+  const [scanned, setScanned] = useState<number | null>(null)
+  const [scanError, setScanError] = useState<string | null>(null)
   /** Set when a signed-out user finishes a scan and must sign in to continue. */
   const [gateOpen, setGateOpen] = useState(false)
 
@@ -53,23 +70,44 @@ export default function Home() {
     }
   }, [user, authLoading])
 
-  // Mock OCR: the file or link is ignored — we play the loading stages,
-  // then either continue or stop at the sign-in gate.
-  const startScan = (from: 'file' | 'url') => {
+  /**
+   * Run a real extraction, then either continue to the results or stop at the
+   * sign-in gate.
+   *
+   * A photo is tried for its full line items first and falls back to reading
+   * just the total, because most photographed receipts are creased, cropped, or
+   * lit badly enough that some line is unreadable — and a proven total is still
+   * worth showing even though it cannot be compared across stores.
+   */
+  const runScan = async (scan: Scan) => {
     setActiveReceipt(null)
-    setPendingScan(scannedItems)
+    setPendingScan(null)
+    setScanError(null)
+    setScanned(null)
     setStage(0)
-    setStages(from === 'url' ? URL_STAGES : FILE_STAGES)
-  }
+    setStages(scan.kind === 'url' ? URL_STAGES : FILE_STAGES)
 
-  useEffect(() => {
-    if (!stages) return
-    if (stage < stages.length - 1) {
-      const t = setTimeout(() => setStage((s) => s + 1), STAGE_MS)
-      return () => clearTimeout(t)
-    }
-    const t = setTimeout(() => {
+    try {
+      let document: ReceiptDocument
+      try {
+        document =
+          scan.kind === 'url' ? await extractFromUrl(scan.url) : await extractFromImage(scan.file)
+      } catch (err) {
+        if (scan.kind !== 'file' || !isApiError(err) || err.code !== 'insufficient_evidence') throw err
+        const total = await extractImageTotal(scan.file)
+        setStages(null)
+        setScanError(
+          `הצלחנו לקרוא רק את הסכום: ${formatPrice(Number(total.total))}. ` +
+            'כדי להשוות מחירים צריך צילום שבו כל השורות קריאות.',
+        )
+        return
+      }
+
+      const items = itemsFromDocument(document)
+      setPendingScan({ items, document })
+      setScanned(items.length)
       setStages(null)
+
       if (user) {
         localStorage.setItem(CELEBRATE_KEY, '1')
         navigate('/results')
@@ -79,9 +117,19 @@ export default function Home() {
         localStorage.setItem(RESUME_KEY, '1')
         setGateOpen(true)
       }
-    }, STAGE_MS)
+    } catch (err) {
+      console.error('[sali] scan failed:', err)
+      setStages(null)
+      setScanError(isApiError(err) ? err.message : 'לא הצלחנו לקרוא את הקבלה. נסו שוב.')
+    }
+  }
+
+  // Rotate the stage copy while the request is in flight, holding on the last.
+  useEffect(() => {
+    if (!stages || stage >= stages.length - 1) return
+    const t = setTimeout(() => setStage((s) => s + 1), STAGE_MS)
     return () => clearTimeout(t)
-  }, [stages, stage, navigate, user])
+  }, [stages, stage])
 
   // Resume the scanned receipt once signed in — covers both the instant local
   // sign-in and returning from the Google OAuth redirect (fresh page load).
@@ -109,7 +157,12 @@ export default function Home() {
   const createEmpty = async () => {
     localStorage.removeItem(CELEBRATE_KEY) // an empty cart has nothing to celebrate
     const now = new Date()
-    const record = await createReceipt(user?.id ?? null, `קבלה חדשה ${now.getDate()}.${now.getMonth() + 1}`, [])
+    const record = await createReceipt(
+      user?.id ?? null,
+      `קבלה חדשה ${now.getDate()}.${now.getMonth() + 1}`,
+      [],
+      null,
+    )
     setActiveReceipt(record.id)
     navigate('/results')
   }
@@ -128,6 +181,15 @@ export default function Home() {
     <div className="home">
       <HomeMapBackground />
       <div className="home-content">
+        {scanError && (
+          <div className="scan-error" role="alert">
+            <span>{scanError}</span>
+            <button className="scan-error-close" onClick={() => setScanError(null)} aria-label="סגירה">
+              ×
+            </button>
+          </div>
+        )}
+
         {showList ? (
           <ReceiptListHome
             user={user}
@@ -135,10 +197,10 @@ export default function Home() {
             onOpen={openReceipt}
             onDelete={removeReceipt}
             onCreateEmpty={createEmpty}
-            onScan={startScan}
+            onScan={runScan}
           />
         ) : (
-          <UploadHome onScan={startScan} />
+          <UploadHome onScan={runScan} />
         )}
       </div>
 
@@ -148,9 +210,8 @@ export default function Home() {
           <p className="loading-text" key={stage}>
             {stages[stage]}
           </p>
-          {/* Reveal the count once we're past the "reading" stage. */}
           <p className="loading-meta">
-            {stage >= stages.length - 2 ? `זוהו ${countOf(scannedItems)} מוצרים ✓` : ' '}
+            {scanned === null ? 'קריאת קבלה אמיתית עשויה לקחת עד דקה' : `זוהו ${scanned} מוצרים ✓`}
           </p>
         </div>
       )}
@@ -173,7 +234,7 @@ export default function Home() {
 /* ------------------------------------------------------------------ */
 
 interface UploadProps {
-  onScan: (from: 'file' | 'url') => void
+  onScan: (scan: Scan) => void
 }
 
 function UploadHome({ onScan }: UploadProps) {
@@ -204,7 +265,8 @@ function UploadHome({ onScan }: UploadProps) {
         onDrop={(e) => {
           e.preventDefault()
           setDragOver(false)
-          onScan('file')
+          const file = e.dataTransfer.files[0]
+          if (file) onScan({ kind: 'file', file })
         }}
       >
         <ReceiptGlyph className="receipt-icon" />
@@ -230,7 +292,7 @@ function UploadHome({ onScan }: UploadProps) {
           className="field-row url-form"
           onSubmit={(e) => {
             e.preventDefault()
-            if (url.trim()) onScan('url')
+            if (url.trim()) onScan({ kind: 'url', url: url.trim() })
           }}
         >
           <input
@@ -248,20 +310,29 @@ function UploadHome({ onScan }: UploadProps) {
           </button>
         </form>
 
+        {/* The API accepts JPEG, PNG and WEBP only, so nothing else is offered. */}
         <input
           ref={cameraRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
           capture="environment"
           hidden
-          onChange={(e) => e.target.files?.length && onScan('file')}
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            e.target.value = '' // let the same file be picked twice in a row
+            if (file) onScan({ kind: 'file', file })
+          }}
         />
         <input
           ref={uploadRef}
           type="file"
-          accept="image/*,application/pdf"
+          accept="image/jpeg,image/png,image/webp"
           hidden
-          onChange={(e) => e.target.files?.length && onScan('file')}
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            e.target.value = ''
+            if (file) onScan({ kind: 'file', file })
+          }}
         />
       </main>
 
@@ -279,7 +350,7 @@ interface ListProps {
   onOpen: (r: SavedReceipt) => void
   onDelete: (id: string) => void
   onCreateEmpty: () => void
-  onScan: (from: 'file' | 'url') => void
+  onScan: (scan: Scan) => void
 }
 
 function ReceiptListHome({
@@ -333,7 +404,7 @@ function ReceiptListHome({
           className="field-row url-form inline"
           onSubmit={(e) => {
             e.preventDefault()
-            if (url.trim()) onScan('url')
+            if (url.trim()) onScan({ kind: 'url', url: url.trim() })
           }}
         >
           <input
@@ -353,16 +424,16 @@ function ReceiptListHome({
       </section>
 
       <ul className="receipt-list">
-        {receipts.map((r) => (
+        {receipts.map((r) => {
+          const origin = originFromDocument(r.document)
+          return (
           <li key={r.id} className="receipt-row">
             <button className="receipt-open" onClick={() => onOpen(r)}>
-              <span className="receipt-row-logo">
-                <img src={receiptOrigin(r.id).logo} alt={receiptOrigin(r.id).chain} />
-              </span>
+              <ChainMark chain={origin.chain} logo={origin.logo} className="receipt-row-logo" />
               <div className="receipt-row-info">
                 <span className="receipt-row-name">{r.name}</span>
                 <span className="receipt-row-meta">
-                  {receiptOrigin(r.id).chain} · {formatSavedDate(r.savedAt)}
+                  {origin.chain} · {formatSavedDate(r.savedAt)}
                 </span>
               </div>
               <span className="receipt-row-total mono" dir="ltr">
@@ -377,23 +448,32 @@ function ReceiptListHome({
               <TrashIcon />
             </button>
           </li>
-        ))}
+          )
+        })}
       </ul>
 
       <input
         ref={cameraRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         capture="environment"
         hidden
-        onChange={(e) => e.target.files?.length && onScan('file')}
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          if (file) onScan({ kind: 'file', file })
+        }}
       />
       <input
         ref={uploadRef}
         type="file"
-        accept="image/*,application/pdf"
+        accept="image/jpeg,image/png,image/webp"
         hidden
-        onChange={(e) => e.target.files?.length && onScan('file')}
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = ''
+          if (file) onScan({ kind: 'file', file })
+        }}
       />
     </>
   )

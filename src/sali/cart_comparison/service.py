@@ -107,8 +107,8 @@ class CartComparisonService:
         matched: list[MatchedLine] = []
         unmatched: list[UnmatchedLine] = []
 
-        for item in document.receipt.items:
-            result = self._matcher.match(item)
+        items = list(document.receipt.items)
+        for item, result in zip(items, self._matcher.match_all(items), strict=True):
             if result.product is None or result.matched_by is None:
                 unmatched.append(
                     UnmatchedLine(

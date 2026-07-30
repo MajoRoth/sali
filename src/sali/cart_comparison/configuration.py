@@ -1,12 +1,34 @@
-"""Configuration for talking to the Open Supermarkets price database."""
+"""Configuration for talking to the Open Supermarkets price database.
+
+Two deployments of this API exist and they are not interchangeable — each has
+exactly what the other is missing:
+
+* The hosted service at `data.openisraelisupermarkets.co.il` **has prices**,
+  every store in one unpaginated response, and real city names. It needs a
+  bearer token, and it publishes **no store coordinates at all**.
+* The open instance at `34.165.235.189:8000` needs no token and **does publish
+  coordinates**, but its price pipeline has never run: `/health/pipeline`
+  reports zero chains, and `compare-prices` returns an empty comparison for
+  every product in its own catalogue.
+
+So prices come from the first and map pins from the second, joined on
+`(chainCode, storeNumber)` — see `sali.nearby.stores`.
+"""
 
 from __future__ import annotations
 
 import os
 
-#: Base URL of the Open Supermarkets API. Overridable so a local or staging
-#: instance can be pointed at without editing code.
-DEFAULT_CATALOG_URL = "http://34.165.235.189:8000"
+#: The instance that actually publishes prices.
+DEFAULT_CATALOG_URL = "https://data.openisraelisupermarkets.co.il"
+
+#: The instance that publishes store coordinates. Used only to place branches
+#: on a map; nothing priced ever comes from here.
+DEFAULT_GEOCODING_URL = "http://34.165.235.189:8000"
+
+#: Shipped so the app runs out of the box against the public dataset. Anyone
+#: needing their own quota sets `SUPERMARKET_API_KEY`.
+DEFAULT_CATALOG_TOKEN = "001d35a9-09fb-4805-8fe2-c86f69bc03ce"
 
 #: `/products/compare-prices` rejects more than 20 ids per call, so a cart is
 #: always split into batches of this size.
@@ -32,9 +54,64 @@ CONFIDENT_NAME_MATCH_SCORE = 0.8
 #: catalogue does not key on.
 BARCODE_LENGTHS = frozenset({12, 13, 14})
 
-CATALOG_TIMEOUT_SECONDS = 30.0
+#: A healthy barcode lookup takes about five seconds and a search about ten, so
+#: this is generous for a working host — and it is the unit in which a shopper
+#: waits on a broken one, which is why it is not more generous than that.
+CATALOG_TIMEOUT_SECONDS = 15.0
+
+#: How many times a call is attempted before giving up. The hosted service
+#: answers a barcode lookup in about five seconds and occasionally 504s under
+#: that load, so one retry converts most failures into answers; more than that
+#: and the shopper is waiting on a service that is plainly having a bad minute.
+CATALOG_RETRY_ATTEMPTS = 2
+
+CATALOG_RETRY_BACKOFF_SECONDS = 0.4
+
+#: Concurrent barcode lookups. The hosted catalogue has no bulk endpoint and
+#: takes seconds per barcode, so a fifty-line receipt resolved serially takes
+#: minutes — measured, 16 workers turn that into roughly twenty seconds.
+BARCODE_LOOKUP_WORKERS = 16
+
+#: How many receipt lines are searched for a cheaper alternative. Each search is
+#: a slow catalogue call, and swaps only pay off on the expensive lines, so the
+#: cart's priciest lines are searched and the long tail of cheap ones is not.
+SWAP_SEARCH_LINES = 12
+
+#: Concurrent swap searches. Lower than the barcode cap because search is the
+#: slower endpoint of the two and this work is an optional improvement.
+SWAP_SEARCH_WORKERS = 8
+
+#: Consecutive failures after which a host is treated as down and calls are
+#: skipped. A fifty-line receipt against a dead service would otherwise be
+#: fifty lookups times two attempts times a thirty-second timeout.
+CIRCUIT_BREAKER_THRESHOLD = 4
+
+#: How long calls are skipped before one is let through to test the water.
+CIRCUIT_BREAKER_COOLDOWN_SECONDS = 60.0
 
 
 def catalog_base_url() -> str:
     """The price database this service compares carts against."""
     return os.environ.get("SALI_PRICES_API_URL", DEFAULT_CATALOG_URL).rstrip("/")
+
+
+def geocoding_base_url() -> str:
+    """The instance store coordinates are read from."""
+    return os.environ.get("SALI_GEOCODING_API_URL", DEFAULT_GEOCODING_URL).rstrip("/")
+
+
+def catalog_token() -> str | None:
+    """The bearer token for the price database, if one is needed."""
+    token = os.environ.get("SUPERMARKET_API_KEY", DEFAULT_CATALOG_TOKEN).strip()
+    return token or None
+
+
+def catalog_headers() -> dict[str, str]:
+    """Auth headers for the price database.
+
+    The hosted service rejects a bare token with `Invalid token format`; it
+    wants the `Bearer` scheme. The open instance ignores the header entirely,
+    so sending it always is safe and keeps one code path.
+    """
+    token = catalog_token()
+    return {"Authorization": f"Bearer {token}"} if token else {}

@@ -12,12 +12,14 @@ candidate is only accepted above a confidence floor.
 from __future__ import annotations
 
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any
 
 from sali.cart_comparison.catalog import SupermarketsCatalog
 from sali.cart_comparison.configuration import (
     BARCODE_LENGTHS,
+    BARCODE_LOOKUP_WORKERS,
     MIN_NAME_MATCH_SCORE,
 )
 from sali.cart_comparison.models import CatalogProduct, MatchMethod
@@ -105,16 +107,23 @@ def similarity(receipt_name: str, product_name: str) -> float:
 def _to_product(raw: dict[str, Any]) -> CatalogProduct | None:
     """Read a catalogue row, refusing the ones that cannot be priced.
 
-    Around one row in eight comes back malformed: a float-formatted id like
-    `7290000041179.0` paired with `productBarcode: 0`. Those cannot be priced —
-    and worse, they all share the barcode 0, so admitting two of them would
-    silently merge two different products into one line of the cart.
+    Two id shapes are in play and both are legitimate. The hosted service keys
+    products on opaque cuids (`cmlftahii00v7gdqvf17rt2bw`); the open instance
+    uses the barcode as the id. Only `productBarcode` is validated, because
+    that is what identifies the product across stores — the id is an opaque
+    handle to pass back to `compare-prices`, and demanding it look like a
+    number rejects the entire hosted catalogue.
+
+    A barcode of 0 is the real failure: around one row in eight comes back with
+    a float-formatted name and `productBarcode: 0`, and since they all share
+    that barcode, admitting two would silently merge two different products
+    into one line of the cart.
     """
     identifier = raw.get("id")
     barcode = raw.get("productBarcode")
-    if not isinstance(identifier, str) or not isinstance(barcode, int):
+    if not isinstance(identifier, str) or not identifier:
         return None
-    if isinstance(barcode, bool) or barcode <= 0 or not identifier.isdigit():
+    if not isinstance(barcode, int) or isinstance(barcode, bool) or barcode <= 0:
         return None
     manufacturer = raw.get("manufacturerOrImporterName")
     return CatalogProduct(
@@ -149,22 +158,41 @@ class CartMatcher:
 
     def match(self, item: Item) -> LineMatch:
         if is_barcode(item.code):
-            raw = self._catalog.product_by_barcode(item.code or "")
-            if raw is not None:
-                product = _to_product(raw)
-                if product is not None:
-                    return LineMatch(product, "barcode", 1.0, None)
-            # A printed barcode the catalogue does not know is a real gap, not a
-            # reason to guess by name: the name is usually the merchant's own
-            # abbreviation of a product the database simply does not carry.
-            return LineMatch(
-                None,
-                None,
-                0.0,
-                f"barcode {item.code} is not in the price database",
-            )
-
+            return self._from_barcode(item.code or "")
         return self._match_by_name(item.name)
+
+    def match_all(self, items: list[Item]) -> list[LineMatch]:
+        """Resolve a whole receipt, in the order it was given.
+
+        Every line costs at least one call to a catalogue that answers in
+        seconds, so a fifty-line receipt resolved one line after another takes
+        minutes — long enough that the shopper assumes the app has hung.
+        Resolving them concurrently is what makes the request interactive; the
+        worker cap keeps it from looking like an attack on a free service.
+        """
+        if len(items) < 2:
+            return [self.match(item) for item in items]
+
+        with ThreadPoolExecutor(
+            max_workers=min(BARCODE_LOOKUP_WORKERS, len(items))
+        ) as pool:
+            return list(pool.map(self.match, items))
+
+    def _from_barcode(self, barcode: str) -> LineMatch:
+        raw = self._catalog.product_by_barcode(barcode)
+        if raw is not None:
+            product = _to_product(raw)
+            if product is not None:
+                return LineMatch(product, "barcode", 1.0, None)
+        # A printed barcode the catalogue does not know is a real gap, not a
+        # reason to guess by name: the name is usually the merchant's own
+        # abbreviation of a product the database simply does not carry.
+        return LineMatch(
+            None,
+            None,
+            0.0,
+            f"barcode {barcode} is not in the price database",
+        )
 
     def _match_by_name(self, name: str) -> LineMatch:
         candidates = self._candidates(name)
