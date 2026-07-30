@@ -40,5 +40,7 @@ data/*.gz
 data/*.db
 
 # other
-docs/
-scripts/extract_recipe_data/*.csv
+docs/*
+!docs/adr/
+!docs/adr/*.md
+scripts/extract_recipe_data/output/

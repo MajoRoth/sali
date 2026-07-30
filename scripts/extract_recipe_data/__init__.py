@@ -1,1 +1,1 @@
-"""Proof-of-concept tools for extracting Weezmo receipt data."""
+"""Multi-platform Digital Receipt extraction proof of concept."""

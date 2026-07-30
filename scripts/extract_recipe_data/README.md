@@ -1,75 +1,114 @@
-# Weezmo receipt extractor POC
+# Digital Receipt URL extractor POC
 
-This proof of concept turns one or more Weezmo digital-receipt links into a
-single, normalized CSV of purchased products.
+This proof of concept sends one public Digital Receipt URL to GPT-5.6 Luna
+through the OpenAI Responses API. OpenAI-hosted web search verifies the page and
+extracts a strict, platform-neutral JSON Receipt Document.
 
-Although the original folder name says `recipe`, the supplied links are
-receipts. The code therefore uses receipt terminology.
+The URL is the only receipt input sent by the script. There is no local HTML
+fetching, browser rendering, platform adapter, or fallback parser.
 
-## How it works
+## Install
 
-The visible receipt page is a React shell. Different merchants render their
-items with different HTML, but the current Weezmo frontend first requests the
-same structured JSON endpoint for both:
+The project requires Python 3.13 or newer:
 
-```text
-GET https://receipts.weezmo.com/api/receipts/{receipt UUID}?withTemplate=false
+```bash
+uv sync
 ```
 
-The extractor reads the `q` receipt UUID from each supplied URL, requests that
-compact JSON, validates that the returned receipt and optional `b` business UUID
-match the URL, and whitelists product and basic receipt fields into the CSV. It
-does not export payment data or the raw receipt payload.
+Set `OPENAI_API_KEY` in the shell or in the repository root `.env`:
+
+```bash
+export OPENAI_API_KEY='<your-project-api-key>'
+```
+
+The `.env` file is git-ignored and should remain private.
 
 ## Run
 
 From the repository root:
 
 ```bash
-uv run python scripts/extract_recipe_data/extract_receipts.py \
-  'https://receipts.weezmo.com/cms.html?q=<receipt-uuid>&b=<business-uuid>&cookie=true' \
-  --output scripts/extract_recipe_data/weezmo_receipts.csv
+uv run python scripts/extract_recipe_data/extract_receipt_via_openai.py \
+  'https://merchant.example/receipt/private-token'
 ```
 
-You can pass multiple URLs, or pass a bare receipt UUID. Duplicate receipts are
-fetched only once. The default output is
-`scripts/extract_recipe_data/weezmo_receipts.csv`.
+The script:
 
-The CSV is UTF-8 with a byte-order mark so Hebrew text opens correctly in Excel.
-It contains receipt and merchant identifiers, branch and purchase metadata,
-product code/name, unit price, quantity, gross line total, item adjustments, and
-a calculated net line total. Product codes remain text, including leading
-zeroes. Text beginning with a spreadsheet formula prefix is escaped. Generated
-CSVs in this folder are git-ignored because a live receipt ID currently grants
-access to the underlying receipt data.
+- accepts one public HTTPS URL;
+- sends it to `gpt-5.6-luna`;
+- requires OpenAI-hosted web search restricted to the supplied hostname;
+- makes exactly one OpenAI request with `store=False`;
+- verifies that the page is evidence of a completed purchase;
+- parses a strict Structured Output;
+- reconciles item and receipt totals locally using decimal arithmetic;
+- writes `output/hosted_receipt.json` with private `0600` permissions.
+
+It refuses to overwrite existing output unless `--force` is supplied. If the
+page is inaccessible, is not a receipt, lacks sufficient evidence, or fails
+local reconciliation, the command exits unsuccessfully and writes no JSON.
+
+## Receipt Document
+
+The saved UTF-8 JSON is the same shape intended for the future HTTP API:
+
+```json
+{
+  "schema_version": "1.0",
+  "receipt": {
+    "merchant": {
+      "name": "Example Market",
+      "branch_name": null,
+      "branch_number": null
+    },
+    "transaction": {
+      "receipt_id": null,
+      "purchased_at": "2026-07-30T18:42:00+03:00",
+      "transaction_number": "42",
+      "type": "purchase",
+      "currency": "ILS"
+    },
+    "totals": {
+      "subtotal": "12.90",
+      "discounts": "0",
+      "total": "12.90"
+    },
+    "items": [
+      {
+        "position": 1,
+        "code": "000123",
+        "name": "Example product",
+        "categories": [],
+        "quantity": "1",
+        "unit": "item",
+        "unit_price": "12.90",
+        "gross_total": "12.90",
+        "adjustments": [],
+        "final_total": "12.90"
+      }
+    ]
+  },
+  "warnings": []
+}
+```
+
+Money and fractional quantities are decimal strings to avoid floating-point
+precision loss. Unknown optional fields remain `null`; collections remain
+arrays. Source URLs, browsing citations, customer identity, contact details,
+and payment information are excluded from saved output.
 
 ## Validate
+
+Tests use synthetic receipt data and a mocked OpenAI client:
 
 ```bash
 uv run pytest scripts/extract_recipe_data
 uv run ruff check scripts/extract_recipe_data
 ```
 
-The tests also use only the Python standard library:
+## Limitations
 
-```bash
-python3 -m unittest scripts.extract_recipe_data.test_extract_receipts
-```
-
-## POC limitations
-
-- The endpoint is an undocumented implementation detail of Weezmo's current
-  frontend and may change.
-- Anyone with a receipt UUID can currently query that receipt. Treat receipt
-  links, IDs, and generated CSVs as private data.
-- The endpoint is rate-limited. This CLI de-duplicates inputs and reports HTTP
-  429 without retrying; it is intended for low-volume use.
-- The tool only supports receipts with structured `items`. It does not yet
-  perform OCR when Weezmo provides only an image or original receipt text.
-- Some merchants put promotions in `item.additionalData` rather than the normal
-  discount fields. The POC preserves those entries as JSON. It considers only
-  negative numeric values to be candidate adjustments and applies them only
-  when the resulting sum reconciles to the receipt total; otherwise they remain
-  visible but unapplied.
-- Purchase timestamps are preserved exactly as Weezmo returns them because
-  timezone handling is inconsistent across merchants.
+- Only unauthenticated public HTTPS URLs are accepted.
+- OpenAI-hosted browsing may not read JavaScript-heavy, expired, tokenized, or
+  cookie-gated receipt URLs.
+- Extraction is probabilistic; local reconciliation fails closed instead of
+  returning price data whose arithmetic cannot be trusted.

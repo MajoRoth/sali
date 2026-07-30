@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Analyze and compare supermarket prices, and recommend cheaper alternatives."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "openai>=2.0.0",
+    "pydantic>=2.10.0",
+]
 
 [project.scripts]
 sali = "sali.main:main"
@@ -21,3 +24,6 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.6",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
