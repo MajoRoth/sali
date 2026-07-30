@@ -32,5 +32,6 @@ open-supermarkets-api-client = { workspace = true }
 [dependency-groups]
 dev = [
     "pytest>=8.0",
+    "pytest-asyncio>=1.4.0",
     "ruff>=0.6",
 ]
