@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict
 
 from sali.cart_comparison.catalog import CatalogUnavailableError
 from sali.cart_comparison.models import CartComparison
+from sali.cart_comparison.ocr_correction import OcrReceiptCorrector
 from sali.cart_comparison.service import CartComparisonService
 from sali.nearby.models import (
     GeoPoint,
@@ -49,6 +50,7 @@ from sali.receipt_extraction.url_validation import ReceiptUrlValidator
 type ExtractReceipt = Callable[[str], ReceiptDocument]
 type ExtractReceiptImage = Callable[[ReceiptImage], ReceiptDocument]
 type ExtractReceiptImageTotal = Callable[[ReceiptImage], ReceiptImageTotalDocument]
+type CorrectReceipt = Callable[[ReceiptDocument], ReceiptDocument]
 type CompareCart = Callable[[ReceiptDocument, str | None], CartComparison]
 type PriceNearby = Callable[[ReceiptDocument, GeoPoint, int, int, bool], NearbyResponse]
 type ListNearbyStores = Callable[[float, float, int, int], "NearbyStoreList"]
@@ -288,17 +290,41 @@ def _default_list_nearby_stores(
     )
 
 
+def _corrected[Source](
+    extract: Callable[[Source], ReceiptDocument],
+    correct: CorrectReceipt,
+) -> Callable[[Source], ReceiptDocument]:
+    """Extraction with catalogue error-correction applied to its output.
+
+    Composed here, once, so every route that extracts — plain extraction and
+    the extract-then-price combinations alike — returns a corrected document
+    without each endpoint having to remember to ask.
+    """
+
+    def extract_and_correct(source: Source) -> ReceiptDocument:
+        return correct(extract(source))
+
+    return extract_and_correct
+
+
 def create_app(
     extract_receipt: ExtractReceipt | None = None,
     extract_receipt_image: ExtractReceiptImage | None = None,
     extract_receipt_image_total: ExtractReceiptImageTotal | None = None,
+    correct_receipt: CorrectReceipt | None = None,
     compare_cart: CompareCart | None = None,
     price_nearby: PriceNearby | None = None,
     list_nearby_stores: ListNearbyStores | None = None,
 ) -> FastAPI:
-    """Create an API app; injection keeps contract tests independent of OpenAI."""
-    extractor = extract_receipt or OpenAIReceiptExtractor().extract
-    image_extractor = extract_receipt_image or OpenAIReceiptImageExtractor().extract
+    """Create an API app; injection keeps contract tests independent of OpenAI
+    and of the price catalogue."""
+    corrector = correct_receipt or OcrReceiptCorrector().correct
+    extractor = _corrected(
+        extract_receipt or OpenAIReceiptExtractor().extract, corrector
+    )
+    image_extractor = _corrected(
+        extract_receipt_image or OpenAIReceiptImageExtractor().extract, corrector
+    )
     image_total_extractor = (
         extract_receipt_image_total or OpenAIReceiptImageTotalExtractor().extract
     )

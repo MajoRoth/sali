@@ -33,6 +33,7 @@ from sali.cart_comparison.configuration import (
     CONNECTION_POOL_SIZE,
     KEEPALIVE_EXPIRY_SECONDS,
     MAX_PRODUCT_IDS_PER_REQUEST,
+    OCR_MATCH_CANDIDATE_LIMIT,
     SEARCH_CANDIDATE_LIMIT,
     SEARCH_TIMEOUT_SECONDS,
     catalog_base_url,
@@ -313,6 +314,37 @@ class SupermarketsCatalog:
             return []
         items = payload.get("items")
         return [item for item in items if isinstance(item, dict)] if items else []
+
+    def ocr_match(
+        self,
+        item_code: str,
+        item_name: str,
+        price: float,
+        *,
+        limit: int = OCR_MATCH_CANDIDATE_LIMIT,
+    ) -> list[dict[str, Any]]:
+        """The catalogue products nearest a noisily-read (code, name, price).
+
+        The endpoint ranks the whole catalogue by edit-and-price distance and
+        always fills `limit`, however poor the fit — it reports no distance,
+        so whether the nearest product is *near* is the caller's judgement.
+        An empty result means failure or an empty catalogue, never "no".
+        """
+        if not item_name.strip():
+            return []
+        payload = self._get(
+            "/products/ocr-match",
+            {
+                "item_code": item_code,
+                "item_name": item_name,
+                "price": price,
+                "limit": limit,
+            },
+            tolerate_errors=True,
+        )
+        if not isinstance(payload, list):
+            return []
+        return [row for row in payload if isinstance(row, dict)]
 
     def compare_prices(
         self,

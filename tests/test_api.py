@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from sali.api import create_app
+from sali.api import create_app as _create_app
 from sali.cart_comparison.catalog import CatalogUnavailableError
 from sali.cart_comparison.models import CartComparison, StoreCart
 from sali.receipt_extraction.errors import (
@@ -15,6 +15,17 @@ from sali.receipt_extraction.models import (
     ReceiptImageTotalDocument,
     validate_and_reconcile,
 )
+
+
+def create_app(*args, **kwargs):
+    """The real app factory with receipt correction stubbed to a no-op.
+
+    Correction is a catalogue round-trip per receipt line; these are HTTP
+    contract tests, and none of them should leave the process. A test that
+    exercises the correction seam passes its own `correct_receipt`.
+    """
+    kwargs.setdefault("correct_receipt", lambda document: document)
+    return _create_app(*args, **kwargs)
 
 
 def receipt_document():
@@ -148,6 +159,44 @@ def test_extract_image_returns_the_same_receipt_document_without_persistence() -
     assert requested[0].media_type == "image/jpeg"
     assert requested[0].data == b"\xff\xd8\xff\xdb"
     assert "receipt.jpg" not in response.text
+
+
+def test_extraction_routes_return_the_corrected_document() -> None:
+    """Both extraction routes hand their output through the correction pass.
+
+    What the shopper saves is whatever these routes return, so a correction
+    applied anywhere later would miss the saved copy. The pass rewrites the
+    document, and the response must be the rewritten one.
+    """
+
+    def correct(document):
+        receipt = document.receipt.model_copy(
+            update={
+                "items": [
+                    document.receipt.items[0].model_copy(
+                        update={"code": "7290000000001"}
+                    )
+                ]
+            }
+        )
+        return document.model_copy(update={"receipt": receipt})
+
+    from_url = TestClient(
+        _create_app(lambda _url: receipt_document(), correct_receipt=correct)
+    ).post("/api/receipts/extract", json={"url": "https://receipt.example/order/1"})
+    from_image = TestClient(
+        _create_app(
+            extract_receipt_image=lambda _image: receipt_document(),
+            correct_receipt=correct,
+        )
+    ).post(
+        "/api/receipts/extract-image",
+        files={"image": ("receipt.jpg", b"\xff\xd8\xff\xdb", "image/jpeg")},
+    )
+
+    assert from_url.status_code == from_image.status_code == 200
+    assert from_url.json()["receipt"]["items"][0]["code"] == "7290000000001"
+    assert from_image.json()["receipt"]["items"][0]["code"] == "7290000000001"
 
 
 def test_extract_image_total_returns_a_partial_total_without_persistence() -> None:

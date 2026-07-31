@@ -60,6 +60,22 @@ BARCODE_MISS_NAME_SCORE = 0.75
 #: same generic produce name repeated across chains.
 ALTERNATE_MATCH_LIMIT = 4
 
+#: Candidates fetched per `ocr-match` call. The endpoint always fills whatever
+#: limit it is given, however poor the fit, so a bigger page buys only noise;
+#: five is enough for the right product to surface when it exists at all.
+OCR_MATCH_CANDIDATE_LIMIT = 5
+
+#: Name score at which an extracted item is rewritten to a catalogue product.
+#: Set at the barcode-miss bar, and for the same reason: the rewrite is saved
+#: with the receipt, so a lookalike accepted here is an error the shopper
+#: keeps, not one the next re-price can undo.
+OCR_CORRECTION_MIN_SCORE = 0.75
+
+#: How many edits away a printed numeric code may be from a candidate barcode
+#: and still corroborate it. One or two is a misread digit — the exact error
+#: `ocr-match` exists to fix; more is a different product's code.
+OCR_CODE_EDIT_DISTANCE = 2
+
 #: A receipt code is treated as a barcode only at these lengths. Shorter codes
 #: on Israeli receipts are merchant-internal PLUs for weighed goods, which the
 #: catalogue does not key on.

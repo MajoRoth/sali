@@ -151,6 +151,37 @@ def test_a_blank_search_never_reaches_the_network() -> None:
     assert requests == []
 
 
+def test_ocr_match_sends_the_reading_and_keeps_only_product_rows() -> None:
+    catalog, requests = catalog_against(
+        lambda _request: httpx.Response(200, json=[{"id": "7290000000001"}, "noise", 7])
+    )
+
+    matches = catalog.ocr_match("7290000000007", "חלב תנובה", 6.9)
+
+    request = requests[0]
+    assert request.url.path == "/products/ocr-match"
+    assert request.url.params["item_code"] == "7290000000007"
+    assert request.url.params["item_name"] == "חלב תנובה"
+    assert request.url.params["price"] == "6.9"
+    assert matches == [{"id": "7290000000001"}]
+
+
+def test_a_failing_ocr_match_is_retried_then_tolerated() -> None:
+    """Correction improves a document; it must never cost the extraction."""
+    catalog, requests = catalog_against(lambda _request: httpx.Response(504))
+
+    assert catalog.ocr_match("", "חלב", 6.9) == []
+    assert len(requests) == CATALOG_RETRY_ATTEMPTS
+
+
+def test_a_nameless_ocr_match_never_reaches_the_network() -> None:
+    """With no name there is nothing to score acceptance on afterwards."""
+    catalog, requests = catalog_against(lambda _request: httpx.Response(200, json=[]))
+
+    assert catalog.ocr_match("7290000000007", "   ", 6.9) == []
+    assert requests == []
+
+
 def test_stores_are_narrowed_by_city_because_the_unfiltered_list_is_capped() -> None:
     catalog, requests = catalog_against(
         lambda _request: httpx.Response(200, json={"stores": [{"id": "1"}]})
