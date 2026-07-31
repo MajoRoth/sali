@@ -4,6 +4,7 @@ import { formatPrice } from '../lib/geo'
 import type { PricedLine, PricedStore } from '../lib/pricing'
 import ChainMark from '../components/ChainMark'
 import SavingBadge from '../components/SavingBadge'
+import SwapIcon from '../components/SwapIcon'
 import type { ReceiptItem } from '../lib/types'
 import './CartView.css'
 
@@ -108,7 +109,13 @@ export default function CartView() {
               {line.available && line.unitPrice !== null
                 ? `${line.qty} × ${formatPrice(line.unitPrice)} ליחידה`
                 : 'אין מחיר עדכני בסניף'}
-              {line.swappedFrom && <span className="citem-swap"> · במקום {line.swappedFrom}</span>}
+              {line.swappedFrom && (
+                <span className="citem-swap">
+                  {' · '}
+                  <SwapIcon size={12} />
+                  במקום {line.swappedFrom}
+                </span>
+              )}
             </div>
           </div>
         ))}

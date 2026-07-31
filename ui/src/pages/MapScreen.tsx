@@ -11,6 +11,7 @@ import { chainColor, chainLogo, chainMonogram } from '../lib/chains'
 import ChainMark from '../components/ChainMark'
 import SavingBadge from '../components/SavingBadge'
 import CrownIcon from '../components/CrownIcon'
+import SwapIcon from '../components/SwapIcon'
 import './MapScreen.css'
 
 /** The origin store gets a map pin only when it's within this radius of the
@@ -284,7 +285,11 @@ function StoreCard({ store, selected, best, receiptTotal, onClick, ref }: CardPr
 
       <SavingBadge amount={Math.abs(diff)} save={diff > 0} size="md" />
       <span className="price-xy mono" dir="ltr">
-        {formatPrice(store.cartTotal)} / {formatPrice(store.bestPrice)}
+        {formatPrice(store.cartTotal)} /{' '}
+        <span className="swap-price">
+          <SwapIcon />
+          {formatPrice(store.bestPrice)}
+        </span>
       </span>
     </button>
   )

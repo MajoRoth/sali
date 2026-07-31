@@ -141,7 +141,15 @@
 }
 
 .citem-swap {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   color: var(--muted, #6b7f74);
+}
+
+.citem-swap svg {
+  flex-shrink: 0;
+  color: var(--accent, currentColor);
 }
 
 /* What the branch could not price — a caution, not the list's caption. */

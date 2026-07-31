@@ -1,0 +1,12 @@
+/* The optimized (swap) price — flagged with the swap-cycle icon. */
+.swap-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--accent, var(--text));
+  font-weight: 600;
+}
+
+.swap-price svg {
+  flex-shrink: 0;
+}
