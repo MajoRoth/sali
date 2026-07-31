@@ -12,7 +12,7 @@ from schemas.analytics import (
     CrossChainPriceComparisonResponse,
     OverallStatistics,
 )
-from schemas.product import ProductBarcodeResponse, ProductSearchPage
+from schemas.product import Product, ProductBarcodeResponse, ProductSearchPage
 
 router = APIRouter()
 
@@ -38,6 +38,17 @@ async def search_products(
         has_more=len(products) == limit,
         next_offset=offset + limit if len(products) == limit else None,
     )
+
+
+@router.get("/similar", response_model=list[Product])
+async def get_similar_products(
+    item_code: str = Query(
+        ..., description="The item code to find similar products for"
+    ),
+    limit: int = Query(5, ge=1, le=50, description="Max items to return (max 50)"),
+    db: AsyncSession = Depends(deps.get_db),
+) -> Any:
+    return await crud.get_similar_products(db, item_code=item_code, limit=limit)
 
 
 @router.get("/barcode/{barcode}", response_model=ProductBarcodeResponse)
