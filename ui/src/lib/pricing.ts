@@ -73,18 +73,45 @@ export function originStore(items: ReceiptItem[], origin: ReceiptOrigin): Priced
  * ranks on, and labels any line the swap engine replaced so the shopper can see
  * that it is not literally what they bought.
  */
+/**
+ * Join a cart line to the receipt line it answers.
+ *
+ * On the position the server stamps on every line, never on list index: a store
+ * cart holds only the lines that could be matched, so one unmatched product
+ * shifts every line after it and compares the shopper's chocolate against what
+ * they paid for dish soap.
+ *
+ * `paid` is in receipt order, so a receipt saved before the server carried
+ * `position` still lines up on the 1-based printed position.
+ */
+function paidLineFor(
+  paid: ReceiptItem[],
+  position: number | undefined,
+  index: number,
+): ReceiptItem | undefined {
+  return position === undefined ? paid[index] : paid[position - 1]
+}
+
+/**
+ * What the shopper paid for just the lines this store can price.
+ *
+ * The baseline any saving has to be measured against. Comparing a store's total
+ * to the whole receipt books every product it does not stock as a saving — the
+ * more it is missing, the cheaper it looks, which is exactly backwards.
+ */
+export function paidForPricedLines(store: NearbyStore, paid: ReceiptItem[]): number {
+  return store.optimalCart.items.reduce((sum, entry, index) => {
+    if (!entry.available) return sum
+    const source = paidLineFor(paid, entry.position, index)
+    return source ? sum + source.unitPrice * source.qty : sum
+  }, 0)
+}
+
 export function pricedStore(store: NearbyStore, paid: ReceiptItem[]): PricedStore {
   const swappedFrom = new Map(store.optimalCart.swaps.map((s) => [s.to.barcode, s.from.name]))
 
-  // Join on the receipt position the server stamps on every cart line. Never on
-  // list index: a store cart holds only the lines that could be matched, so one
-  // unmatched product shifts every line after it and compares the shopper's
-  // chocolate against what they paid for dish soap.
-  //
-  // `paid` is in receipt order, so a receipt saved before the server carried
-  // `position` still lines up on the 1-based printed position.
   const paidAt = (position: number | undefined, index: number): ReceiptItem | undefined =>
-    position === undefined ? paid[index] : paid[position - 1]
+    paidLineFor(paid, position, index)
 
   const line = (entry: CartLine, index: number): PricedLine => {
     const source = paidAt(entry.position, index)
