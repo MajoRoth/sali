@@ -1,17 +1,21 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Celebration from '../components/Celebration'
+import ChainMark from '../components/ChainMark'
 import SavingBadge from '../components/SavingBadge'
 import CrownIcon from '../components/CrownIcon'
+import SwapIcon from '../components/SwapIcon'
+import { warningText } from '../lib/api'
 import type { StoreOnMap, Supermarket } from '../lib/types'
 import { formatDistance, formatPrice } from '../lib/geo'
 import { useStores, useUserPosition } from '../lib/useStores'
-import { cartStores, type PricedStore } from '../lib/pricing'
+import { originStore, pricedStore, type PricedStore } from '../lib/pricing'
 import { useAuth } from '../lib/auth'
 import {
   countOf,
   createReceipt,
-  receiptOrigin,
+  documentTotal,
+  originFromDocument,
   renameReceipt,
   setActiveReceipt,
   totalOf,
@@ -23,7 +27,6 @@ import './Results.css'
 export default function Results() {
   const navigate = useNavigate()
   const userPos = useUserPosition()
-  const { ranked, cheapestBest } = useStores(userPos)
 
   const { user } = useAuth()
   // Home passes the opened receipt in router state — use it directly, no refetch.
@@ -50,11 +53,28 @@ export default function Results() {
     localStorage.removeItem('sali.celebrateOnce')
   }
 
-  const receiptTotal = totalOf(active.items)
+  const {
+    ranked,
+    cheapestBest,
+    branches,
+    loading: pricing,
+    error: pricingError,
+    warnings,
+  } = useStores(active.document, userPos)
+  const branchCount = branches.length
+  // The server flags simulated figures with a `demo prices:` warning. Everything
+  // derived from money — the banner, and the savings celebration — keys off this.
+  const demoNote = warnings.some((w) => w.startsWith('demo prices:'))
+    ? warningText('demo prices:')
+    : null
+
+  // The receipt's own printed total is authoritative; summing the lines is only
+  // a fallback for a cart with no document behind it.
+  const receiptTotal = documentTotal(active.document) ?? totalOf(active.items)
   const receiptItemCount = countOf(active.items)
   const name = savedName ?? active.name
   const receiptId = savedId ?? active.id
-  const origin = receiptOrigin(receiptId)
+  const origin = originFromDocument(active.document)
 
   if (!userPos || active.loading) {
     return (
@@ -65,7 +85,7 @@ export default function Results() {
     )
   }
 
-  const bestSaving = receiptTotal - cheapestBest
+  const bestSaving = cheapestBest === null ? 0 : receiptTotal - cheapestBest
   // Show the name field when there's no name yet, or the user is renaming.
   const naming = !name || editing
 
@@ -78,7 +98,7 @@ export default function Results() {
       if (receiptId) {
         await renameReceipt(user?.id ?? null, receiptId, chosen)
       } else {
-        const record = await createReceipt(user?.id ?? null, chosen, active.items)
+        const record = await createReceipt(user?.id ?? null, chosen, active.items, active.document)
         setActiveReceipt(record.id)
         setSavedId(record.id)
       }
@@ -103,7 +123,7 @@ export default function Results() {
     setEditing(true)
   }
 
-  const originStore = cartStores(active.items)[0]
+  const receiptBasket = originStore(active.items, origin)
   const openCart = (store: PricedStore) => {
     navigate('/cart', { state: { store, items: active.items, name } })
   }
@@ -159,11 +179,9 @@ export default function Results() {
 
         {/* The receipt itself — the baseline, pinned below the nav. Tap for the
             origin store's exact per-item prices. */}
-        <div className="receipt-card" onClick={() => openCart(originStore)} role="button">
+        <div className="receipt-card" onClick={() => openCart(receiptBasket)} role="button">
           <div className="receipt-origin">
-            <span className="receipt-origin-logo">
-              <img src={origin.logo} alt={origin.chain} />
-            </span>
+            <ChainMark chain={origin.chain} logo={origin.logo} className="receipt-origin-logo" />
             <div className="receipt-origin-info">
               <span className="receipt-origin-chain">{origin.chain}</span>
               <span className="receipt-origin-branch">{origin.branch}</span>
@@ -217,27 +235,66 @@ export default function Results() {
           )}
         </div>
 
-        <ol className="store-list">
-          {ranked.map((store, i) => (
-            <StoreRow
-              key={store.id}
-              store={store}
-              best={store.bestPrice === cheapestBest}
-              receiptTotal={receiptTotal}
-              style={{ animationDelay: `${Math.min(i, 6) * 55}ms` }}
-              onOpen={() =>
-                openCart({
-                  id: store.id,
-                  brand: store.brand,
-                  logo: store.logo,
-                  online: store.online,
-                  isOrigin: false,
-                  cartTotal: store.cartTotal,
-                })
-              }
-            />
-          ))}
-        </ol>
+        {pricing && (
+          <div className="stores-pending">
+            <div className="spinner-sm" />
+            <p>משווים מחירים בסופרים שסביבכם…</p>
+          </div>
+        )}
+
+        {!pricing && pricingError && (
+          <div className="stores-empty error" role="alert">
+            <p className="stores-empty-title">ההשוואה נכשלה</p>
+            <p className="stores-empty-body">{pricingError}</p>
+          </div>
+        )}
+
+        {!pricing && !pricingError && ranked.length === 0 && (
+          <NoPrices warnings={warnings} branchCount={branchCount} />
+        )}
+
+        {/*
+          The price database is down and the server sent simulated figures.
+          This banner is the only thing standing between a demo and a lie, so
+          it sits above the list rather than below it, and it is not dismissible.
+        */}
+        {!pricing && demoNote && (
+          <p className="demo-banner" role="status">
+            {demoNote}
+          </p>
+        )}
+
+        {!pricing && ranked.length > 0 && (
+          <>
+            <ol className="store-list">
+              {ranked.map((store, i) => (
+                <StoreRow
+                  key={store.id}
+                  store={store}
+                  best={store.bestPrice === cheapestBest}
+                  receiptTotal={receiptTotal}
+                  style={{ animationDelay: `${Math.min(i, 6) * 55}ms` }}
+                  onOpen={() => openCart(pricedStore(store.source, active.items))}
+                />
+              ))}
+            </ol>
+            {/*
+              What the ranking left out, said under it: lines the price database
+              could not match, and the branches whose chains publish no prices.
+              Without this, a missing שופרסל reads as the app ignoring it.
+            */}
+            <div className="store-list-notes">
+              {warnings
+                .map(warningText)
+                .filter((text): text is string => text !== null)
+                .map((note) => (
+                  <p key={note} className="stores-empty-note">
+                    {note}
+                  </p>
+                ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="results-cta">
@@ -247,9 +304,52 @@ export default function Results() {
         </button>
       </div>
 
-      {celebrate && bestSaving > 0 && (
+      {celebrate && bestSaving > 0 && !demoNote && (
         <Celebration amount={bestSaving} onDone={endCelebration} />
       )}
+    </div>
+  )
+}
+
+/**
+ * Shown when the cart could not be priced anywhere.
+ *
+ * Not a rare edge: a receipt full of a chain's own-brand goods, or one bought
+ * somewhere whose prices the database has not refreshed, ends up here. Saying
+ * which of those it was — and still reporting the branches we did find — is
+ * the honest thing; an empty list with no explanation reads as "there is
+ * nothing near you", which is false and is the one message we can disprove.
+ */
+function NoPrices({ warnings, branchCount }: { warnings: string[]; branchCount: number }) {
+  const noListings = warnings.some((w) => w.startsWith('no store prices'))
+  // The server's warnings are English diagnostics; only the few a shopper can
+  // act on have Hebrew copy, and `warningText` returns null for the rest.
+  const notes = warnings
+    .filter((w) => !w.startsWith('no store prices'))
+    .map(warningText)
+    .filter((text): text is string => text !== null)
+
+  return (
+    <div className="stores-empty">
+      <p className="stores-empty-title">
+        {noListings ? 'אין כרגע מחירים להשוואה' : 'לא נמצאה עגלה מתומחרת בסביבה'}
+      </p>
+      <p className="stores-empty-body">
+        {noListings
+          ? 'מאגר המחירים לא מחזיק כרגע מחיר עדכני לאף אחד מהמוצרים שבקבלה. ' +
+            'ברגע שיתפרסמו מחירים חדשים, ההשוואה כאן תתמלא מאליה.'
+          : 'לא נמצא סניף בסביבה עם מחיר עדכני למוצרים שבקבלה.'}
+      </p>
+      {branchCount > 0 && (
+        <p className="stores-empty-note">
+          מצאנו {branchCount} סניפים אמיתיים בסביבתכם — אפשר לראות אותם על המפה.
+        </p>
+      )}
+      {notes.map((note) => (
+        <p key={note} className="stores-empty-note">
+          {note}
+        </p>
+      ))}
     </div>
   )
 }
@@ -269,11 +369,18 @@ function StoreRow({
 }) {
   const diff = receiptTotal - store.bestPrice
 
+  // An approximate position is the city centre, so there is no distance to
+  // quote — naming the city is the honest version of the same information.
+  // The list renders plain Supermarkets, whose distance lives on the server
+  // response (`source.distanceM`); only map rows carry their own copy.
+  const meters = (store as StoreOnMap).distanceM ?? store.source.distanceM
   const where = store.online
     ? store.deliveryFee === 0
       ? 'משלוח חינם'
       : `משלוח ${formatPrice(store.deliveryFee)}`
-    : formatDistance((store as StoreOnMap).distanceM)
+    : store.approxLocation || meters == null
+      ? (store.source.city ?? 'מיקום משוער')
+      : formatDistance(meters)
 
   return (
     <li
@@ -290,54 +397,49 @@ function StoreRow({
 
       {/* Logo + online tag — right side (RTL start). */}
       <div className="store-logo-col">
-        <span className="row-logo">
-          <img src={store.logo} alt={store.brand} />
-        </span>
+        <ChainMark chain={store.brand} logo={store.logo} className="row-logo" />
         {store.online && <span className="online-tag">אונליין</span>}
       </div>
 
       <div className="row-info">
         <span className="row-name">{store.brand}</span>
-        <span className="row-where">{where}</span>
+        <span className="row-where">
+          {store.branch ? `${store.branch} · ${where}` : where}
+        </span>
+        {store.coverage < 1 && (
+          <span className="row-gap">חסרים {store.unavailableCount} מוצרים</span>
+        )}
       </div>
 
-      {/* Savings — the headline value, left side (RTL end). */}
+      {/* Left side (RTL end). A saving is only meaningful for a store that
+          actually stocks the cart: "save ₪552" off a basket holding 11% of the
+          items is the price of the missing 89%, not a discount. Partial stores
+          therefore show what they cover and nothing else. */}
       <div className="row-savings">
-        <SavingBadge amount={Math.abs(diff)} save={diff > 0} size="lg" />
-        <span className="price-xy mono" dir="ltr">
-          {formatPrice(store.cartTotal)} /{' '}
-          <span className="swap-price">
-            <SwapIcon />
-            {formatPrice(store.bestPrice)}
-          </span>
-        </span>
+        {store.coverage < 1 ? (
+          <>
+            <span className="row-partial mono" dir="ltr">
+              {formatPrice(store.bestPrice)}
+            </span>
+            <span className="price-xy">עבור {Math.round(store.coverage * 100)}% מהעגלה</span>
+          </>
+        ) : (
+          <>
+            <SavingBadge amount={Math.abs(diff)} save={diff > 0} size="lg" />
+            <span className="price-xy mono" dir="ltr">
+              {formatPrice(store.cartTotal)} /{' '}
+              <span className="swap-price">
+                <SwapIcon />
+                {formatPrice(store.bestPrice)}
+              </span>
+            </span>
+          </>
+        )}
       </div>
     </li>
   )
 }
 
-
-// Two round arrows forming a circle — the "swap for a cheaper item" cycle.
-function SwapIcon({ size = 14 }: { size?: number }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" width={size} height={size} aria-hidden="true">
-      <path
-        d="M18.5 8.5A8 8 0 0 0 5.2 7.3"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-      <path d="M18.9 4.6v4h-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path
-        d="M5.5 15.5a8 8 0 0 0 13.3 1.2"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-      <path d="M5.1 19.4v-4h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
 
 function EditIcon() {
   return (

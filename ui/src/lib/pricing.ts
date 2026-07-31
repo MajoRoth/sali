@@ -1,81 +1,99 @@
-import supermarketsJson from '../resources/supermarkets.json'
-import originJson from '../resources/origin.json'
-import type { ReceiptItem } from './types'
+import type { CartLine, NearbyStore } from './api'
+import { chainLogo } from './chains'
+import type { ReceiptItem, ReceiptOrigin } from './types'
 
 /**
- * A store for the cart view. Mock: we only have store-level totals, so per-item
- * prices are generated deterministically (see `itemPrices`). The origin store
- * uses the exact receipt prices; the rest are estimates scaled to their total.
+ * A basket the cart screen can render line by line.
+ *
+ * There are exactly two kinds, and the distinction is the whole point of the
+ * screen. The **origin** basket is what the shopper actually paid, taken from
+ * their own receipt. Every other basket is what one store quotes for the same
+ * products, taken from the price database. Nothing here is estimated: a line a
+ * store has no price for is shown as unavailable rather than filled in, because
+ * a guessed price is indistinguishable from a real one once it is on screen.
  */
 export interface PricedStore {
   id: string
   brand: string
-  logo: string
+  branch: string
+  logo: string | null
   online: boolean
   isOrigin: boolean
   cartTotal: number
+  /** Priced lines, in receipt order. */
+  lines: PricedLine[]
+  /** Set on non-origin stores: how many lines it could not price. */
+  unavailableCount: number
 }
 
-interface RawStore {
-  id: string
-  brand: string
-  logo: string
-  online: boolean
-  cartTotal: number
+export interface PricedLine {
+  name: string
+  barcode: string
+  qty: number
+  /** null when this store has no current price for the product. */
+  unitPrice: number | null
+  lineTotal: number | null
+  available: boolean
+  /** The receipt's own per-unit price, for the side-by-side comparison. */
+  paidUnitPrice: number | null
+  /** Set when this line was swapped for a cheaper equivalent. */
+  swappedFrom?: string
 }
 
-/** The origin store (exact receipt prices) plus every comparison store. */
-export function cartStores(items: ReceiptItem[]): PricedStore[] {
-  const receiptTotal = items.reduce((s, i) => s + i.qty * i.unitPrice, 0)
-  const origin: PricedStore = {
+/** The shopper's own receipt as a basket — the baseline everything compares to. */
+export function originStore(items: ReceiptItem[], origin: ReceiptOrigin): PricedStore {
+  return {
     id: 'origin',
-    brand: originJson.brand,
-    logo: originJson.logo,
+    brand: origin.chain,
+    branch: origin.branch,
+    logo: origin.logo,
     online: false,
     isOrigin: true,
-    cartTotal: receiptTotal,
+    cartTotal: items.reduce((sum, i) => sum + i.qty * i.unitPrice, 0),
+    unavailableCount: 0,
+    lines: items.map((i) => ({
+      name: i.name,
+      barcode: i.barcode,
+      qty: i.qty,
+      unitPrice: i.unitPrice,
+      lineTotal: i.qty * i.unitPrice,
+      available: true,
+      paidUnitPrice: i.unitPrice,
+    })),
   }
-  const alternatives = (supermarketsJson as RawStore[]).map((s) => ({
-    id: s.id,
-    brand: s.brand,
-    logo: s.logo,
-    online: s.online,
-    isOrigin: false,
-    cartTotal: s.cartTotal,
-  }))
-  return [origin, ...alternatives]
-}
-
-/** Stable per-(store, item) multiplier in ~0.82–1.28. */
-function factor(seed: string): number {
-  let h = 0
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0
-  return 0.82 + ((h % 1000) / 1000) * 0.46
 }
 
 /**
- * Per-unit price of each receipt item at a store. The origin returns exact
- * receipt prices; others are generated and scaled so the line totals sum to
- * that store's cart total (keeping the cart view consistent with the list).
+ * One store's quote for the cart, from the backend.
+ *
+ * Reads the optimal (post-swap) basket, since that is the total the list screen
+ * ranks on, and labels any line the swap engine replaced so the shopper can see
+ * that it is not literally what they bought.
  */
-export function itemPrices(store: PricedStore, items: ReceiptItem[]): number[] {
-  if (store.isOrigin) return items.map((i) => i.unitPrice)
-  const raw = items.map((i) => i.unitPrice * factor(`${store.id}|${i.barcode}`))
-  const rawTotal = raw.reduce((s, p, idx) => s + p * items[idx].qty, 0)
-  const scale = rawTotal > 0 ? store.cartTotal / rawTotal : 1
-  return raw.map((p) => Math.round(p * scale * 100) / 100)
-}
-
-export interface ItemRange {
-  min: number
-  max: number
-}
-
-/** Cheapest/most-expensive per-unit price of each item across all stores. */
-export function itemRanges(items: ReceiptItem[]): ItemRange[] {
-  const perStore = cartStores(items).map((s) => itemPrices(s, items))
-  return items.map((_, idx) => {
-    const col = perStore.map((prices) => prices[idx])
-    return { min: Math.min(...col), max: Math.max(...col) }
+export function pricedStore(store: NearbyStore, paid: ReceiptItem[]): PricedStore {
+  const swappedFrom = new Map(store.optimalCart.swaps.map((s) => [s.to.barcode, s.from.name]))
+  // Both baskets are emitted in receipt order, so position lines them up with
+  // what the shopper paid.
+  const line = (entry: CartLine, index: number): PricedLine => ({
+    name: entry.name,
+    barcode: entry.barcode,
+    qty: entry.qty,
+    unitPrice: entry.unitPrice,
+    lineTotal: entry.lineTotal,
+    available: entry.available,
+    paidUnitPrice: paid[index]?.unitPrice ?? null,
+    swappedFrom: swappedFrom.get(entry.barcode),
   })
+
+  return {
+    id: `${store.chain}:${store.storeId}`,
+    brand: store.chain,
+    branch: store.branch,
+    logo: chainLogo(store.chain),
+    online: store.online,
+    isOrigin: false,
+    cartTotal: store.optimalCart.total,
+    unavailableCount: store.optimalCart.unavailableCount,
+    lines: store.optimalCart.items.map(line),
+  }
 }

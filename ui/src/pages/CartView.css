@@ -134,3 +134,31 @@
   gap: 3px;
   flex-shrink: 0;
 }
+
+/* Lines this store has no current price for. Dimmed, never filled in. */
+.citem.unavailable {
+  opacity: 0.55;
+}
+
+.citem-swap {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted, #6b7f74);
+}
+
+.citem-swap svg {
+  flex-shrink: 0;
+  color: var(--accent, currentColor);
+}
+
+/* What the branch could not price — a caution, not the list's caption. */
+.cartview-warn {
+  margin: 10px 16px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(180, 99, 42, 0.08);
+  color: #8a4d20;
+  font-size: 12.5px;
+  line-height: 1.5;
+}

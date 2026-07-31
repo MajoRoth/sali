@@ -6,8 +6,17 @@ create table if not exists public.receipts (
   user_id    uuid not null references auth.users (id) on delete cascade,
   name       text not null,
   items      jsonb not null default '[]'::jsonb,
+  -- The full extracted Receipt Document. `items` is the flattened view the
+  -- list screen renders; this is everything the extractor read, and it is what
+  -- lets a saved receipt be re-priced later against wherever the shopper is
+  -- standing then. Nullable because receipts saved before this column existed
+  -- have no document, and the app degrades to `items` when it is absent.
+  document   jsonb,
   created_at timestamptz not null default now()
 );
+
+-- Safe to re-run on a project created before `document` existed.
+alter table public.receipts add column if not exists document jsonb;
 
 create index if not exists receipts_user_created_idx
   on public.receipts (user_id, created_at desc);

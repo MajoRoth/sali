@@ -2,7 +2,9 @@ import { useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'
 import { divIcon } from 'leaflet'
 import { useStores, useUserPosition } from '../lib/useStores'
+import { chainColor, chainMonogram } from '../lib/chains'
 import { FALLBACK_LOCATION } from '../lib/geo'
+import type { BranchOnMap } from '../lib/types'
 
 /**
  * Keeps the view centered on `pos` (shifted low so the user + pins sit inside the
@@ -21,17 +23,19 @@ function Recenter({ pos }: { pos: [number, number] }) {
 }
 
 /**
- * Decorative map behind the home content, showing the user + mock nearby stores.
+ * Decorative map behind the home content, showing the user and the real
+ * supermarkets around them.
  *
  * Loading is decoupled from geolocation: the map renders immediately at a default
  * location (so tiles start downloading right away), then recenters when the real
- * position resolves. Store pins are computed off the same current center, so they
- * appear without waiting either. Non-interactive; the fade lives in CSS.
+ * position resolves. Pins are the genuine branch directory rather than scenery —
+ * passing no receipt asks for the branches without pricing anything, which is
+ * one cheap call. Non-interactive; the fade lives in CSS.
  */
 export default function HomeMapBackground() {
   const userPos = useUserPosition()
   const center = userPos ?? FALLBACK_LOCATION
-  const { physical } = useStores(center)
+  const { branches } = useStores(null, center)
 
   return (
     <div className="home-map" aria-hidden="true">
@@ -51,8 +55,8 @@ export default function HomeMapBackground() {
         <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
         <Recenter pos={center} />
         <Marker position={center} icon={userIcon()} interactive={false} />
-        {physical.map((s) => (
-          <Marker key={s.id} position={[s.lat, s.lng]} icon={logoIcon(s.logo)} interactive={false} />
+        {branches.slice(0, 40).map((b) => (
+          <Marker key={b.id} position={[b.lat, b.lng]} icon={brandIcon(b)} interactive={false} />
         ))}
       </MapContainer>
     </div>
@@ -68,10 +72,15 @@ function userIcon() {
   })
 }
 
-function logoIcon(logo: string) {
+function brandIcon(branch: BranchOnMap) {
+  const inner = branch.logo
+    ? `<img src="${branch.logo}" alt="">`
+    : `<span class="home-pin-mono" style="background:${chainColor(branch.chain)}">${chainMonogram(
+        branch.chain,
+      )}</span>`
   return divIcon({
     className: 'home-marker-wrap',
-    html: `<div class="home-pin"><img src="${logo}" alt=""></div>`,
+    html: `<div class="home-pin">${inner}</div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 18],
   })
