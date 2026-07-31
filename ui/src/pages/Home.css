@@ -17,6 +17,48 @@
   padding: max(20px, env(safe-area-inset-top)) 20px calc(30vh + env(safe-area-inset-bottom));
 }
 
+/* --- Footer: the open-source invitation, pinned under both versions --- */
+
+/* Anchored to the bottom of the content box rather than added to the flow, so
+   it stays put whether the upload card or a scrolling receipt list is above. */
+/* Physical right, not inline-end: the page is RTL, and the corner meant here is
+   the one the reader sees on the right whichever way the text runs. */
+.home-footer {
+  position: absolute;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  right: 20px;
+  left: auto;
+  display: flex;
+  pointer-events: none;
+}
+
+.repo-link {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  /* Legible over the map that fades in behind it. */
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(23, 37, 29, 0.07);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+.repo-link:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.repo-link svg {
+  flex-shrink: 0;
+}
+
 /* --- Map background: user + nearby stores, faded out toward the top --- */
 
 .home-map {

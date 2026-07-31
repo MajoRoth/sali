@@ -125,11 +125,22 @@ const fromRow = (r: ReceiptRow): SavedReceipt => ({
 const COLUMNS = 'id, name, items, document, created_at'
 const COLUMNS_LEGACY = 'id, name, items, created_at'
 
-/** Postgres "column does not exist" — the `document` column has not been added. */
+/**
+ * The two ways "there is no `document` column" comes back.
+ *
+ * A *select* naming a missing column reaches Postgres, which answers `42703`.
+ * An *insert* whose body names one does not: PostgREST rejects it against its
+ * own schema cache first and answers `PGRST204`. Matching only the Postgres
+ * code meant reading a receipt degraded gracefully while saving one failed
+ * outright — the same missing column, reported by a different layer.
+ */
 const UNDEFINED_COLUMN = '42703'
+const UNKNOWN_COLUMN_IN_BODY = 'PGRST204'
 
-function isMissingDocumentColumn(error: { code?: string } | null): boolean {
-  return error?.code === UNDEFINED_COLUMN
+function isMissingDocumentColumn(error: { code?: string; message?: string } | null): boolean {
+  if (error?.code === UNDEFINED_COLUMN) return true
+  // PGRST204 is "some column in the body is unknown" — only ours should retry.
+  return error?.code === UNKNOWN_COLUMN_IN_BODY && (error.message ?? '').includes("'document'")
 }
 
 interface Queried {

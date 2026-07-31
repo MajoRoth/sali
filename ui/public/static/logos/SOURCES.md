@@ -10,6 +10,7 @@ All trademarks belong to their respective owners.
 | `carrefour.png` | קרפור | [Hebrew Wikipedia](https://he.wikipedia.org/wiki/%D7%A7%D7%95%D7%91%D7%A5:Carrefour_logo.png) (fair use) |
 | `superyuda.png` | סופר יודה | Official site — `yuda.co.il` |
 | `ramilevy.png` | רמי לוי | [Hebrew Wikipedia](https://he.wikipedia.org/wiki/%D7%A7%D7%95%D7%91%D7%A5:RAMILEVI.png) (fair use) |
+| `doralon.svg` | דור אלון | [Hebrew Wikipedia](https://he.wikipedia.org/wiki/%D7%A7%D7%95%D7%91%D7%A5:Dor_Alon_Logo.svg) (fair use) |
 | `wolt.png` | Wolt Market | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Wolt-app-icon-2019.png) |
 
 `shufersal.svg` was modified only to add a `viewBox` attribute so it scales in CSS.
