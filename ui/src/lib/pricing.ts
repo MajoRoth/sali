@@ -36,6 +36,8 @@ export interface PricedLine {
   available: boolean
   /** The receipt's own per-unit price, for the side-by-side comparison. */
   paidUnitPrice: number | null
+  /** What the shopper paid for this line in full, for the header's arithmetic. */
+  paidLineTotal: number | null
   /** Set when this line was swapped for a cheaper equivalent. */
   swappedFrom?: string
 }
@@ -59,6 +61,7 @@ export function originStore(items: ReceiptItem[], origin: ReceiptOrigin): Priced
       lineTotal: i.qty * i.unitPrice,
       available: true,
       paidUnitPrice: i.unitPrice,
+      paidLineTotal: i.qty * i.unitPrice,
     })),
   }
 }
@@ -72,18 +75,31 @@ export function originStore(items: ReceiptItem[], origin: ReceiptOrigin): Priced
  */
 export function pricedStore(store: NearbyStore, paid: ReceiptItem[]): PricedStore {
   const swappedFrom = new Map(store.optimalCart.swaps.map((s) => [s.to.barcode, s.from.name]))
-  // Both baskets are emitted in receipt order, so position lines them up with
-  // what the shopper paid.
-  const line = (entry: CartLine, index: number): PricedLine => ({
-    name: entry.name,
-    barcode: entry.barcode,
-    qty: entry.qty,
-    unitPrice: entry.unitPrice,
-    lineTotal: entry.lineTotal,
-    available: entry.available,
-    paidUnitPrice: paid[index]?.unitPrice ?? null,
-    swappedFrom: swappedFrom.get(entry.barcode),
-  })
+
+  // Join on the receipt position the server stamps on every cart line. Never on
+  // list index: a store cart holds only the lines that could be matched, so one
+  // unmatched product shifts every line after it and compares the shopper's
+  // chocolate against what they paid for dish soap.
+  //
+  // `paid` is in receipt order, so a receipt saved before the server carried
+  // `position` still lines up on the 1-based printed position.
+  const paidAt = (position: number | undefined, index: number): ReceiptItem | undefined =>
+    position === undefined ? paid[index] : paid[position - 1]
+
+  const line = (entry: CartLine, index: number): PricedLine => {
+    const source = paidAt(entry.position, index)
+    return {
+      name: entry.name,
+      barcode: entry.barcode,
+      qty: entry.qty,
+      unitPrice: entry.unitPrice,
+      lineTotal: entry.lineTotal,
+      available: entry.available,
+      paidUnitPrice: source?.unitPrice ?? null,
+      paidLineTotal: source ? source.unitPrice * source.qty : null,
+      swappedFrom: swappedFrom.get(entry.barcode),
+    }
+  }
 
   return {
     id: `${store.chain}:${store.storeId}`,

@@ -128,6 +128,7 @@ def simulated_stores(
                 unavailable += 1
                 lines.append(
                     CartLine(
+                        position=item.position,
                         barcode=str(item.code or ""),
                         name=item.name,
                         qty=float(quantity),
@@ -147,6 +148,7 @@ def simulated_stores(
             total += line_total
             lines.append(
                 CartLine(
+                    position=item.position,
                     barcode=str(item.code or ""),
                     name=item.name,
                     qty=float(quantity),

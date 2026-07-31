@@ -75,6 +75,12 @@ export interface GeoPoint {
 }
 
 export interface CartLine {
+  /**
+   * The receipt line this answers, as printed on it — the join key back to the
+   * cart. Optional only because a receipt saved before the server emitted it
+   * has to keep opening; new responses always carry it.
+   */
+  position?: number
   barcode: string
   name: string
   qty: number

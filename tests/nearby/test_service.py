@@ -167,3 +167,55 @@ def test_branches_of_chains_that_quoted_nothing_are_disclosed() -> None:
         "price" in warning
         for warning in response.warnings
     )
+
+
+def test_cart_line_positions_skip_the_unmatched_line() -> None:
+    """The join key survives a line the catalogue could not resolve.
+
+    A store cart holds only the lines that could be matched, so it is shorter
+    than the receipt. Without a position on each line the screen pairs the two
+    by list index, and every line after the gap answers the wrong receipt line —
+    the shopper's third product priced against what they paid for the second.
+    """
+    doc = document(
+        [
+            ("עגבניה", "18", "1", "3.10"),
+            ("מרשמלו", None, "1", "7.90"),
+            ("שוקולד חלב", "21", "1", "5.90"),
+        ]
+    )
+    matcher = FakeMatcher(
+        [
+            LineMatch(catalogue("935", 935, "עגבניה"), "barcode", 1.0, None),
+            # The middle line resolves to nothing and drops out of every cart.
+            LineMatch(None, None, 0.0, "no catalogue match"),
+            LineMatch(catalogue("880", 880, "שוקולד חלב"), "barcode", 1.0, None),
+        ]
+    )
+    catalog = FakeCatalog(
+        comparisons=[
+            comparison(935, [chain("c1", "ויקטורי", [{"storeId": "1", "price": 3.0}])]),
+            comparison(880, [chain("c1", "ויקטורי", [{"storeId": "1", "price": 8.9}])]),
+        ]
+    )
+    service = NearbyService(
+        catalog=catalog,
+        matcher=matcher,
+        directory=FakeDirectory([branch("c1", "1", "ויקטורי")]),
+    )
+
+    response = service.price(doc, location=HERE, radius_m=5000)
+
+    store = response.stores[0]
+    # Two cart lines for a three-line receipt — and they name positions 1 and 3,
+    # not 1 and 2. Index-based pairing is exactly what this rules out.
+    assert [line.position for line in store.same_cart.items] == [1, 3]
+    assert [line.position for line in store.optimal_cart.items] == [1, 3]
+    chocolate = store.same_cart.items[1]
+    assert chocolate.name == "שוקולד חלב"
+    assert chocolate.unit_price == 8.9
+
+    # The origin basket carries every receipt line, positions included, so the
+    # UI can join against it too.
+    assert response.origin is not None
+    assert [line.position for line in response.origin.same_cart.items] == [1, 2, 3]

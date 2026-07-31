@@ -69,8 +69,17 @@ class NearbyUrlRequest(_Wire):
 
 
 class CartLine(_Wire):
-    """One receipt line as one store would sell it."""
+    """One receipt line as one store would sell it.
 
+    `position` is the join key back to the receipt, and it is not decoration.
+    A store cart holds only the lines that could be matched, so a cart of 22
+    lines can answer a receipt of 23. Anything pairing the two by list index
+    silently shifts every line after the first unmatched one, and compares a
+    shopper's chocolate against what they paid for dish soap.
+    """
+
+    #: The receipt line this answers, as printed on it (`Item.position`).
+    position: int
     barcode: str
     name: str
     qty: float
