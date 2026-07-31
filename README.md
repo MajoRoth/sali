@@ -349,7 +349,9 @@ populated, because they are answers a shopper can act on.
 | `SUPERMARKET_API_KEY` | bundled public token | Bearer token for the pricing instance |
 | `SALI_FALLBACK_PRICES` | unset | Set to `1` to simulate prices when the database is down — **development only, not real prices** |
 | `SALI_STORE_DIRECTORY_TTL_SECONDS` | `21600` | How long the cross-instance pricing index is cached |
-| `SALI_CORS_ORIGINS` | `http://localhost:5173` | Comma-separated browser origins allowed to call the API |
+| `SALI_CORS_ORIGINS` | unset (any loopback origin) | Comma-separated browser origins allowed to call the API; set it on a deployed box, e.g. `http://34.165.235.189:5173` |
+| `SALI_HOST` | `127.0.0.1` | Interface `sali-api` binds; set `0.0.0.0` on a deployed box that serves other machines |
+| `SALI_PORT` | `8000` | Port `sali-api` listens on |
 | `SALI_LOG_FAILURE_DETAIL` | unset | Set to `1` to log model- and page-derived failure text while debugging |
 
 ## UI

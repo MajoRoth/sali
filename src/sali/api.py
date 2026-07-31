@@ -360,10 +360,11 @@ def create_app(
     )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://34.165.235.189:5173"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=_cors_origins(),
+        allow_origin_regex=_cors_origin_regex(),
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
     )
 
     @app.exception_handler(RequestValidationError)
@@ -606,6 +607,16 @@ app = create_app()
 
 
 def main() -> None:
-    """Run the trusted local development server."""
+    """Run the API server.
+
+    Binds loopback unless the deployment says otherwise: set `SALI_HOST` to
+    `0.0.0.0` (and `SALI_CORS_ORIGINS` to the UI's origin) on a box that must
+    serve other machines.
+    """
     import uvicorn
-    uvicorn.run("sali.api:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "sali.api:app",
+        host=os.environ.get("SALI_HOST", "127.0.0.1"),
+        port=int(os.environ.get("SALI_PORT", "8000")),
+        reload=True,
+    )

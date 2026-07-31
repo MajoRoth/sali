@@ -22,7 +22,7 @@
  * first on macOS — so every call spent a refused IPv6 connection before falling
  * back, and anything stricter than a browser about that fallback just failed.
  */
-const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://34.165.235.189:8000').replace(/\/$/, '')
+const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000').replace(/\/$/, '')
 
 /* ------------------------------------------------------------------ */
 /* Receipt Document — the extraction contract (snake_case).            */
