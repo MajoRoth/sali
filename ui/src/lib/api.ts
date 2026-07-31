@@ -75,6 +75,10 @@ export interface GeoPoint {
 }
 
 export interface CartLine {
+  /** The receipt line this answers — the only valid join key back to the
+   * receipt, since a cart holds only the *matched* lines and array order
+   * drifts as soon as one line goes unmatched. */
+  position: number
   barcode: string
   name: string
   qty: number

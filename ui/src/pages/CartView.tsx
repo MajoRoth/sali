@@ -39,8 +39,15 @@ export default function CartView() {
     // outliers, and they are what a shopper acts on.
     .sort((a, b) => (b.diff ?? -Infinity) - (a.diff ?? -Infinity))
 
-  const paidTotal = (state.items ?? []).reduce((s, i) => s + i.unitPrice * i.qty, 0)
-  const totalDiff = store.isOrigin ? 0 : paidTotal - store.cartTotal
+  // What the shopper paid for the very items this store prices — the only sum
+  // the store's total may honestly be compared against. Comparing against the
+  // whole receipt once headlined "saving ₪94.80" on a cart that was simply
+  // missing twelve of the products.
+  const coveredPaid = store.lines.reduce(
+    (s, l) => (l.available && l.paidUnitPrice !== null ? s + l.paidUnitPrice * l.qty : s),
+    0,
+  )
+  const totalDiff = store.isOrigin ? 0 : coveredPaid - store.cartTotal
   const totalSave = totalDiff >= -0.005
 
   return (
@@ -75,7 +82,7 @@ export default function CartView() {
 
       {store.unavailableCount > 0 && (
         <p className="cartview-note">
-          {store.unavailableCount} מוצרים אינם במלאי המתומחר של הסניף ואינם נכללים בסכום.
+          {store.unavailableCount} מוצרים אינם במלאי המתומחר של הסניף ואינם נכללים בסכום ובחיסכון.
         </p>
       )}
 

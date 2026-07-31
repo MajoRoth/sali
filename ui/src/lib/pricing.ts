@@ -72,16 +72,21 @@ export function originStore(items: ReceiptItem[], origin: ReceiptOrigin): Priced
  */
 export function pricedStore(store: NearbyStore, paid: ReceiptItem[]): PricedStore {
   const swappedFrom = new Map(store.optimalCart.swaps.map((s) => [s.to.barcode, s.from.name]))
-  // Both baskets are emitted in receipt order, so position lines them up with
-  // what the shopper paid.
-  const line = (entry: CartLine, index: number): PricedLine => ({
+  // Joined on the receipt line number, never on array order: the cart holds
+  // only the *matched* lines, so the moment one receipt line goes unmatched,
+  // every later index points at the wrong purchase — a ₪8.90 chocolate was
+  // once credited with the dish soap's ₪13.90 as "what you paid". Receipts
+  // saved before positions existed fall back to 1-based order, which is what
+  // their positions were.
+  const paidByPosition = new Map(paid.map((item, index) => [item.position ?? index + 1, item]))
+  const line = (entry: CartLine): PricedLine => ({
     name: entry.name,
     barcode: entry.barcode,
     qty: entry.qty,
     unitPrice: entry.unitPrice,
     lineTotal: entry.lineTotal,
     available: entry.available,
-    paidUnitPrice: paid[index]?.unitPrice ?? null,
+    paidUnitPrice: paidByPosition.get(entry.position)?.unitPrice ?? null,
     swappedFrom: swappedFrom.get(entry.barcode),
   })
 

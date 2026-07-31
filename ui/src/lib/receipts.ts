@@ -28,6 +28,7 @@ export function itemsFromDocument(document: ReceiptDocument): ReceiptItem[] {
   return document.receipt.items.map((item) => {
     const qty = Number(item.quantity ?? '1')
     return {
+      position: item.position,
       name: item.name,
       barcode: item.code ?? '',
       qty: Number.isFinite(qty) && qty > 0 ? qty : 1,

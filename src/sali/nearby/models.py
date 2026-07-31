@@ -71,6 +71,10 @@ class NearbyUrlRequest(_Wire):
 class CartLine(_Wire):
     """One receipt line as one store would sell it."""
 
+    #: The receipt line this answers. The cart holds only *matched* lines, so
+    #: array order does not line up with the receipt — anything comparing a
+    #: cart line to what was paid must join on this, never on index.
+    position: int
     barcode: str
     name: str
     qty: float

@@ -167,3 +167,43 @@ def test_branches_of_chains_that_quoted_nothing_are_disclosed() -> None:
         "price" in warning
         for warning in response.warnings
     )
+
+
+def test_cart_lines_carry_the_receipt_position_even_when_a_line_is_unmatched() -> None:
+    # The cart holds only matched lines, so the moment one receipt line goes
+    # unmatched, array order stops meaning anything. The position is the only
+    # join key back to what was paid — losing it once credited a ₪8.90
+    # chocolate with the dish soap's ₪13.90 as "what you paid".
+    doc = document(
+        [
+            ("עגבניה", "18", "1", "3.10"),
+            ("מרשמלו", "7290019545620", "1", "4.90"),
+            ("שוקולד חלב", "7290000170053", "1", "5.90"),
+        ]
+    )
+    matcher = FakeMatcher(
+        [
+            LineMatch(catalogue("935", 935, "עגבניה"), "name", 1.0, None),
+            LineMatch(None, None, 0.0, "barcode 7290019545620 is not in the price database"),
+            LineMatch(catalogue("170053", 170053, "שוקולד חלב"), "barcode", 1.0, None),
+        ]
+    )
+    catalog = FakeCatalog(
+        comparisons=[
+            comparison(935, [chain("c1", "ויקטורי", [{"storeId": "1", "price": 3.0}])]),
+            comparison(170053, [chain("c1", "ויקטורי", [{"storeId": "1", "price": 8.9}])]),
+        ]
+    )
+    service = NearbyService(
+        catalog=catalog,
+        matcher=matcher,
+        directory=FakeDirectory([branch("c1", "1", "ויקטורי")]),
+    )
+
+    response = service.price(doc, location=HERE, radius_m=5000)
+
+    store = response.stores[0]
+    assert [line.position for line in store.same_cart.items] == [1, 3]
+    assert [line.position for line in store.optimal_cart.items] == [1, 3]
+    assert response.origin is not None
+    assert [line.position for line in response.origin.same_cart.items] == [1, 2, 3]

@@ -2,6 +2,12 @@ import type { NearbyStore } from './api'
 
 /** One line of the shopper's own receipt, at the price they actually paid. */
 export interface ReceiptItem {
+  /**
+   * The receipt line number, matching `CartLine.position` on priced carts.
+   * Optional because receipts saved before it existed don't carry one; those
+   * fall back to their 1-based array order, which is the same thing.
+   */
+  position?: number;
   name: string;
   /** The code printed on the receipt: a barcode when there was one, else a PLU. */
   barcode: string;
