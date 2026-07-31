@@ -42,8 +42,16 @@ export default function CartView() {
     // outliers, and they are what a shopper acts on.
     .sort((a, b) => (b.diff ?? -Infinity) - (a.diff ?? -Infinity))
 
-  const paidTotal = (state.items ?? []).reduce((s, i) => s + i.unitPrice * i.qty, 0)
-  const totalDiff = store.isOrigin ? 0 : paidTotal - store.cartTotal
+  // Compare like with like: the store's total covers only the lines it could
+  // price, so the baseline is what the shopper paid *for those same lines*.
+  // Measuring a partial cart against the whole receipt books every product the
+  // store does not stock as a saving — the more it is missing, the better it
+  // looks, which is exactly backwards.
+  const paidForPriced = store.lines.reduce(
+    (sum, line) => (line.available && line.paidLineTotal !== null ? sum + line.paidLineTotal : sum),
+    0,
+  )
+  const totalDiff = store.isOrigin ? 0 : paidForPriced - store.cartTotal
   const totalSave = totalDiff >= -0.005
 
   // Says what the numbers on each row mean, above the rows. The origin basket
@@ -85,7 +93,7 @@ export default function CartView() {
 
       {store.unavailableCount > 0 && (
         <p className="cartview-warn">
-          {store.unavailableCount} מוצרים אינם במלאי המתומחר של הסניף ואינם נכללים בסכום.
+          {store.unavailableCount} מוצרים אינם במלאי המתומחר של הסניף ואינם נכללים בסכום ובחיסכון.
         </p>
       )}
 

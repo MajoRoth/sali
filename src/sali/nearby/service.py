@@ -431,6 +431,7 @@ class NearbyService:
                 unavailable += 1
                 same_lines.append(
                     CartLine(
+                        position=line.position,
                         barcode=str(line.product.barcode),
                         name=line.product.name or line.receipt_name,
                         qty=float(quantity),
@@ -451,6 +452,7 @@ class NearbyService:
             same_total += line_total
             same_lines.append(
                 CartLine(
+                    position=line.position,
                     barcode=str(product.barcode),
                     name=product.name or line.receipt_name,
                     qty=float(quantity),
@@ -550,6 +552,9 @@ class NearbyService:
             optimal_total += line_total
             optimal_lines.append(
                 CartLine(
+                    # A swap answers the same receipt line as the product it
+                    # replaced, so the join key travels with it.
+                    position=line.position,
                     barcode=str(swap.replacement.barcode),
                     name=swap.replacement.name,
                     qty=float(quantity),
@@ -609,6 +614,7 @@ class NearbyService:
 
         lines = [
             CartLine(
+                position=item.position,
                 barcode=str(item.code or ""),
                 name=item.name,
                 qty=float(_quantity(item)),
