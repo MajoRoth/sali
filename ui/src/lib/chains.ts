@@ -15,6 +15,7 @@ const LOGOS: [RegExp, string][] = [
   [/קרפור|carrefour/i, '/static/logos/carrefour.png'],
   [/טיב\s*טעם|tiv\s*taam/i, '/static/logos/tivtaam.svg'],
   [/סופר\s*יודה|superyuda/i, '/static/logos/superyuda.png'],
+  [/דור\s*אלון|dor\s*alon/i, '/static/logos/doralon.svg'],
   [/wolt/i, '/static/logos/wolt.png'],
 ]
 

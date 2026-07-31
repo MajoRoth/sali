@@ -566,8 +566,13 @@
 }
 
 /* A partial store shows what it covers, never a saving — see StoreRow. */
-.row-partial {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--ink, #1a1a1a);
+/* Scopes the saving above it to the part of the cart this store can price.
+   Carries the same caution colour as the missing-items note on the other side
+   of the row, so the two read as one qualification rather than two remarks. */
+.row-partial-note {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--warn, #b4632a);
+  text-align: left;
+  unicode-bidi: plaintext;
 }

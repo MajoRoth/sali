@@ -9,7 +9,12 @@ import { warningText } from '../lib/api'
 import type { StoreOnMap, Supermarket } from '../lib/types'
 import { formatDistance, formatPrice } from '../lib/geo'
 import { useStores, useUserPosition } from '../lib/useStores'
-import { originStore, pricedStore, type PricedStore } from '../lib/pricing'
+import {
+  originStore,
+  paidForPricedLines,
+  pricedStore,
+  type PricedStore,
+} from '../lib/pricing'
 import { useAuth } from '../lib/auth'
 import {
   countOf,
@@ -272,7 +277,16 @@ export default function Results() {
                   key={store.id}
                   store={store}
                   best={store.bestPrice === cheapestBest}
-                  receiptTotal={receiptTotal}
+                  // A store that prices the whole cart is measured against the
+                  // receipt's own printed total, which is authoritative. One
+                  // that prices only part of it is measured against what was
+                  // paid for that part — otherwise the products it does not
+                  // stock are counted as a saving.
+                  paidBaseline={
+                    store.coverage < 1
+                      ? paidForPricedLines(store.source, active.items)
+                      : receiptTotal
+                  }
                   style={{ animationDelay: `${Math.min(i, 6) * 55}ms` }}
                   onOpen={() => openCart(pricedStore(store.source, active.items))}
                 />
@@ -357,17 +371,18 @@ function NoPrices({ warnings, branchCount }: { warnings: string[]; branchCount: 
 function StoreRow({
   store,
   best,
-  receiptTotal,
+  paidBaseline,
   style,
   onOpen,
 }: {
   store: Supermarket
   best: boolean
-  receiptTotal: number
+  /** What was paid for the lines this store prices — the saving's baseline. */
+  paidBaseline: number
   style?: React.CSSProperties
   onOpen?: () => void
 }) {
-  const diff = receiptTotal - store.bestPrice
+  const diff = paidBaseline - store.bestPrice
 
   // An approximate position is the city centre, so there is no distance to
   // quote — naming the city is the honest version of the same information.
@@ -411,29 +426,25 @@ function StoreRow({
         )}
       </div>
 
-      {/* Left side (RTL end). A saving is only meaningful for a store that
-          actually stocks the cart: "save ₪552" off a basket holding 11% of the
-          items is the price of the missing 89%, not a discount. Partial stores
-          therefore show what they cover and nothing else. */}
+      {/* Left side (RTL end). Every store shows its saving, but a store that
+          cannot price the whole cart shows what its saving covers right under
+          it: measured against the whole receipt, "save ₪552" off a basket
+          holding 11% of the items would be the price of the missing 89%, not a
+          discount. The figure here is already covered-against-covered; the note
+          is what stops it being read as a saving on the full cart. */}
       <div className="row-savings">
-        {store.coverage < 1 ? (
-          <>
-            <span className="row-partial mono" dir="ltr">
-              {formatPrice(store.bestPrice)}
-            </span>
-            <span className="price-xy">עבור {Math.round(store.coverage * 100)}% מהעגלה</span>
-          </>
-        ) : (
-          <>
-            <SavingBadge amount={Math.abs(diff)} save={diff > 0} size="lg" />
-            <span className="price-xy mono" dir="ltr">
-              {formatPrice(store.cartTotal)} /{' '}
-              <span className="swap-price">
-                <SwapIcon />
-                {formatPrice(store.bestPrice)}
-              </span>
-            </span>
-          </>
+        <SavingBadge amount={Math.abs(diff)} save={diff > 0} size="lg" />
+        <span className="price-xy mono" dir="ltr">
+          {formatPrice(store.cartTotal)} /{' '}
+          <span className="swap-price">
+            <SwapIcon />
+            {formatPrice(store.bestPrice)}
+          </span>
+        </span>
+        {store.coverage < 1 && (
+          <span className="row-partial-note">
+            עבור {Math.round(store.coverage * 100)}% מהעגלה
+          </span>
         )}
       </div>
     </li>
