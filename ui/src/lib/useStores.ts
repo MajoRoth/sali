@@ -116,6 +116,7 @@ export function useStores(
   document: ReceiptDocument | null,
   userPos: [number, number] | null,
   radiusM: number = SEARCH_RADIUS_M,
+  allowSubstitutions: boolean = true,
 ): Stores {
   const [response, setResponse] = useState<NearbyResponse | null>(null)
   const [branches, setBranches] = useState<BranchOnMap[]>([])
@@ -163,7 +164,7 @@ export function useStores(
     setLoading(true)
     setError(null)
 
-    void priceNearby(document, { lat, lng }, radiusM)
+    void priceNearby(document, { lat, lng }, radiusM, allowSubstitutions)
       .then((result) => {
         if (!cancelled) setResponse(result)
       })
@@ -179,7 +180,7 @@ export function useStores(
     return () => {
       cancelled = true
     }
-  }, [document, lat, lng, radiusM])
+  }, [document, lat, lng, radiusM, allowSubstitutions])
 
   return useMemo(() => {
     if (lat === undefined || lng === undefined) return IDLE

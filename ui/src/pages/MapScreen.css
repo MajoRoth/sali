@@ -473,3 +473,13 @@
   cursor: default;
   opacity: 0.92;
 }
+
+.map-toggle-subs {
+  margin-right: auto;
+  margin-left: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(23, 37, 29, 0.08);
+  border-radius: 99px;
+  padding: 6px 10px;
+  box-shadow: 0 4px 12px rgba(23, 37, 29, 0.06);
+}

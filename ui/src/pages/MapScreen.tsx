@@ -25,9 +25,13 @@ export default function MapScreen() {
 
   const { user } = useAuth()
   const active = useActiveReceipt(user?.id ?? null)
+  const [allowSubstitutions, setAllowSubstitutions] = useState(true)
+
   const { physical, online, cheapestBest, branches, response } = useStores(
     active.document,
     userPos,
+    undefined,
+    allowSubstitutions,
   )
   const receiptTotal = documentTotal(active.document) ?? totalOf(active.items)
   const receiptItemCount = countOf(active.items)
@@ -144,6 +148,14 @@ export default function MapScreen() {
           <span className="chip-sep">·</span>
           <span>{active.name ?? 'עגלה סרוקה'}</span>
         </div>
+        <label className="toggle-substitutions map-toggle-subs" title="החלפה למוצרים דומים וזולים יותר">
+          <input
+            type="checkbox"
+            checked={allowSubstitutions}
+            onChange={(e) => setAllowSubstitutions(e.target.checked)}
+          />
+          <SwapIcon size={13} />
+        </label>
       </header>
 
       <section className="store-sheet">

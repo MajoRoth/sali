@@ -40,8 +40,9 @@ class CartComparisonService:
         document: ReceiptDocument,
         *,
         city: str | None = None,
+        allow_substitutions: bool = True,
     ) -> CartComparison:
-        matched, unmatched = self._resolve(document)
+        matched, unmatched = self._resolve(document, allow_substitutions=allow_substitutions)
         warnings: list[str] = []
 
         prices = []
@@ -112,12 +113,13 @@ class CartComparisonService:
     def _resolve(
         self,
         document: ReceiptDocument,
+        allow_substitutions: bool = True,
     ) -> tuple[list[MatchedLine], list[UnmatchedLine]]:
         matched: list[MatchedLine] = []
         unmatched: list[UnmatchedLine] = []
 
         items = list(document.receipt.items)
-        for item, result in zip(items, self._matcher.match_all(items), strict=True):
+        for item, result in zip(items, self._matcher.match_all(items, allow_substitutions=allow_substitutions), strict=True):
             if result.product is None or result.matched_by is None:
                 unmatched.append(
                     UnmatchedLine(

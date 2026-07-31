@@ -72,7 +72,7 @@ def _quantity(item: Item) -> Decimal:
 def _cheapest_reading(
     line: MatchedLine,
     store_prices: dict[int, Decimal],
-) -> tuple[CatalogProduct, float | None, Decimal] | None:
+) -> tuple[CatalogProduct, float | None, Decimal, bool] | None:
     """How this store sells this line, if it does: the cheapest priced product
     among the match and its equally-valid alternates.
 
@@ -82,17 +82,27 @@ def _cheapest_reading(
     actually priced, under that product's own name and confidence.
     """
     readings = [
-        (line.product, line.confidence if line.matched_by == "name" else None),
-        *((alternate.product, alternate.confidence) for alternate in line.alternates),
+        (line.product, line.confidence if line.matched_by == "name" else None, False),
+        *(
+            (alternate.product, alternate.confidence, getattr(alternate, "is_substitution", False))
+            for alternate in line.alternates
+        ),
     ]
-    best: tuple[CatalogProduct, float | None, Decimal] | None = None
-    for product, confidence in readings:
+    exact_best: tuple[CatalogProduct, float | None, Decimal, bool] | None = None
+    sub_best: tuple[CatalogProduct, float | None, Decimal, bool] | None = None
+
+    for product, confidence, is_sub in readings:
         price = store_prices.get(product.barcode)
         if price is None:
             continue
-        if best is None or price < best[2]:
-            best = (product, confidence, price)
-    return best
+        if is_sub:
+            if sub_best is None or price < sub_best[2]:
+                sub_best = (product, confidence, price, is_sub)
+        else:
+            if exact_best is None or price < exact_best[2]:
+                exact_best = (product, confidence, price, is_sub)
+    
+    return exact_best or sub_best
 
 
 class NearbyService:
@@ -116,10 +126,11 @@ class NearbyService:
         radius_m: int,
         limit: int = 30,
         include_online: bool = False,
+        allow_substitutions: bool = True,
     ) -> NearbyResponse:
         here = (location.lat, location.lng)
         items = {item.position: item for item in document.receipt.items}
-        matched, unmatched = self._resolve(document)
+        matched, unmatched = self._resolve(document, allow_substitutions=allow_substitutions)
         warnings: list[str] = []
 
         in_radius = self._directory.nearby(here, radius_m)
@@ -260,12 +271,17 @@ class NearbyService:
     def _resolve(
         self,
         document: ReceiptDocument,
+        allow_substitutions: bool = True,
     ) -> tuple[list[MatchedLine], list[UnmatchedLine]]:
         matched: list[MatchedLine] = []
         unmatched: list[UnmatchedLine] = []
 
         items = list(document.receipt.items)
-        for item, result in zip(items, self._matcher.match_all(items), strict=True):
+        for item, result in zip(
+            items,
+            self._matcher.match_all(items, allow_substitutions=allow_substitutions),
+            strict=True,
+        ):
             if result.product is None or result.matched_by is None:
                 unmatched.append(
                     UnmatchedLine(
@@ -442,11 +458,12 @@ class NearbyService:
                         match_confidence=(
                             line.confidence if line.matched_by == "name" else None
                         ),
+                        is_substitution=False,
                     )
                 )
                 continue
 
-            product, confidence, price = reading
+            product, confidence, price, is_sub = reading
             readings[line.position] = (product, price)
             line_total = price * quantity
             same_total += line_total
@@ -461,6 +478,7 @@ class NearbyService:
                     line_total=_money(line_total),
                     available=True,
                     match_confidence=confidence,
+                    is_substitution=is_sub,
                 )
             )
 
@@ -584,6 +602,7 @@ class NearbyService:
                     line_savings=_money(swap.line_savings),
                     reason="cheaper_similar",
                     similarity=swap.similarity,
+                    is_substitution=swap.is_substitution,
                 )
             )
 

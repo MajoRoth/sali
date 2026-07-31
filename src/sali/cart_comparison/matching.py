@@ -190,12 +190,34 @@ class CartMatcher:
         self._catalog = catalog
         self._minimum_score = minimum_score
 
-    def match(self, item: Item) -> LineMatch:
+    def match(self, item: Item, allow_substitutions: bool = True) -> LineMatch:
         if is_barcode(item.code):
-            return self._from_barcode(item.code or "", item.name)
-        return self._match_by_name(item.name)
+            match_result = self._from_barcode(item.code or "", item.name)
+        else:
+            match_result = self._match_by_name(item.name)
 
-    def match_all(self, items: list[Item]) -> list[LineMatch]:
+        if not allow_substitutions or match_result.product is None:
+            return match_result
+
+        similar = self._catalog.similar_products(match_result.product.product_id, limit=5)
+        if not similar:
+            return match_result
+
+        new_alternates = list(match_result.alternates)
+        for raw in similar:
+            prod = to_product(raw)
+            if prod and prod.product_id != match_result.product.product_id:
+                new_alternates.append(AlternateProduct(product=prod, confidence=0.9, is_substitution=True))
+
+        return LineMatch(
+            match_result.product,
+            match_result.matched_by,
+            match_result.confidence,
+            match_result.reason,
+            tuple(new_alternates),
+        )
+
+    def match_all(self, items: list[Item], allow_substitutions: bool = True) -> list[LineMatch]:
         """Resolve a whole receipt, in the order it was given.
 
         Every line costs at least one call to a catalogue that answers in
@@ -205,12 +227,15 @@ class CartMatcher:
         worker cap keeps it from looking like an attack on a free service.
         """
         if len(items) < 2:
-            return [self.match(item) for item in items]
+            return [self.match(item, allow_substitutions=allow_substitutions) for item in items]
+
+        from functools import partial
+        func = partial(self.match, allow_substitutions=allow_substitutions)
 
         with ThreadPoolExecutor(
             max_workers=min(BARCODE_LOOKUP_WORKERS, len(items))
         ) as pool:
-            return list(pool.map(self.match, items))
+            return list(pool.map(func, items))
 
     def _from_barcode(self, barcode: str, name: str) -> LineMatch:
         found = self._lookup(barcode)

@@ -37,6 +37,7 @@ class AlternateProduct(_StrictModel):
 
     product: CatalogProduct
     confidence: Annotated[float, Field(ge=0.0, le=1.0)]
+    is_substitution: bool = False
 
 
 class MatchedLine(_StrictModel):

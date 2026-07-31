@@ -314,6 +314,22 @@ class SupermarketsCatalog:
         items = payload.get("items")
         return [item for item in items if isinstance(item, dict)] if items else []
 
+    def similar_products(
+        self,
+        product_id: str,
+        *,
+        limit: int = 5,
+    ) -> list[dict[str, Any]]:
+        """Fetch similar products by item_code."""
+        payload = self._get(
+            "/products/similar",
+            {"item_code": product_id, "limit": limit},
+            tolerate_errors=True,
+        )
+        if not isinstance(payload, list):
+            return []
+        return [item for item in payload if isinstance(item, dict)]
+
     def compare_prices(
         self,
         product_ids: list[str],

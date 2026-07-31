@@ -50,7 +50,7 @@ type ExtractReceipt = Callable[[str], ReceiptDocument]
 type ExtractReceiptImage = Callable[[ReceiptImage], ReceiptDocument]
 type ExtractReceiptImageTotal = Callable[[ReceiptImage], ReceiptImageTotalDocument]
 type CompareCart = Callable[[ReceiptDocument, str | None], CartComparison]
-type PriceNearby = Callable[[ReceiptDocument, GeoPoint, int, int, bool], NearbyResponse]
+type PriceNearby = Callable[[ReceiptDocument, GeoPoint, int, int, bool, bool], NearbyResponse]
 type ListNearbyStores = Callable[[float, float, int, int], "NearbyStoreList"]
 
 
@@ -94,12 +94,14 @@ class CartComparisonRequest(BaseModel):
 
     document: ReceiptDocument
     city: str | None = None
+    allow_substitutions: bool = True
 
 
 class CartComparisonUrlRequest(ReceiptExtractionRequest):
     """Extract a Digital Receipt and price its cart in one call."""
 
     city: str | None = None
+    allow_substitutions: bool = True
 
 
 class ApiError(BaseModel):
@@ -252,6 +254,7 @@ def _default_price_nearby(
     radius_m: int,
     limit: int,
     include_online: bool,
+    allow_substitutions: bool,
 ) -> NearbyResponse:
     return default_service().price(
         document,
@@ -259,6 +262,7 @@ def _default_price_nearby(
         radius_m=radius_m,
         limit=limit,
         include_online=include_online,
+        allow_substitutions=allow_substitutions,
     )
 
 
@@ -477,7 +481,7 @@ def create_app(
     )
     def compare(request: CartComparisonRequest) -> CartComparison:
         """Price an already-extracted Receipt Document across stores."""
-        return cart_comparer(request.document, request.city)
+        return cart_comparer(request.document, request.city, request.allow_substitutions)
 
     @app.post(
         "/api/carts/compare-url",
@@ -487,7 +491,7 @@ def create_app(
     def compare_url(request: CartComparisonUrlRequest) -> CartComparison:
         """Extract a Digital Receipt and rank stores for its cart in one call."""
         ReceiptUrlValidator().validate(request.url)
-        return cart_comparer(extractor(request.url), request.city)
+        return cart_comparer(extractor(request.url), request.city, request.allow_substitutions)
 
     @app.post(
         "/api/carts/compare-image",
@@ -497,10 +501,10 @@ def create_app(
     async def compare_image(
         image: Annotated[UploadFile, File(...)],
         city: Annotated[str | None, Form()] = None,
+        allow_substitutions: Annotated[bool, Form()] = True,
     ) -> CartComparison:
         """Extract a Receipt Image and rank stores for its cart in one call."""
-        document = image_extractor(await validated_receipt_image(image))
-        return cart_comparer(document, city)
+        return cart_comparer(image_extractor(await validated_receipt_image(image)), city, allow_substitutions)
 
     # -- Nearby: the app's own view, in `docs/nearby-schema.md` terms ---------
     #
@@ -534,6 +538,7 @@ def create_app(
             request.radius_m,
             request.limit,
             request.include_online,
+            request.allow_substitutions,
         )
 
     @app.post(
@@ -550,6 +555,7 @@ def create_app(
             request.radius_m,
             request.limit,
             request.include_online,
+            request.allow_substitutions,
         )
 
     @app.post(
@@ -564,11 +570,17 @@ def create_app(
         radius_m: Annotated[int, Form(gt=0, le=50_000)] = 5_000,
         limit: Annotated[int, Form(gt=0, le=200)] = 30,
         include_online: Annotated[bool, Form()] = False,
+        allow_substitutions: Annotated[bool, Form()] = True,
     ) -> NearbyResponse:
         """Extract a Receipt Image and price it nearby, in one call."""
         document = image_extractor(await validated_receipt_image(image))
         return nearby_pricer(
-            document, GeoPoint(lat=lat, lng=lng), radius_m, limit, include_online
+            document,
+            GeoPoint(lat=lat, lng=lng),
+            radius_m,
+            limit,
+            include_online,
+            allow_substitutions,
         )
 
     return app

@@ -40,6 +40,8 @@ export interface PricedLine {
   paidLineTotal: number | null
   /** Set when this line was swapped for a cheaper equivalent. */
   swappedFrom?: string
+  /** True if the swap is an alternative product, not just an exact match under a different name. */
+  isSubstitution?: boolean
 }
 
 /** The shopper's own receipt as a basket — the baseline everything compares to. */
@@ -75,6 +77,7 @@ export function originStore(items: ReceiptItem[], origin: ReceiptOrigin): Priced
  */
 export function pricedStore(store: NearbyStore, paid: ReceiptItem[]): PricedStore {
   const swappedFrom = new Map(store.optimalCart.swaps.map((s) => [s.to.barcode, s.from.name]))
+  const isSubstitution = new Set(store.optimalCart.swaps.filter((s) => s.isSubstitution).map((s) => s.to.barcode))
 
   // Join on the receipt position the server stamps on every cart line. Never on
   // list index: a store cart holds only the lines that could be matched, so one
@@ -98,6 +101,7 @@ export function pricedStore(store: NearbyStore, paid: ReceiptItem[]): PricedStor
       paidUnitPrice: source?.unitPrice ?? null,
       paidLineTotal: source ? source.unitPrice * source.qty : null,
       swappedFrom: swappedFrom.get(entry.barcode),
+      isSubstitution: isSubstitution.has(entry.barcode),
     }
   }
 

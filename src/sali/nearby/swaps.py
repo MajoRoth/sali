@@ -42,6 +42,7 @@ class SwapOption:
     position: int
     product: CatalogProduct
     similarity: float
+    is_substitution: bool = False
 
 
 def _candidates_for(
@@ -54,12 +55,29 @@ def _candidates_for(
         return []
 
     scored: list[SwapOption] = []
+    
+    # 1. Include similar products already found by the matcher.
+    for alternate in line.alternates:
+        if getattr(alternate, "is_substitution", False):
+            scored.append(
+                SwapOption(
+                    position=line.position,
+                    product=alternate.product,
+                    similarity=alternate.confidence,
+                    is_substitution=True,
+                )
+            )
+
+    # 2. Search the catalogue for names.
     for raw in catalog.search_products(query):
         product = to_product(raw)
         if product is None or product.barcode == line.product.barcode:
             continue
         score = similarity(line.product.name, product.name)
         if score < SWAP_SIMILARITY_FLOOR:
+            continue
+        # Avoid duplicating an option we already appended from alternates
+        if any(option.product.barcode == product.barcode for option in scored):
             continue
         scored.append(
             SwapOption(
@@ -130,6 +148,7 @@ class AppliedSwap:
     swapped_unit_price: Decimal
     quantity: Decimal
     similarity: float
+    is_substitution: bool = False
 
     @property
     def line_savings(self) -> Decimal:
@@ -184,6 +203,7 @@ def choose_swaps(
                 swapped_unit_price=replacement_price,
                 quantity=quantity,
                 similarity=option.similarity,
+                is_substitution=option.is_substitution,
             )
             if candidate.line_savings < MIN_SWAP_SAVING:
                 continue

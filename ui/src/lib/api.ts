@@ -89,6 +89,7 @@ export interface CartLine {
   lineTotal: number | null
   available: boolean
   matchConfidence?: number | null
+  isSubstitution?: boolean
 }
 
 export interface Cart {
@@ -107,6 +108,7 @@ export interface Swap {
   reason: string
   category?: string | null
   similarity?: number | null
+  isSubstitution?: boolean
 }
 
 export interface OptimalCart extends Cart {
@@ -261,10 +263,11 @@ export function priceNearby(
   document: ReceiptDocument,
   location: GeoPoint,
   radiusM: number,
+  allowSubstitutions: boolean = true,
 ): Promise<NearbyResponse> {
   return request<NearbyResponse>(
     '/api/carts/nearby',
-    json({ document, location, radiusM, includeOnline: true }),
+    json({ document, location, radiusM, includeOnline: true, allowSubstitutions }),
   )
 }
 

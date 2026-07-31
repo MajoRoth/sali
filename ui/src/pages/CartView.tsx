@@ -118,10 +118,14 @@ export default function CartView() {
                 ? `${line.qty} × ${formatPrice(line.unitPrice)} ליחידה`
                 : 'אין מחיר עדכני בסניף'}
               {line.swappedFrom && (
-                <span className="citem-swap">
+                <span className={`citem-swap ${line.isSubstitution ? 'is-sub' : ''}`}>
                   {' · '}
                   <SwapIcon size={12} />
-                  במקום {line.swappedFrom}
+                  {line.isSubstitution ? (
+                    <strong>תחליף מוצע במקום {line.swappedFrom}</strong>
+                  ) : (
+                    <>במקום {line.swappedFrom}</>
+                  )}
                 </span>
               )}
             </div>

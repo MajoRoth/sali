@@ -571,3 +571,19 @@
   font-weight: 700;
   color: var(--ink, #1a1a1a);
 }
+
+.toggle-substitutions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-substitutions input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+}

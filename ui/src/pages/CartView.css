@@ -154,11 +154,19 @@
 
 /* What the branch could not price — a caution, not the list's caption. */
 .cartview-warn {
-  margin: 10px 16px 0;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(180, 99, 42, 0.08);
-  color: #8a4d20;
-  font-size: 12.5px;
-  line-height: 1.5;
+  margin: 0;
+  padding: 10px 16px;
+  background: var(--warn-bg, #fff8e1);
+  color: var(--warn-fg, #6b4e00);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  border-bottom: 1px solid var(--warn-border, #e0b000);
+}
+
+.citem-swap.is-sub {
+  color: #0b784a;
+}
+.citem-swap.is-sub strong {
+  font-weight: 600;
 }

@@ -56,6 +56,7 @@ class NearbyRequest(_Wire):
     radius_m: Annotated[int, Field(gt=0, le=50_000)] = 5_000
     limit: Annotated[int, Field(gt=0, le=200)] = 30
     include_online: bool = False
+    allow_substitutions: bool = True
 
 
 class NearbyUrlRequest(_Wire):
@@ -66,6 +67,7 @@ class NearbyUrlRequest(_Wire):
     radius_m: Annotated[int, Field(gt=0, le=50_000)] = 5_000
     limit: Annotated[int, Field(gt=0, le=200)] = 30
     include_online: bool = False
+    allow_substitutions: bool = True
 
 
 class CartLine(_Wire):
@@ -91,6 +93,7 @@ class CartLine(_Wire):
     #: Present only when the receipt line was resolved by name rather than by
     #: barcode, so the UI can mark a line that might be the wrong variant.
     match_confidence: float | None = None
+    is_substitution: bool = False
 
 
 class Cart(_Wire):
@@ -115,6 +118,7 @@ class Swap(_Wire):
     reason: SwapReason
     category: str | None = None
     similarity: float | None = None
+    is_substitution: bool = False
 
 
 class OptimalCart(Cart):

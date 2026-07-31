@@ -53,6 +53,8 @@ export default function Results() {
     localStorage.removeItem('sali.celebrateOnce')
   }
 
+  const [allowSubstitutions, setAllowSubstitutions] = useState(true)
+
   const {
     ranked,
     cheapestBest,
@@ -60,7 +62,7 @@ export default function Results() {
     loading: pricing,
     error: pricingError,
     warnings,
-  } = useStores(active.document, userPos)
+  } = useStores(active.document, userPos, undefined, allowSubstitutions)
   const branchCount = branches.length
   // The server flags simulated figures with a `demo prices:` warning. Everything
   // derived from money — the banner, and the savings celebration — keys off this.
@@ -218,10 +220,15 @@ export default function Results() {
               ?
             </button>
           </div>
-          <span className="subhead-note">
+          <label className="subhead-note toggle-substitutions">
+            <input
+              type="checkbox"
+              checked={allowSubstitutions}
+              onChange={(e) => setAllowSubstitutions(e.target.checked)}
+            />
             <SwapIcon size={13} />
-            כולל החלפה למוצרים דומים וזולים יותר
-          </span>
+            החלפה למוצרים דומים וזולים יותר
+          </label>
           {showPriceHelp && (
             <div className="price-help-pop">
               המספרים בסוגריים <b dir="ltr">(א/ב)</b>:
