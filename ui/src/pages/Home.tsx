@@ -230,6 +230,8 @@ export default function Home() {
           onCancel={() => {
             localStorage.removeItem(RESUME_KEY)
             setGateOpen(false)
+	    localStorage.setItem(CELEBRATE_KEY, '1')
+            navigate('/results')
           }}
         />
       )}
