@@ -1,12 +1,17 @@
 """Resolve receipt lines to products in the price database.
 
-Barcode first: a receipt that prints a 12-14 digit code names the exact product,
-and the catalogue is keyed on that code, so the match is free and certain. A
-printed barcode the catalogue lacks — usually a store brand — falls back to the
-name, but at a floor high enough that only a near-certain reading is accepted.
+Global barcode first: a receipt that prints a 12-14 digit code names the exact
+product, and the catalogue is keyed on that code, so the match is free and
+certain. A printed barcode the catalogue lacks — usually a store brand — falls
+back to the name, but at a floor high enough that only a near-certain reading is
+accepted.
 
-Name second: weighed goods (produce, deli, bakery) carry a merchant-internal PLU
-instead, which means nothing outside that chain. Those lines are searched by
+Local code second: weighed goods (produce, deli, bakery) carry a short
+merchant-internal PLU/SKU. The Israeli transparency files publish those codes,
+so the catalogue can look them up, but they are not globally unique. A local
+lookup is accepted only when its name also supports the receipt line.
+
+Name third: a local-code collision or an item with no usable code is searched by
 name, and because a wrong match silently corrupts a store's cart total, a
 candidate is only accepted above a confidence floor.
 
@@ -19,6 +24,7 @@ chain and every other store shows it as missing.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
@@ -30,6 +36,10 @@ from sali.cart_comparison.configuration import (
     BARCODE_LOOKUP_WORKERS,
     BARCODE_MISS_NAME_SCORE,
     CONFIDENT_NAME_MATCH_SCORE,
+    LOCAL_ALTERNATE_MATCH_LIMIT,
+    LOCAL_CODE_NAME_SCORE,
+    LOCAL_EQUIVALENT_NAME_SCORE,
+    LOCAL_SEARCH_CANDIDATE_LIMIT,
     MIN_NAME_MATCH_SCORE,
 )
 from sali.cart_comparison.models import AlternateProduct, CatalogProduct, MatchMethod
@@ -39,6 +49,16 @@ from sali.receipt_extraction.models import Item
 #: them lets `חלב תנובה 3%` and `חלב תנובה 3 %` tokenize alike.
 _PUNCTUATION = re.compile(r"[\"'`׳״.,;:!?()\[\]{}/\\|*+\-–—_=<>@#&~^$₪%]+")
 _WHITESPACE = re.compile(r"\s+")
+
+# Deposit rows are regulated charges, not products stocked under a catalogue
+# barcode. Requiring a shelf-price row for them makes every otherwise complete
+# cart look incomplete. Keep the expression deliberately narrow so ordinary
+# products whose description merely mentions a bottle are still matched
+# normally.
+_FIXED_DEPOSIT = re.compile(
+    r"^(?:(?:\u05d3\u05de\u05d9|\u05d6\u05d9\u05db\u05d5\u05d9)\s+)?"
+    r"\u05e4\u05d9?\u05e7\u05d3\u05d5\u05df(?:\s|$)"
+)
 
 
 def normalize(text: str) -> str:
@@ -51,9 +71,68 @@ def tokenize(text: str) -> list[str]:
     return [token for token in normalize(text).split(" ") if token]
 
 
+def has_valid_gtin_checksum(code: str | None) -> bool:
+    """Whether ``code`` carries a valid GTIN check digit.
+
+    EAN-8 is common on small packages, but eight-digit retailer SKUs also
+    exist.  Length alone therefore cannot tell those two apart.  The check
+    digit can: starting at the right of the payload, GTIN digits are weighted
+    3, 1, 3, 1 ... and the final digit makes the sum a multiple of ten.
+    """
+    if not code or not code.isdigit() or len(code) < 2:
+        return False
+    payload = code[:-1]
+    weighted = sum(
+        int(digit) * (3 if (len(payload) - index) % 2 else 1)
+        for index, digit in enumerate(payload)
+    )
+    expected = (10 - weighted % 10) % 10
+    return expected == int(code[-1])
+
+
 def is_barcode(code: str | None) -> bool:
-    """Whether a receipt's printed code is a catalogue barcode."""
-    return bool(code) and code.isdigit() and len(code) in BARCODE_LENGTHS
+    """Whether a receipt's printed code is a globally identifying barcode.
+
+    Existing 12-14 digit catalogue identifiers keep their historical handling.
+    An eight-digit value is global only when it is a checksum-valid EAN-8;
+    otherwise it remains a retailer-local SKU.
+    """
+    return bool(code) and code.isdigit() and (
+        len(code) in BARCODE_LENGTHS
+        or (len(code) == 8 and has_valid_gtin_checksum(code))
+    )
+
+
+def is_local_code(code: str | None) -> bool:
+    """Whether a receipt code is a retailer-local numeric PLU/SKU.
+
+    A local code must never be padded into a GTIN or trusted as globally unique.
+    Leading zeroes remain in the lookup string because a retailer may use them
+    even though the upstream product row stores an integer.
+    """
+    return (
+        bool(code)
+        and code.isdigit()
+        and int(code) > 0
+        and len(code) < min(BARCODE_LENGTHS)
+        and not is_barcode(code)
+    )
+
+
+def is_fixed_charge(item: Item) -> bool:
+    """Whether a receipt row is a regulated charge shared by every retailer."""
+    return _FIXED_DEPOSIT.match(normalize(item.name)) is not None
+
+
+def _fixed_charge_product(item: Item) -> CatalogProduct:
+    """Represent a fixed row without pretending it exists in the catalogue."""
+    code = int(item.code) if item.code and item.code.isdigit() else 0
+    return CatalogProduct(
+        product_id=f"fixed-charge:{item.position}",
+        barcode=code or 900_000_000_000_000 + item.position,
+        name=item.name,
+        manufacturer=None,
+    )
 
 
 def _tokens_match(left: str, right: str) -> bool:
@@ -112,6 +191,35 @@ def similarity(receipt_name: str, product_name: str) -> float:
         score *= _SIZE_CONFLICT_FACTOR
 
     return score
+
+
+# Retail price files decorate loose-goods names with department words that say
+# how an item is sold, not what it is. Removing this deliberately small set lets
+# `מלפפון` confirm `מלפפון/ירקות שקיל` without making `מלפפון בייבי` equivalent
+# to ordinary cucumber.
+_LOCAL_NAME_NOISE = frozenset(
+    {
+        "במשקל",
+        "בתפזורת",
+        "ירקות",
+        "מחלקה",
+        "משקל",
+        "פירות",
+        "שקיל",
+        "שקילה",
+        "תפזורת",
+    }
+)
+
+
+def _local_name(text: str) -> str:
+    useful = [token for token in tokenize(text) if token not in _LOCAL_NAME_NOISE]
+    return " ".join(useful) or normalize(text)
+
+
+def local_similarity(receipt_name: str, product_name: str) -> float:
+    """Name evidence for a retailer-local code, ignoring sale-mode noise."""
+    return similarity(_local_name(receipt_name), _local_name(product_name))
 
 
 #: A numeric id, possibly float-formatted (`7290000074184.0`). The digits are
@@ -191,8 +299,17 @@ class CartMatcher:
         self._minimum_score = minimum_score
 
     def match(self, item: Item) -> LineMatch:
+        if is_fixed_charge(item):
+            return LineMatch(
+                _fixed_charge_product(item),
+                "fixed_charge",
+                1.0,
+                None,
+            )
         if is_barcode(item.code):
             return self._from_barcode(item.code or "", item.name)
+        if is_local_code(item.code):
+            return self._from_local_code(item.code or "", item.name)
         return self._match_by_name(item.name)
 
     def match_all(self, items: list[Item]) -> list[LineMatch]:
@@ -253,30 +370,149 @@ class CartMatcher:
             return ProductLookup(self._catalog.product_by_barcode(barcode), True)
         return finder(barcode)
 
+    def _from_local_code(self, code: str, name: str) -> LineMatch:
+        """Resolve one chain-local PLU/SKU and collect equivalents.
+
+        The exact endpoint often contains the source retailer's row and avoids
+        choosing a packaged lookalike. It is never trusted on code alone because
+        short numbers are assigned independently by different chains.
+        """
+        found = self._lookup(code)
+        candidates = self._local_candidates(name)
+
+        direct_product = (
+            to_product(found.product) if found.product is not None else None
+        )
+        direct_score = (
+            local_similarity(name, direct_product.name)
+            if direct_product is not None
+            and str(direct_product.barcode) == str(int(code))
+            else 0.0
+        )
+        ranked = self._ranked_candidates(
+            name,
+            candidates,
+            score=local_similarity,
+            local_only=True,
+        )
+
+        if direct_product is not None and direct_score >= LOCAL_CODE_NAME_SCORE:
+            # Code agreement and name agreement are independent halves of the
+            # confidence. This remains below global-barcode certainty unless
+            # the normalized names are identical.
+            confidence = 0.5 + direct_score / 2
+            return LineMatch(
+                direct_product,
+                "local_code",
+                confidence,
+                None,
+                self._local_alternates(
+                    ranked,
+                    primary=direct_product,
+                    minimum_score=LOCAL_EQUIVALENT_NAME_SCORE,
+                ),
+            )
+
+        # A collision or a catalogue row with an empty/broken name must not win
+        # just because the number agrees. Prefer another local code whose name
+        # is a confident reading, retaining its peers for other chains.
+        if ranked and ranked[0][1] >= self._minimum_score:
+            product, best_score = ranked[0]
+            return LineMatch(
+                product,
+                "name",
+                best_score,
+                None,
+                self._local_alternates(
+                    ranked,
+                    primary=product,
+                    minimum_score=max(
+                        LOCAL_EQUIVALENT_NAME_SCORE,
+                        self._minimum_score,
+                    ),
+                ),
+            )
+
+        # Some retailers also print short internal SKUs for packaged items.
+        # Preserve the general name fallback for those lines.
+        fallback = self._match_by_name(name, candidates=candidates)
+        if fallback.product is not None:
+            return fallback
+
+        if not found.answered and not candidates:
+            return LineMatch(
+                None,
+                None,
+                0.0,
+                f"the price database could not be reached to look up local code {code}",
+            )
+        return LineMatch(
+            None,
+            None,
+            fallback.confidence,
+            f"local code {code} could not be confirmed by the product name: "
+            f"{fallback.reason or 'no candidate reached the confidence floor'}",
+        )
+
+    @staticmethod
+    def _is_local_product(product: CatalogProduct) -> bool:
+        return not is_barcode(str(product.barcode))
+
+    def _ranked_candidates(
+        self,
+        name: str,
+        candidates: list[dict[str, Any]],
+        *,
+        score: Callable[[str, str], float],
+        local_only: bool = False,
+    ) -> list[tuple[CatalogProduct, float]]:
+        """Return the highest name score per product code."""
+        scored: dict[int, tuple[CatalogProduct, float]] = {}
+        for raw in candidates:
+            product = to_product(raw)
+            if product is None or (
+                local_only and not self._is_local_product(product)
+            ):
+                continue
+            candidate_score = score(name, product.name)
+            current = scored.get(product.barcode)
+            if current is None or candidate_score > current[1]:
+                scored[product.barcode] = (product, candidate_score)
+        return sorted(scored.values(), key=lambda pair: pair[1], reverse=True)
+
+    @staticmethod
+    def _local_alternates(
+        ranked: list[tuple[CatalogProduct, float]],
+        *,
+        primary: CatalogProduct,
+        minimum_score: float,
+    ) -> tuple[AlternateProduct, ...]:
+        alternatives: list[AlternateProduct] = []
+        for product, score in ranked:
+            if product.barcode == primary.barcode or score < minimum_score:
+                continue
+            alternatives.append(
+                AlternateProduct(product=product, confidence=round(score, 3))
+            )
+            if len(alternatives) >= LOCAL_ALTERNATE_MATCH_LIMIT:
+                break
+        return tuple(alternatives)
+
     def _match_by_name(
         self,
         name: str,
         *,
         minimum_score: float | None = None,
+        candidates: list[dict[str, Any]] | None = None,
     ) -> LineMatch:
         floor = self._minimum_score if minimum_score is None else minimum_score
-        candidates = self._candidates(name)
+        candidates = self._candidates(name) if candidates is None else candidates
         if not candidates:
             return LineMatch(None, None, 0.0, "no catalogue product matched the name")
 
         # Best score per barcode: two rows sharing a barcode are one product,
         # and letting both through would price the same thing against itself.
-        scored: dict[int, tuple[CatalogProduct, float]] = {}
-        for raw in candidates:
-            product = to_product(raw)
-            if product is None:
-                continue
-            score = similarity(name, product.name)
-            current = scored.get(product.barcode)
-            if current is None or score > current[1]:
-                scored[product.barcode] = (product, score)
-
-        ranked = sorted(scored.values(), key=lambda pair: pair[1], reverse=True)
+        ranked = self._ranked_candidates(name, candidates, score=similarity)
         best_score = ranked[0][1] if ranked else 0.0
         if not ranked or best_score < floor:
             return LineMatch(
@@ -297,6 +533,31 @@ class CartMatcher:
             or score >= max(CONFIDENT_NAME_MATCH_SCORE, floor)
         )
         return LineMatch(ranked[0][0], "name", best_score, None, alternates)
+
+    def _local_candidates(self, name: str) -> list[dict[str, Any]]:
+        """Search widely until a query returns retailer-local product rows."""
+        seen: set[str] = set()
+        candidates: list[dict[str, Any]] = []
+        for query in self._queries(name):
+            batch = self._catalog.search_products(
+                query,
+                limit=LOCAL_SEARCH_CANDIDATE_LIMIT,
+            )
+            found_local = False
+            for raw in batch:
+                identifier = raw.get("id")
+                if isinstance(identifier, str) and identifier not in seen:
+                    seen.add(identifier)
+                    candidates.append(raw)
+                product = to_product(raw)
+                found_local = found_local or (
+                    product is not None and self._is_local_product(product)
+                )
+            # A precise query that found local rows has supplied the useful
+            # candidate set. Only printer-truncated/no-result queries continue.
+            if found_local:
+                break
+        return candidates
 
     def _candidates(self, name: str) -> list[dict[str, Any]]:
         """Search the catalogue for anything plausibly this line.
@@ -332,7 +593,11 @@ class CartMatcher:
 __all__ = [
     "CartMatcher",
     "LineMatch",
+    "has_valid_gtin_checksum",
     "is_barcode",
+    "is_fixed_charge",
+    "is_local_code",
+    "local_similarity",
     "normalize",
     "similarity",
     "to_product",

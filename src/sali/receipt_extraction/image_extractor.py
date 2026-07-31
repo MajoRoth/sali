@@ -37,7 +37,15 @@ Verification rules:
 
 Extraction rules for a verified receipt:
 - Include every purchased line item in visible order with positions 1..N.
-- Preserve the original language of product names.
+- Preserve the original language and copy each product name exactly as printed;
+  do not replace hard-to-read words with a familiar product guess.
+- Copy every printed product code digit-for-digit. Codes may be EAN-8, UPC,
+  EAN-13/GTIN-14, or a shorter merchant SKU; never shift digits between rows.
+- In right-to-left receipt tables, keep the code, description, quantity and
+  total from the same visual row. Read Hebrew in its natural right-to-left
+  order, not in the left-to-right order of the table columns.
+- Recheck the merchant, branch, every item name and every item code against the
+  image once more before returning the structured result.
 - Use null for unavailable optional values and [] for unavailable collections.
 - Every item must have a product name and final line total.
 - Express money, quantity, and unit price as plain base-10 decimal strings

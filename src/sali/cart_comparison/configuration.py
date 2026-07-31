@@ -38,10 +38,24 @@ MAX_PRODUCT_IDS_PER_REQUEST = 20
 #: first page is ever scored.
 SEARCH_CANDIDATE_LIMIT = 25
 
+#: A short receipt code is a retailer-local item number (PLU/SKU), not a
+#: globally unique barcode. Name-searching those lines needs a wider first page
+#: because the same loose product appears once per chain under a different code.
+LOCAL_SEARCH_CANDIDATE_LIMIT = 100
+
 #: Minimum name-match score for a fallback match to be accepted. Below this the
 #: line is reported unmatched rather than priced against the wrong product,
 #: because a wrong match silently corrupts a store's cart total.
 MIN_NAME_MATCH_SCORE = 0.5
+
+#: A retailer-local code is useful only when the row stored under that code also
+#: describes the receipt item. Codes collide between chains, so accepting the
+#: lookup without this guard can turn cucumber into corn.
+LOCAL_CODE_NAME_SCORE = 0.5
+
+#: Other local codes are admitted as cross-chain equivalents only when their
+#: normalized names are strong readings of the same receipt line.
+LOCAL_EQUIVALENT_NAME_SCORE = 0.8
 
 #: Score at or above which a name match needs no second look. Between this and
 #: the floor the product is priced but reported as uncertain: `תפו"א לבן`
@@ -49,9 +63,10 @@ MIN_NAME_MATCH_SCORE = 0.5
 CONFIDENT_NAME_MATCH_SCORE = 0.8
 
 #: Floor for pricing a line by name when its *printed barcode* is not in the
-#: catalogue. Higher than the weighed-goods floor on purpose: a PLU line has no
-#: other route, but a barcode line names an exact product, so a name is only
-#: trusted here when it is nearly beyond doubt — the store-brand פתי בר whose
+#: catalogue. Higher than the weighed-goods floor on purpose: a local PLU is
+#: only useful with name confirmation, but a barcode line names an exact
+#: product, so a name is trusted here only when it is nearly beyond doubt —
+#: the store-brand פתי בר whose
 #: barcode the database lacks, not a loose lookalike.
 BARCODE_MISS_NAME_SCORE = 0.75
 
@@ -76,9 +91,13 @@ OCR_CORRECTION_MIN_SCORE = 0.75
 #: `ocr-match` exists to fix; more is a different product's code.
 OCR_CODE_EDIT_DISTANCE = 2
 
+#: Produce may have one local code per chain. Retaining more than the ordinary
+#: name-match limit is what lets the same loose item be compared broadly.
+LOCAL_ALTERNATE_MATCH_LIMIT = 12
+
 #: A receipt code is treated as a barcode only at these lengths. Shorter codes
-#: on Israeli receipts are merchant-internal PLUs for weighed goods, which the
-#: catalogue does not key on.
+#: on Israeli receipts are merchant-internal PLUs/SKUs. The catalogue may index
+#: them, but another chain can reuse the same number for a different product.
 BARCODE_LENGTHS = frozenset({12, 13, 14})
 
 #: A healthy barcode lookup takes about five seconds and a search about ten, so

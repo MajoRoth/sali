@@ -56,7 +56,12 @@ def rank_carts(
 ) -> tuple[list[StoreCart], list[StoreCart]]:
     """Return (complete carts, partial carts), each cheapest first."""
     directory = stores or {}
-    wanted = {barcode for line in matched for barcode in _line_barcodes(line)}
+    wanted = {
+        barcode
+        for line in matched
+        if line.matched_by != "fixed_charge"
+        for barcode in _line_barcodes(line)
+    }
     if not wanted or not prices:
         return [], []
 
@@ -69,6 +74,12 @@ def rank_carts(
         current = bucket.get(price.barcode)
         if current is None or price.price < current.price:
             bucket[price.barcode] = price
+
+    chain_prices = {
+        chain_id: priced
+        for (chain_id, store_id), priced in by_store.items()
+        if store_id is None
+    }
 
     complete: list[StoreCart] = []
     partial: list[StoreCart] = []
@@ -88,12 +99,25 @@ def rank_carts(
         total = Decimal(0)
         priced_lines = 0
         missing: list[MissingProduct] = []
+        used_chain_estimate = sample.chain_level
         for line in matched:
+            if line.matched_by == "fixed_charge":
+                priced_lines += 1
+                total += Decimal(line.paid)
+                continue
             quotes = [
                 price
                 for barcode in _line_barcodes(line)
                 if (price := priced.get(barcode)) is not None
             ]
+            if not quotes and store_id is not None:
+                fallback = chain_prices.get(chain_id, {})
+                quotes = [
+                    price
+                    for barcode in _line_barcodes(line)
+                    if (price := fallback.get(barcode)) is not None
+                ]
+                used_chain_estimate = used_chain_estimate or bool(quotes)
             if quotes:
                 priced_lines += 1
                 total += _quantity(line) * min(quote.price for quote in quotes)
@@ -116,7 +140,7 @@ def rank_carts(
             total_items=len(matched),
             missing=missing,
             total=_money(total),
-            chain_level_estimate=sample.chain_level,
+            chain_level_estimate=used_chain_estimate,
         )
         (complete if cart.complete else partial).append(cart)
 

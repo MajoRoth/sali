@@ -18,7 +18,15 @@ def catalog_against(handler) -> tuple[SupermarketsCatalog, list[httpx.Request]]:
     return SupermarketsCatalog("http://prices.test", client=client), seen
 
 
-from sali.cart_comparison.matching import CartMatcher, is_barcode, similarity
+from sali.cart_comparison.matching import (
+    CartMatcher,
+    has_valid_gtin_checksum,
+    is_barcode,
+    is_fixed_charge,
+    is_local_code,
+    local_similarity,
+    similarity,
+)
 from sali.receipt_extraction.models import Item
 
 
@@ -33,12 +41,14 @@ class FakeCatalog:
         self._by_barcode = by_barcode or {}
         self._by_query = by_query or {}
         self.queries: list[str] = []
+        self.limits: list[int] = []
 
     def product_by_barcode(self, barcode: str) -> dict[str, Any] | None:
         return self._by_barcode.get(barcode)
 
     def search_products(self, query: str, *, limit: int = 25) -> list[dict[str, Any]]:
         self.queries.append(query)
+        self.limits.append(limit)
         return self._by_query.get(query, [])
 
 
@@ -71,12 +81,109 @@ def line(name: str, code: str | None = None) -> Item:
 def test_only_catalogue_length_codes_count_as_barcodes() -> None:
     assert is_barcode("7290005271458")
     assert is_barcode("304819702099")
-    # Weighed goods print a merchant-internal PLU, which the catalogue does not
-    # key on, so it must never be looked up as a barcode.
+    # Weighed goods print a merchant-internal PLU. The catalogue can contain it,
+    # but it is not globally unique and must never be trusted as a barcode.
     assert not is_barcode("595")
     assert not is_barcode("9951417")
     assert not is_barcode(None)
     assert not is_barcode("729000527145X")
+
+
+def test_checksum_valid_ean8_is_global_but_an_invalid_one_remains_local() -> None:
+    assert has_valid_gtin_checksum("72940983")
+    assert is_barcode("72940983")
+    assert not is_local_code("72940983")
+
+    assert not has_valid_gtin_checksum("72940984")
+    assert not is_barcode("72940984")
+    assert is_local_code("72940984")
+
+
+def test_short_numeric_codes_are_local_not_global_barcodes() -> None:
+    assert is_local_code("935")
+    assert is_local_code("9077667")
+    assert not is_local_code("0")
+    assert not is_local_code("7290005271458")
+    assert not is_local_code("95A")
+    assert not is_local_code(None)
+
+
+def test_a_deposit_row_is_a_fixed_charge_without_catalogue_requests() -> None:
+    deposit = line(
+        "\u05d3\u05de\u05d9 \u05e4\u05e7\u05d3\u05d5\u05df 0.30 "
+        "\u05e9\u05d7",
+        "1000",
+    )
+    catalog = FakeCatalog()
+
+    match = CartMatcher(catalog).match(deposit)
+
+    assert is_fixed_charge(deposit)
+    assert match.matched_by == "fixed_charge"
+    assert match.product is not None
+    assert match.product.name == deposit.name
+    assert catalog.queries == []
+
+
+def test_local_name_similarity_ignores_weighed_department_words() -> None:
+    cucumber = "\u05de\u05dc\u05e4\u05e4\u05d5\u05df"
+    decorated = (
+        "\u05de\u05dc\u05e4\u05e4\u05d5\u05df/"
+        "\u05d9\u05e8\u05e7\u05d5\u05ea "
+        "\u05e9\u05e7\u05d9\u05dc"
+    )
+
+    assert local_similarity(cucumber, decorated) == 1.0
+
+
+def test_an_agreeing_local_code_is_used_and_equivalents_are_retained() -> None:
+    cucumber = "\u05de\u05dc\u05e4\u05e4\u05d5\u05df"
+    decorated = (
+        "\u05de\u05dc\u05e4\u05e4\u05d5\u05df/"
+        "\u05d9\u05e8\u05e7\u05d5\u05ea "
+        "\u05e9\u05e7\u05d9\u05dc"
+    )
+    catalog = FakeCatalog(
+        by_barcode={"935": product(935, decorated)},
+        by_query={
+            cucumber: [
+                product(935, decorated),
+                product(777104, cucumber),
+                product(7290000002600, cucumber),
+            ]
+        },
+    )
+
+    match = CartMatcher(catalog).match(line(cucumber, "935"))
+
+    assert match.matched_by == "local_code"
+    assert match.confidence == 1.0
+    assert match.product is not None
+    assert match.product.barcode == 935
+    assert [alternate.product.barcode for alternate in match.alternates] == [777104]
+    assert catalog.limits == [100]
+
+
+def test_a_colliding_local_code_is_rejected_in_favour_of_the_name() -> None:
+    cucumber = "\u05de\u05dc\u05e4\u05e4\u05d5\u05df"
+    corn = "\u05ea\u05d9\u05e8\u05e1 \u05d7\u05e1\u05dc\u05d8"
+    catalog = FakeCatalog(
+        by_barcode={"695": product(695, corn)},
+        by_query={
+            cucumber: [
+                product(1502, cucumber),
+                product(40363, cucumber),
+            ]
+        },
+    )
+
+    match = CartMatcher(catalog).match(line(cucumber, "695"))
+
+    assert match.matched_by == "name"
+    assert match.product is not None
+    assert match.product.barcode == 1502
+    assert match.product.barcode != 695
+    assert [alternate.product.barcode for alternate in match.alternates] == [40363]
 
 
 def test_a_printed_barcode_matches_exactly_and_skips_the_name_search() -> None:

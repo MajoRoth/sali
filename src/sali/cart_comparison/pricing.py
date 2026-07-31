@@ -119,11 +119,11 @@ def read_store_prices(comparisons: Iterable[dict[str, Any]]) -> list[StorePrice]
                 )
                 resolved += 1
 
-            if resolved:
-                continue
-
-            # No usable per-store rows: keep the chain in the running on its own
-            # cheapest price rather than dropping a chain that does stock this.
+            # Keep the chain's own minimum even when branch rows exist. Price
+            # feeds are often sparse per branch: branch A lists the milk and
+            # branch B lists the bread although the chain carries both. The
+            # chain row lets cart assembly fill such a branch-level gap while
+            # explicitly marking the result as an estimate.
             chain_price = _first_price(chain, ("minPrice", "avgPrice"))
             if chain_price is not None:
                 prices.append(

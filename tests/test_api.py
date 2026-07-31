@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from sali.api import create_app as _create_app
 from sali.cart_comparison.catalog import CatalogUnavailableError
 from sali.cart_comparison.models import CartComparison, StoreCart
+from sali.nearby.models import NearbyResponse
 from sali.receipt_extraction.errors import (
     HostedReceiptError,
     ReceiptInspectionFailure,
@@ -339,6 +340,47 @@ def test_compare_ranks_stores_for_an_already_extracted_receipt() -> None:
     assert response.status_code == 200
     assert response.json()["complete_carts"][0]["total"] == "15.00"
     assert seen == [("Example product", "נס ציונה")]
+
+
+def test_saved_document_is_corrected_before_nearby_pricing() -> None:
+    seen: list[str] = []
+
+    def correct(document):
+        receipt = document.receipt.model_copy(
+            update={
+                "items": [
+                    document.receipt.items[0].model_copy(
+                        update={"name": "Canonical product"}
+                    )
+                ]
+            }
+        )
+        return document.model_copy(update={"receipt": receipt})
+
+    def price(document, _location, _radius, _limit, _include_online):
+        seen.append(document.receipt.items[0].name)
+        return NearbyResponse(
+            computed_at="2026-07-31T12:00:00+00:00",
+            currency="ILS",
+            origin=None,
+            stores=[],
+            unmatched=[],
+            warnings=[],
+            stores_in_radius=0,
+        )
+
+    response = TestClient(
+        create_app(correct_receipt=correct, price_nearby=price)
+    ).post(
+        "/api/carts/nearby",
+        json={
+            "document": receipt_document().model_dump(mode="json"),
+            "location": {"lat": 32.0, "lng": 34.78},
+        },
+    )
+
+    assert response.status_code == 200
+    assert seen == ["Canonical product"]
 
 
 def test_compare_url_extracts_then_prices_the_cart_in_one_call() -> None:

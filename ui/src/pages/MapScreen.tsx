@@ -8,6 +8,7 @@ import { useStores, useUserPosition } from '../lib/useStores'
 import { useAuth } from '../lib/auth'
 import { countOf, documentTotal, totalOf, useActiveReceipt } from '../lib/receipts'
 import { chainColor, chainLogo, chainMonogram } from '../lib/chains'
+import { paidForPricedLines } from '../lib/pricing'
 import ChainMark from '../components/ChainMark'
 import SavingBadge from '../components/SavingBadge'
 import CrownIcon from '../components/CrownIcon'
@@ -184,7 +185,7 @@ export default function MapScreen() {
               store={s}
               selected={s.id === selectedId}
               best={s.bestPrice === cheapestBest}
-              receiptTotal={receiptTotal}
+              paidBaseline={paidForPricedLines(s.source, active.items)}
               onClick={() => selectStore(s.id, false)}
             />
           ))}
@@ -229,7 +230,7 @@ export default function MapScreen() {
                   store={s}
                   selected={false}
                   best={s.bestPrice === cheapestBest}
-                  receiptTotal={receiptTotal}
+                  paidBaseline={paidForPricedLines(s.source, active.items)}
                 />
               ))}
             </div>
@@ -244,13 +245,13 @@ interface CardProps {
   store: Supermarket
   selected: boolean
   best: boolean
-  receiptTotal: number
+  paidBaseline: number
   onClick?: () => void
   ref?: React.Ref<HTMLButtonElement>
 }
 
-function StoreCard({ store, selected, best, receiptTotal, onClick, ref }: CardProps) {
-  const diff = receiptTotal - store.bestPrice
+function StoreCard({ store, selected, best, paidBaseline, onClick, ref }: CardProps) {
+  const diff = paidBaseline - store.bestPrice
   // The pin for an approximate store sits on the city centre, so a distance
   // would be measured to the wrong point. Name the city instead.
   const sub = store.online
@@ -291,6 +292,14 @@ function StoreCard({ store, selected, best, receiptTotal, onClick, ref }: CardPr
           {formatPrice(store.bestPrice)}
         </span>
       </span>
+      {store.coverage < 1 && (
+        <div className="card-save-note">
+          עבור {Math.round(store.coverage * 100)}% מהעגלה · חסרים {store.unavailableCount}
+        </div>
+      )}
+      {store.chainLevelEstimate && (
+        <div className="card-save-note">הערכת מחיר ברמת הרשת</div>
+      )}
     </button>
   )
 }

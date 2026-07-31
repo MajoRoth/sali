@@ -49,8 +49,13 @@ logger = logging.getLogger(__name__)
 _CENTS = Decimal("0.01")
 
 
+def _rounded_money(value: Decimal) -> Decimal:
+    """The canonical amount represented by a displayed two-decimal value."""
+    return value.quantize(_CENTS, rounding=ROUND_HALF_UP)
+
+
 def _money(value: Decimal) -> float:
-    return float(value.quantize(_CENTS, rounding=ROUND_HALF_UP))
+    return float(_rounded_money(value))
 
 
 def _decimal(value: str | None, fallback: Decimal = Decimal(0)) -> Decimal:
@@ -82,7 +87,7 @@ def _cheapest_reading(
     actually priced, under that product's own name and confidence.
     """
     readings = [
-        (line.product, line.confidence if line.matched_by == "name" else None),
+        (line.product, line.confidence if line.matched_by != "barcode" else None),
         *((alternate.product, alternate.confidence) for alternate in line.alternates),
     ]
     best: tuple[CatalogProduct, float | None, Decimal] | None = None
@@ -206,7 +211,10 @@ class NearbyService:
                 "any matched product, so no cart could be priced"
             )
 
-        swap_options = find_candidates(self._catalog, matched) if prices else []
+        priceable = [
+            line for line in matched if line.matched_by != "fixed_charge"
+        ]
+        swap_options = find_candidates(self._catalog, priceable) if prices else []
         if swap_options:
             prices += self._read_prices_for(
                 [option.product.product_id for option in swap_options]
@@ -303,6 +311,7 @@ class NearbyService:
                 dict.fromkeys(
                     product.product_id
                     for line in matched
+                    if line.matched_by != "fixed_charge"
                     for product in (
                         line.product,
                         *(alternate.product for alternate in line.alternates),
@@ -342,6 +351,12 @@ class NearbyService:
             current = bucket.get(price.barcode)
             if current is None or price.price < current:
                 bucket[price.barcode] = price.price
+
+        chain_prices = {
+            chain_id: priced
+            for (chain_id, store_id), priced in by_store.items()
+            if store_id is None
+        }
 
         reachable = {
             (record.store.chain_id, record.store.store_id): record
@@ -383,6 +398,11 @@ class NearbyService:
                     items=items,
                     quantities=quantities,
                     store_prices=store_prices,
+                    fallback_prices=(
+                        chain_prices.get(chain_id, {})
+                        if store_id is not None
+                        else {}
+                    ),
                     swap_options=swap_options,
                     record=record,
                     chain_id=chain_id,
@@ -406,6 +426,7 @@ class NearbyService:
         items: dict[int, Item],
         quantities: dict[int, Decimal],
         store_prices: dict[int, Decimal],
+        fallback_prices: dict[int, Decimal],
         swap_options: list,
         record: NearbyRecord | None,
         chain_id: str,
@@ -420,12 +441,37 @@ class NearbyService:
         #: swap must beat the price the cart already shows, not the primary
         #: product's price at some store that keys the item differently.
         readings: dict[int, tuple[CatalogProduct, Decimal]] = {}
+        used_chain_estimate = chain_level
 
         for line in matched:
             item = items.get(line.position)
             quantity = quantities.get(line.position, Decimal(1))
             unit = normalize_unit(item.unit if item else None)
+
+            if line.matched_by == "fixed_charge":
+                line_total = _rounded_money(_decimal(line.paid))
+                unit_price = (
+                    line_total / quantity if quantity != 0 else line_total
+                )
+                same_total += line_total
+                same_lines.append(
+                    CartLine(
+                        position=line.position,
+                        barcode=line.receipt_code or str(line.product.barcode),
+                        name=line.receipt_name,
+                        qty=float(quantity),
+                        unit=unit,
+                        unit_price=_money(unit_price),
+                        line_total=_money(line_total),
+                        available=True,
+                    )
+                )
+                continue
+
             reading = _cheapest_reading(line, store_prices)
+            if reading is None and fallback_prices:
+                reading = _cheapest_reading(line, fallback_prices)
+                used_chain_estimate = used_chain_estimate or reading is not None
 
             if reading is None:
                 unavailable += 1
@@ -440,7 +486,9 @@ class NearbyService:
                         line_total=None,
                         available=False,
                         match_confidence=(
-                            line.confidence if line.matched_by == "name" else None
+                            line.confidence
+                            if line.matched_by != "barcode"
+                            else None
                         ),
                     )
                 )
@@ -448,7 +496,10 @@ class NearbyService:
 
             product, confidence, price = reading
             readings[line.position] = (product, price)
-            line_total = price * quantity
+            # Cart totals must sum the same cent-rounded amounts the API shows
+            # per line.  Summing hidden fractions here while the optimal cart
+            # sums displayed lines can invent a one-cent saving with no swaps.
+            line_total = _rounded_money(price * quantity)
             same_total += line_total
             same_lines.append(
                 CartLine(
@@ -464,9 +515,6 @@ class NearbyService:
                 )
             )
 
-        available = len(matched) - unavailable
-        coverage = round(available / len(matched), 4) if matched else 0.0
-
         applied = choose_swaps(
             matched, quantities, store_prices, swap_options, readings=readings
         )
@@ -478,6 +526,35 @@ class NearbyService:
             same_lines=same_lines,
             applied=applied,
         )
+
+        # A catalogue miss is still part of the shopper's requested basket.
+        # Preserve it as an unavailable row and count it in coverage; measuring
+        # against ``matched`` made a six-of-eight cart claim 100% coverage and
+        # let the GUI book the two absent products as savings.
+        represented = {line.position for line in same_lines}
+        unmatched_lines = [
+            CartLine(
+                position=item.position,
+                barcode=str(item.code or ""),
+                name=item.name,
+                qty=float(_quantity(item)),
+                unit=normalize_unit(item.unit),
+                unit_price=None,
+                line_total=None,
+                available=False,
+            )
+            for item in items.values()
+            if item.position not in represented
+        ]
+        same_lines.extend(unmatched_lines)
+        optimal_lines.extend(unmatched_lines)
+        same_lines.sort(key=lambda line: line.position)
+        optimal_lines.sort(key=lambda line: line.position)
+
+        requested = len(items)
+        available = sum(1 for line in same_lines if line.available)
+        unavailable = max(0, requested - available)
+        coverage = round(available / requested, 4) if requested else 0.0
 
         return NearbyStore(
             store_id=store_id or f"chain:{chain_id}",
@@ -506,7 +583,7 @@ class NearbyService:
             delivery_fee=0.0,
             city=record.store.city if record else None,
             address=record.store.address if record else None,
-            chain_level_estimate=chain_level,
+            chain_level_estimate=used_chain_estimate,
             same_cart=Cart(
                 items=same_lines,
                 total=_money(same_total),
@@ -548,7 +625,7 @@ class NearbyService:
             item = items.get(line.position)
             unit = normalize_unit(item.unit if item else None)
             quantity = quantities.get(line.position, Decimal(1))
-            line_total = swap.swapped_unit_price * quantity
+            line_total = _rounded_money(swap.swapped_unit_price * quantity)
             optimal_total += line_total
             optimal_lines.append(
                 CartLine(
@@ -689,13 +766,14 @@ class NearbyService:
 
         for line in matched:
             if (
-                line.matched_by == "name"
+                line.matched_by != "barcode"
                 and line.confidence < CONFIDENT_NAME_MATCH_SCORE
             ):
                 warnings.append(
                     f"uncertain: receipt.items[{line.position}] "
                     f"{line.receipt_name!r} was priced as {line.product.name!r} "
-                    f"on a name match scoring {line.confidence:.2f}"
+                    f"on a {line.matched_by.replace('_', '-')} match scoring "
+                    f"{line.confidence:.2f}"
                 )
 
         unreachable = sum(

@@ -106,6 +106,111 @@ def test_a_store_pricing_only_the_alternate_still_supplies_the_line() -> None:
     assert not any("published no price" in warning for warning in response.warnings)
 
 
+def test_a_fixed_deposit_is_available_and_included_in_every_store_total() -> None:
+    doc = document(
+        [
+            ("\u05d7\u05dc\u05d1", "7290000000001", "1", "6.90"),
+            ("דמי פקדון 0.30 שח", "1000", "1", "0.30"),
+        ]
+    )
+    matcher = FakeMatcher(
+        [
+            LineMatch(
+                catalogue("7290000000001", 7290000000001, "\u05d7\u05dc\u05d1"),
+                "barcode",
+                1.0,
+                None,
+            ),
+            LineMatch(
+                catalogue("fixed-charge:2", 1000, doc.receipt.items[1].name),
+                "fixed_charge",
+                1.0,
+                None,
+            ),
+        ]
+    )
+    catalog = FakeCatalog(
+        comparisons=[
+            comparison(
+                7290000000001,
+                [
+                    chain(
+                        "c1",
+                        "\u05e1\u05d8\u05d5\u05e4\u05de\u05e8\u05e7\u05d8",
+                        [{"storeId": "1", "price": 5.0}],
+                    )
+                ],
+            )
+        ]
+    )
+    service = NearbyService(
+        catalog=catalog,
+        matcher=matcher,
+        directory=FakeDirectory(
+            [branch("c1", "1", "\u05e1\u05d8\u05d5\u05e4\u05de\u05e8\u05e7\u05d8")]
+        ),
+    )
+
+    response = service.price(doc, location=HERE, radius_m=5000)
+
+    store = response.stores[0]
+    assert store.same_cart.coverage == 1.0
+    assert store.same_cart.unavailable_count == 0
+    assert store.same_cart.total == 5.3
+    assert store.same_cart.items[1].available
+    assert store.same_cart.items[1].line_total == 0.3
+
+
+def test_same_chain_minimum_fills_a_sparse_branch_price() -> None:
+    doc = document(
+        [
+            ("\u05d7\u05dc\u05d1", "7290000000001", "1", "6.90"),
+            ("\u05dc\u05d7\u05dd", "7290000000002", "1", "8.50"),
+        ]
+    )
+    matcher = FakeMatcher(
+        [
+            LineMatch(
+                catalogue("7290000000001", 7290000000001, "\u05d7\u05dc\u05d1"),
+                "barcode",
+                1.0,
+                None,
+            ),
+            LineMatch(
+                catalogue("7290000000002", 7290000000002, "\u05dc\u05d7\u05dd"),
+                "barcode",
+                1.0,
+                None,
+            ),
+        ]
+    )
+    catalog = FakeCatalog(
+        comparisons=[
+            comparison(
+                7290000000001,
+                [chain("c1", "x", [{"storeId": "1", "price": 5.0}], min_price=5.0)],
+            ),
+            comparison(
+                7290000000002,
+                [chain("c1", "x", [{"storeId": "2", "price": 8.0}], min_price=8.0)],
+            ),
+        ]
+    )
+    service = NearbyService(
+        catalog=catalog,
+        matcher=matcher,
+        directory=FakeDirectory([branch("c1", "1", "x")]),
+    )
+
+    response = service.price(doc, location=HERE, radius_m=5000)
+
+    store = next(store for store in response.stores if store.store_id == "1")
+    assert store.same_cart.coverage == 1.0
+    assert store.same_cart.unavailable_count == 0
+    assert store.same_cart.total == 13.0
+    assert store.chain_level_estimate
+
+
 def test_a_swap_is_measured_against_the_price_the_cart_shows() -> None:
     # The store sells the line as the 4.0 alternate. A 6.0 lookalike is not a
     # saving against that, even though it undercuts the 10.0 primary — applying
@@ -169,14 +274,8 @@ def test_branches_of_chains_that_quoted_nothing_are_disclosed() -> None:
     )
 
 
-def test_cart_line_positions_skip_the_unmatched_line() -> None:
-    """The join key survives a line the catalogue could not resolve.
-
-    A store cart holds only the lines that could be matched, so it is shorter
-    than the receipt. Without a position on each line the screen pairs the two
-    by list index, and every line after the gap answers the wrong receipt line —
-    the shopper's third product priced against what they paid for the second.
-    """
+def test_cart_preserves_an_unmatched_line_as_unavailable_and_counts_it() -> None:
+    """Global catalogue misses remain visible and reduce full-cart coverage."""
     doc = document(
         [
             ("עגבניה", "18", "1", "3.10"),
@@ -207,11 +306,15 @@ def test_cart_line_positions_skip_the_unmatched_line() -> None:
     response = service.price(doc, location=HERE, radius_m=5000)
 
     store = response.stores[0]
-    # Two cart lines for a three-line receipt — and they name positions 1 and 3,
-    # not 1 and 2. Index-based pairing is exactly what this rules out.
-    assert [line.position for line in store.same_cart.items] == [1, 3]
-    assert [line.position for line in store.optimal_cart.items] == [1, 3]
-    chocolate = store.same_cart.items[1]
+    assert [line.position for line in store.same_cart.items] == [1, 2, 3]
+    assert [line.position for line in store.optimal_cart.items] == [1, 2, 3]
+    missing = store.same_cart.items[1]
+    assert not missing.available
+    assert missing.line_total is None
+    assert store.same_cart.unavailable_count == 1
+    assert store.same_cart.coverage == 0.6667
+
+    chocolate = store.same_cart.items[2]
     assert chocolate.name == "שוקולד חלב"
     assert chocolate.unit_price == 8.9
 
@@ -219,3 +322,54 @@ def test_cart_line_positions_skip_the_unmatched_line() -> None:
     # UI can join against it too.
     assert response.origin is not None
     assert [line.position for line in response.origin.same_cart.items] == [1, 2, 3]
+
+
+def test_no_swap_cart_sums_the_same_rounded_line_amounts_in_both_totals() -> None:
+    """Two half-unit lines cannot create a phantom one-cent price difference."""
+    doc = document(
+        [
+            ("Weighted one", "7290000000001", "0.5", "1.67"),
+            ("Weighted two", "7290000000002", "0.5", "1.67"),
+        ]
+    )
+    matcher = FakeMatcher(
+        [
+            LineMatch(
+                catalogue("7290000000001", 7290000000001, "Weighted one"),
+                "barcode",
+                1.0,
+                None,
+            ),
+            LineMatch(
+                catalogue("7290000000002", 7290000000002, "Weighted two"),
+                "barcode",
+                1.0,
+                None,
+            ),
+        ]
+    )
+    catalog = FakeCatalog(
+        comparisons=[
+            comparison(
+                7290000000001,
+                [chain("c1", "x", [{"storeId": "1", "price": 3.33}])],
+            ),
+            comparison(
+                7290000000002,
+                [chain("c1", "x", [{"storeId": "1", "price": 3.33}])],
+            ),
+        ]
+    )
+    service = NearbyService(
+        catalog=catalog,
+        matcher=matcher,
+        directory=FakeDirectory([branch("c1", "1", "x")]),
+    )
+
+    store = service.price(doc, location=HERE, radius_m=5000).stores[0]
+
+    assert [line.line_total for line in store.same_cart.items] == [1.67, 1.67]
+    assert store.same_cart.total == 3.34
+    assert store.optimal_cart.total == 3.34
+    assert store.optimal_cart.savings_vs_same_cart == 0.0
+    assert store.optimal_cart.swaps == []

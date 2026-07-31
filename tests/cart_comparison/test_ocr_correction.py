@@ -15,14 +15,17 @@ class FakeCatalog:
         self,
         known: dict[str, dict[str, Any]] | None = None,
         nearest: list[dict[str, Any]] | None = None,
+        searched: dict[str, list[dict[str, Any]]] | None = None,
         *,
         answering: bool = True,
     ) -> None:
         self._known = known or {}
         self._nearest = nearest or []
+        self._searched = searched or {}
         self._answering = answering
         self.lookups: list[str] = []
         self.readings: list[tuple[str, str, float]] = []
+        self.searches: list[tuple[str, int]] = []
 
     def find_product(self, barcode: str) -> ProductLookup:
         self.lookups.append(barcode)
@@ -40,6 +43,12 @@ class FakeCatalog:
     ) -> list[dict[str, Any]]:
         self.readings.append((item_code, item_name, price))
         return list(self._nearest)
+
+    def search_products(
+        self, query: str, *, limit: int = 25
+    ) -> list[dict[str, Any]]:
+        self.searches.append((query, limit))
+        return list(self._searched.get(query, []))
 
 
 class BrokenCatalog(FakeCatalog):
@@ -107,7 +116,7 @@ def document(
 
 
 def test_a_code_the_catalogue_knows_is_left_alone() -> None:
-    """A barcode hit means the extractor read it right; right beats a guess."""
+    """An already-canonical exact hit is idempotent and avoids fuzzy lookup."""
     catalog = FakeCatalog(known={"7290000000001": product(7290000000001, "חלב")})
     given = document(receipt_item(1, "חלב", "7290000000001"))
 
@@ -115,6 +124,52 @@ def test_a_code_the_catalogue_knows_is_left_alone() -> None:
 
     assert corrected is given
     assert catalog.readings == []
+
+
+def test_an_exact_barcode_replaces_a_corrupted_name_without_a_name_guard() -> None:
+    """The code is identity; severe visual OCR damage must not block cleanup."""
+    catalog = FakeCatalog(
+        known={"7290000000001": product(7290000000001, "Canonical milk")}
+    )
+    given = document(receipt_item(1, "Completely unrelated OCR", "7290000000001"))
+
+    corrected = OcrReceiptCorrector(catalog).correct(given)
+
+    assert corrected.receipt.items[0].code == "7290000000001"
+    assert corrected.receipt.items[0].name == "Canonical milk"
+    assert corrected.warnings == [
+        "corrected: receipt.items[1].name to its catalogue name"
+    ]
+    assert catalog.readings == []
+
+
+def test_a_valid_ean8_uses_exact_lookup_and_gets_its_canonical_name() -> None:
+    catalog = FakeCatalog(known={"72940983": product(72940983, "Hummus 250g")})
+    given = document(receipt_item(1, "Damaged hummus name", "72940983"))
+
+    corrected = OcrReceiptCorrector(catalog).correct(given)
+
+    assert corrected.receipt.items[0].name == "Hummus 250g"
+    assert catalog.lookups == ["72940983"]
+    assert catalog.readings == []
+
+
+def test_a_local_code_needs_name_support_before_exact_name_replacement() -> None:
+    catalog = FakeCatalog(known={"2058": product(2058, "White potatoes Israel")})
+    given = document(receipt_item(1, "White potatoes", "2058"))
+
+    corrected = OcrReceiptCorrector(catalog).correct(given)
+
+    assert corrected.receipt.items[0].name == "White potatoes Israel"
+    assert catalog.readings == []
+
+
+def test_a_colliding_local_code_is_not_trusted_on_code_alone() -> None:
+    catalog = FakeCatalog(known={"2058": product(2058, "Dishwashing liquid")})
+    given = document(receipt_item(1, "White potatoes", "2058"))
+
+    assert OcrReceiptCorrector(catalog).correct(given) is given
+    assert catalog.readings == [("2058", "White potatoes", 10.0)]
 
 
 def test_a_confident_name_match_rewrites_the_misread_code() -> None:
@@ -131,6 +186,22 @@ def test_a_confident_name_match_rewrites_the_misread_code() -> None:
     ]
     # The reading was sent as printed, priced per unit.
     assert catalog.readings == [("7290000000007", "חלב תנובה 3", 6.9)]
+
+
+def test_an_invalid_shifted_gtin_is_recovered_by_a_unique_near_code() -> None:
+    correct = product(7290006753939, "Kebab eastern premium 60")
+    catalog = FakeCatalog(searched={"eastern": [correct]})
+    given = document(
+        receipt_item(1, "Garbled eastern product 600", "7290067539393")
+    )
+
+    corrected = OcrReceiptCorrector(catalog).correct(given)
+
+    item = corrected.receipt.items[0]
+    assert item.code == "7290006753939"
+    assert item.name == "Kebab eastern premium 60"
+    assert catalog.readings == []
+    assert any(query == "eastern" for query, _limit in catalog.searches)
 
 
 def test_a_nearly_identical_code_corroborates_a_middling_name() -> None:
@@ -199,12 +270,14 @@ def test_a_plu_line_is_matched_without_a_barcode_lookup() -> None:
 
 
 def test_an_unanswered_catalogue_changes_nothing() -> None:
-    """With the catalogue silent there is no ground for overruling print."""
+    """A failed exact endpoint may still consult the independent OCR endpoint."""
     catalog = FakeCatalog(answering=False)
     given = document(receipt_item(1, "חלב תנובה", "7290000000007"))
 
     assert OcrReceiptCorrector(catalog).correct(given) is given
-    assert catalog.readings == []
+    assert catalog.readings == [
+        ("7290000000007", given.receipt.items[0].name, 10.0)
+    ]
 
 
 def test_catalogue_trouble_never_fails_the_document() -> None:

@@ -503,7 +503,10 @@ def create_app(
     )
     def compare(request: CartComparisonRequest) -> CartComparison:
         """Price an already-extracted Receipt Document across stores."""
-        return cart_comparer(request.document, request.city)
+        # Saved receipts can predate catalogue correction.  The pass is
+        # idempotent and shares the catalogue cache with pricing, so correcting
+        # at this ingress fixes old documents without repeating network work.
+        return cart_comparer(corrector(request.document), request.city)
 
     @app.post(
         "/api/carts/compare-url",
@@ -555,7 +558,7 @@ def create_app(
     def nearby(request: NearbyRequest) -> NearbyResponse:
         """Price an extracted receipt against the stores around the shopper."""
         return nearby_pricer(
-            request.document,
+            corrector(request.document),
             request.location,
             request.radius_m,
             request.limit,

@@ -41,6 +41,7 @@ data/*.db
 
 # other
 docs/*
+!docs/local-item-codes.md
 !docs/adr/
 !docs/adr/*.md
 scripts/extract_recipe_data/output/

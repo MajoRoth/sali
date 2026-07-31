@@ -90,7 +90,12 @@ export default function Results() {
     )
   }
 
-  const bestSaving = cheapestBest === null ? 0 : receiptTotal - cheapestBest
+  const cheapestStore = cheapestBest === null
+    ? null
+    : ranked.find((store) => store.coverage >= 1 && store.bestPrice === cheapestBest) ?? null
+  const bestSaving = cheapestStore === null
+    ? 0
+    : paidForPricedLines(cheapestStore.source, active.items) - cheapestStore.bestPrice
   // Show the name field when there's no name yet, or the user is renaming.
   const naming = !name || editing
 
@@ -277,16 +282,9 @@ export default function Results() {
                   key={store.id}
                   store={store}
                   best={store.bestPrice === cheapestBest}
-                  // A store that prices the whole cart is measured against the
-                  // receipt's own printed total, which is authoritative. One
-                  // that prices only part of it is measured against what was
-                  // paid for that part — otherwise the products it does not
-                  // stock are counted as a saving.
-                  paidBaseline={
-                    store.coverage < 1
-                      ? paidForPricedLines(store.source, active.items)
-                      : receiptTotal
-                  }
+                  // Compare only identical receipt positions. This is correct
+                  // for full carts too and survives stale matched-only coverage.
+                  paidBaseline={paidForPricedLines(store.source, active.items)}
                   style={{ animationDelay: `${Math.min(i, 6) * 55}ms` }}
                   onOpen={() => openCart(pricedStore(store.source, active.items))}
                 />
@@ -423,6 +421,9 @@ function StoreRow({
         </span>
         {store.coverage < 1 && (
           <span className="row-gap">חסרים {store.unavailableCount} מוצרים</span>
+        )}
+        {store.chainLevelEstimate && (
+          <span className="row-gap">הערכת מחיר ברמת הרשת</span>
         )}
       </div>
 

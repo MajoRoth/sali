@@ -11,7 +11,7 @@ not.
 
 from __future__ import annotations
 
-from sali.cart_comparison.catalog import SupermarketsCatalog
+from sali.cart_comparison.catalog import SupermarketsCatalog, default_catalog
 from sali.cart_comparison.configuration import CONFIDENT_NAME_MATCH_SCORE
 from sali.cart_comparison.matching import CartMatcher
 from sali.cart_comparison.models import (
@@ -32,7 +32,7 @@ class CartComparisonService:
         catalog: SupermarketsCatalog | None = None,
         matcher: CartMatcher | None = None,
     ) -> None:
-        self._catalog = catalog or SupermarketsCatalog()
+        self._catalog = catalog or default_catalog()
         self._matcher = matcher or CartMatcher(self._catalog)
 
     def compare(
@@ -52,6 +52,7 @@ class CartComparisonService:
                 dict.fromkeys(
                     product.product_id
                     for line in matched
+                    if line.matched_by != "fixed_charge"
                     for product in (
                         line.product,
                         *(alternate.product for alternate in line.alternates),
@@ -72,14 +73,15 @@ class CartComparisonService:
         uncertain = [
             line
             for line in matched
-            if line.matched_by == "name"
+            if line.matched_by != "barcode"
             and line.confidence < CONFIDENT_NAME_MATCH_SCORE
         ]
         for line in uncertain:
             warnings.append(
                 f"uncertain: receipt.items[{line.position}] "
                 f"{line.receipt_name!r} was priced as {line.product.name!r} "
-                f"on a name match scoring {line.confidence:.2f}"
+                f"on a {line.matched_by.replace('_', '-')} match scoring "
+                f"{line.confidence:.2f}"
             )
 
         if unmatched:

@@ -168,6 +168,39 @@ def test_a_receipt_is_priced_across_stores_cheapest_complete_cart_first() -> Non
     assert result.currency == "ILS"
 
 
+def test_a_local_code_is_compared_through_equivalent_codes_at_other_stores() -> None:
+    cucumber = "\u05de\u05dc\u05e4\u05e4\u05d5\u05df"
+    decorated = (
+        "\u05de\u05dc\u05e4\u05e4\u05d5\u05df/"
+        "\u05d9\u05e8\u05e7\u05d5\u05ea "
+        "\u05e9\u05e7\u05d9\u05dc"
+    )
+    catalog = FakeCatalog(
+        by_barcode={"935": catalogue_product(935, decorated)},
+        by_query={
+            cucumber: [
+                catalogue_product(935, decorated),
+                catalogue_product(777104, cucumber),
+            ]
+        },
+        comparisons=[
+            priced(935, [{"storeId": "source", "price": 5.0}]),
+            priced(777104, [{"storeId": "other", "price": 4.0}]),
+        ],
+    )
+
+    result = CartComparisonService(catalog).compare(
+        document([(cucumber, "935", "1", "5.50")])
+    )
+
+    assert result.matched[0].matched_by == "local_code"
+    assert [item.product.barcode for item in result.matched[0].alternates] == [
+        777104
+    ]
+    assert catalog.compared == [["935", "777104"]]
+    assert {cart.store_id for cart in result.complete_carts} == {"source", "other"}
+
+
 def test_unmatched_lines_are_reported_and_left_out_of_every_total() -> None:
     catalog = FakeCatalog(
         by_barcode={str(MILK): catalogue_product(MILK, "חלב 3%")},

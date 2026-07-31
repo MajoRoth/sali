@@ -43,6 +43,8 @@ export interface Supermarket {
   approxLocation: boolean;
   /** How many matched products this store had no price for. */
   unavailableCount: number;
+  /** Some line prices came from a chain-wide fallback, not this exact branch. */
+  chainLevelEstimate: boolean;
   /** The backend record, for screens that need the per-line detail. */
   source: NearbyStore;
 }

@@ -51,7 +51,18 @@ export function useUserPosition(): [number, number] | null {
   return pos
 }
 
-function toSupermarket(store: NearbyStore): Supermarket {
+function toSupermarket(store: NearbyStore, requestedCount: number): Supermarket {
+  // Older API responses measured coverage only among catalogue-matched lines.
+  // Recompute it from the receipt so a six-of-eight basket can never claim 100%
+  // coverage (and therefore never count the absent two lines as savings).
+  const availableCount = store.sameCart.items.filter((line) => line.available).length
+  const coverage = requestedCount > 0
+    ? Math.min(1, availableCount / requestedCount)
+    : store.sameCart.coverage
+  const unavailableCount = requestedCount > 0
+    ? Math.max(0, requestedCount - availableCount)
+    : store.sameCart.unavailableCount
+
   return {
     id: `${store.chain}:${store.storeId}`,
     brand: store.chain,
@@ -62,9 +73,10 @@ function toSupermarket(store: NearbyStore): Supermarket {
     bestPrice: store.optimalCart.total,
     swaps: store.optimalCart.swaps.length,
     deliveryFee: store.deliveryFee,
-    coverage: store.sameCart.coverage,
+    coverage,
     approxLocation: store.approximateLocation ?? false,
-    unavailableCount: store.sameCart.unavailableCount,
+    unavailableCount,
+    chainLevelEstimate: store.chainLevelEstimate,
     source: store,
   }
 }
@@ -184,7 +196,10 @@ export function useStores(
   return useMemo(() => {
     if (lat === undefined || lng === undefined) return IDLE
 
-    const stores = (response?.stores ?? []).map(toSupermarket)
+    const requestedCount = document?.receipt.items.length ?? 0
+    const stores = (response?.stores ?? [])
+      .map((store) => toSupermarket(store, requestedCount))
+      .sort((left, right) => right.coverage - left.coverage || left.bestPrice - right.bestPrice)
     const physical: StoreOnMap[] = stores
       .filter((s): s is Supermarket & { source: NearbyStore } => !s.online && s.source.location !== null)
       .map((s) => ({
@@ -198,7 +213,7 @@ export function useStores(
     return {
       physical,
       online,
-      // The backend already ranks coverage-first; preserve that order.
+      // Coverage first: a partial cart is not a cheaper version of a full one.
       ranked: stores,
       // Only complete carts. A partial basket is cheap because it is missing
       // things, so headlining it as the best price advertises a saving that
@@ -213,5 +228,5 @@ export function useStores(
       warnings: response?.warnings ?? [],
       response,
     }
-  }, [response, branches, loading, error, lat, lng])
+  }, [response, branches, loading, error, lat, lng, document])
 }

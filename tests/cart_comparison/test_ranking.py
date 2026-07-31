@@ -107,6 +107,46 @@ def test_a_chain_without_a_store_breakdown_still_competes_on_its_own_price() -> 
     assert prices[0].store_id is None
 
 
+def test_chain_minimum_is_retained_when_branch_prices_are_sparse() -> None:
+    prices = read_store_prices(
+        [
+            comparison(
+                MILK,
+                [
+                    chain(
+                        "c1",
+                        "x",
+                        [{"storeId": "a", "price": 5.0}],
+                        min_price=5.0,
+                    )
+                ],
+            ),
+            comparison(
+                BREAD,
+                [
+                    chain(
+                        "c1",
+                        "x",
+                        [{"storeId": "b", "price": 8.0}],
+                        min_price=8.0,
+                    )
+                ],
+            ),
+        ]
+    )
+
+    complete, partial = rank_carts(
+        [matched(MILK, "\u05d7\u05dc\u05d1"), matched(BREAD, "\u05dc\u05d7\u05dd")],
+        prices,
+    )
+
+    assert partial == []
+    physical = [cart for cart in complete if cart.store_id is not None]
+    assert {cart.store_id for cart in physical} == {"a", "b"}
+    assert all(cart.total == "13.00" for cart in physical)
+    assert all(cart.chain_level_estimate for cart in physical)
+
+
 def test_prices_survive_alternative_field_names() -> None:
     prices = read_store_prices(
         [
@@ -166,6 +206,23 @@ def test_a_store_missing_an_item_ranks_below_every_complete_cart() -> None:
     assert complete[0].total == "14.00"
     assert [store.store_id for store in partial] == ["cheap"]
     assert [item.barcode for item in partial[0].missing] == [BREAD]
+
+
+def test_a_fixed_deposit_charge_does_not_make_a_store_incomplete() -> None:
+    deposit = matched(1000, "\u05d3\u05de\u05d9 \u05e4\u05e7\u05d3\u05d5\u05df").model_copy(
+        update={"matched_by": "fixed_charge", "paid": "0.30"}
+    )
+    prices = read_store_prices(
+        [comparison(MILK, [chain("c1", "x", [{"storeId": "a", "price": 5.0}])])]
+    )
+
+    complete, partial = rank_carts([matched(MILK, "\u05d7\u05dc\u05d1"), deposit], prices)
+
+    assert partial == []
+    assert complete[0].complete
+    assert complete[0].priced_items == 2
+    assert complete[0].total_items == 2
+    assert complete[0].total == "5.30"
 
 
 def test_complete_carts_are_ordered_by_what_the_whole_cart_costs() -> None:

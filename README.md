@@ -176,12 +176,22 @@ Read it in this order:
 
 ### How matching works
 
-Receipt lines are resolved to catalogue products barcode-first. A 12–14 digit
-code printed on the receipt names the exact product, so that match is certain.
-Weighed goods (produce, deli, bakery) carry a merchant-internal PLU instead,
-which means nothing outside that chain — those lines fall back to a name search,
-scored on token overlap, and a candidate below the confidence floor is reported
-unmatched rather than priced as the wrong product.
+Receipt lines are resolved to catalogue products global-barcode-first. A
+12–14 digit code printed on the receipt names the exact product, so that match
+is certain.
+
+Short numeric codes are retailer-local PLUs/SKUs used heavily for produce, deli,
+bakery, and other weighed goods. They are looked up but never trusted by number
+alone: different chains can assign the same short code to different products.
+The catalogue name must also support the receipt line. A confirmed local row is
+priced together with high-confidence local-code equivalents found by name, so
+the same loose product can be compared where another chain publishes it under a
+different code. A colliding code falls back to name matching instead of silently
+pricing the wrong item.
+
+Lines without a confirmed code are searched by name and scored on token overlap.
+A candidate below the confidence floor is reported unmatched rather than priced
+as the wrong product.
 
 On real receipts this resolves 50 of 51 lines for a supermarket shop (the
 holdout being a discount-trigger line, which is not a product). A pharmacy

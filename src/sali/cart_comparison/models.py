@@ -13,7 +13,7 @@ class _StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
 
-type MatchMethod = Literal["barcode", "name"]
+type MatchMethod = Literal["barcode", "local_code", "name", "fixed_charge"]
 
 
 class CatalogProduct(_StrictModel):
