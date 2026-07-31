@@ -5,10 +5,11 @@ batching `compare-prices` under its 20-id ceiling, turning a 404 into "no such
 product" rather than an exception, and never letting one slow upstream call
 fail a whole cart.
 
-Speed is the other half of the job. The hosted service answers a single barcode
-lookup in about five seconds, which is fine for one product and useless for a
-fifty-line receipt — so lookups run concurrently and their results are cached
-for the life of the process.
+Speed is the other half of the job, and it is mostly about connections. The
+hosted service answers a barcode in a second or two over a warm pool and
+refuses the same volume when every call opens its own socket — so one pooled
+client is reused for the life of the object, lookups run concurrently over it,
+and their results are cached.
 """
 
 from __future__ import annotations
@@ -17,7 +18,8 @@ import logging
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Self
 
 import httpx
 
@@ -28,8 +30,11 @@ from sali.cart_comparison.configuration import (
     CATALOG_TIMEOUT_SECONDS,
     CIRCUIT_BREAKER_COOLDOWN_SECONDS,
     CIRCUIT_BREAKER_THRESHOLD,
+    CONNECTION_POOL_SIZE,
+    KEEPALIVE_EXPIRY_SECONDS,
     MAX_PRODUCT_IDS_PER_REQUEST,
     SEARCH_CANDIDATE_LIMIT,
+    SEARCH_TIMEOUT_SECONDS,
     catalog_base_url,
     catalog_headers,
 )
@@ -45,8 +50,38 @@ _MISSING = object()
 _FAILED = object()
 
 
+def _timeout_for(path: str) -> float:
+    """How long this endpoint is worth waiting for."""
+    return SEARCH_TIMEOUT_SECONDS if path.startswith("/products/search") else CATALOG_TIMEOUT_SECONDS
+
+
+def _circuit_key(path: str) -> str:
+    """Which endpoint a path belongs to, ignoring the id on the end.
+
+    `/products/barcode/729...` and `/products/barcode/838...` are one endpoint
+    and share a health story; `/products/search` is a different one entirely.
+    """
+    parts = [part for part in path.split("/") if part][:2]
+    return "/" + "/".join(parts)
+
+
 class CatalogUnavailableError(RuntimeError):
     """The price database could not be reached or answered unusably."""
+
+
+@dataclass(frozen=True)
+class ProductLookup:
+    """What a barcode lookup found, and whether it got an answer at all.
+
+    The distinction is the whole point. "The database has no such product" and
+    "the database did not respond" both leave us without a product, but only
+    the first is a fact about the shopper's receipt — and telling them their
+    milk is not in the database when really the server was down is a plain
+    falsehood.
+    """
+
+    product: dict[str, Any] | None
+    answered: bool
 
 
 class SupermarketsCatalog:
@@ -61,29 +96,62 @@ class SupermarketsCatalog:
         self._base_url = (base_url or catalog_base_url()).rstrip("/")
         self._client = client
         self._headers = catalog_headers() if headers is None else headers
+        self._owned: httpx.Client | None = None
         self._products: dict[str, dict[str, Any] | None] = {}
-        self._lock = threading.Lock()
-        self._failures = 0
-        self._opened_at = 0.0
+        self._lock = threading.RLock()
+        self._failures: dict[str, int] = {}
+        self._opened_at: dict[str, float] = {}
+
+    def _session(self) -> httpx.Client:
+        """The pooled client every request goes through.
+
+        Built once and kept. Opening a fresh client per request means a new TCP
+        and TLS handshake per product, and a fifty-line receipt then arrives as
+        fifty simultaneous new connections — which the hosted service refuses,
+        while the identical request volume over a warm pool succeeds. Measured:
+        eighteen barcode lookups over one pooled client finish in under five
+        seconds with no failures; the same lookups on per-request clients trip
+        the circuit breaker after four.
+        """
+        if self._client is not None:
+            return self._client
+        with self._lock:
+            if self._owned is None:
+                self._owned = httpx.Client(
+                    timeout=CATALOG_TIMEOUT_SECONDS,
+                    headers=self._headers,
+                    limits=httpx.Limits(
+                        max_connections=CONNECTION_POOL_SIZE,
+                        max_keepalive_connections=CONNECTION_POOL_SIZE,
+                        keepalive_expiry=KEEPALIVE_EXPIRY_SECONDS,
+                    ),
+                )
+            return self._owned
 
     def _request(
         self,
         path: str,
         params: Any | None = None,
     ) -> httpx.Response:
-        if self._client is not None:
-            return self._client.get(
-                f"{self._base_url}{path}",
-                params=params,
-                headers=self._headers,
-                timeout=CATALOG_TIMEOUT_SECONDS,
-            )
-        with httpx.Client(timeout=CATALOG_TIMEOUT_SECONDS) as client:
-            return client.get(
-                f"{self._base_url}{path}",
-                params=params,
-                headers=self._headers,
-            )
+        return self._session().get(
+            f"{self._base_url}{path}",
+            params=params,
+            headers=self._headers,
+            timeout=_timeout_for(path),
+        )
+
+    def close(self) -> None:
+        """Release the pooled connections. Injected clients are the caller's."""
+        with self._lock:
+            owned, self._owned = self._owned, None
+        if owned is not None:
+            owned.close()
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self.close()
 
     def _get(
         self,
@@ -100,7 +168,8 @@ class SupermarketsCatalog:
         timed-out lookup must not fail a fifty-line cart that has already
         resolved forty-nine of its lines.
         """
-        if tolerate_errors and self._circuit_open():
+        circuit = _circuit_key(path)
+        if tolerate_errors and self._circuit_open(circuit):
             return _FAILED
 
         attempts = CATALOG_RETRY_ATTEMPTS
@@ -112,19 +181,19 @@ class SupermarketsCatalog:
                 last = type(exc).__name__
             else:
                 if response.status_code == 404:
-                    self._record_success()
+                    self._record_success(circuit)
                     return None
                 if response.status_code < 400:
                     try:
                         payload = response.json()
                     except ValueError as exc:
                         if tolerate_errors:
-                            self._record_failure()
+                            self._record_failure(circuit)
                             return _FAILED
                         raise CatalogUnavailableError(
                             f"the price database returned a non-JSON body for {path}"
                         ) from exc
-                    self._record_success()
+                    self._record_success(circuit)
                     return payload
                 last = str(response.status_code)
                 # 4xx is a bad request, not bad luck; retrying repeats it.
@@ -134,11 +203,11 @@ class SupermarketsCatalog:
                 # Another thread may have tripped the breaker while this call
                 # was in flight; with sixteen workers against a dead host, not
                 # re-checking here doubles the time before anything gives up.
-                if tolerate_errors and self._circuit_open():
+                if tolerate_errors and self._circuit_open(circuit):
                     break
                 time.sleep(CATALOG_RETRY_BACKOFF_SECONDS * (attempt + 1))
 
-        self._record_failure()
+        self._record_failure(circuit)
         if tolerate_errors:
             logger.warning("tolerated catalogue failure for %s (%s)", path, last)
             return _FAILED
@@ -148,47 +217,56 @@ class SupermarketsCatalog:
 
     # -- circuit breaker -----------------------------------------------------
 
-    def _circuit_open(self) -> bool:
-        """Whether to stop calling a host that is plainly down.
+    def _circuit_open(self, circuit: str) -> bool:
+        """Whether to stop calling an endpoint that is plainly down.
 
         Without this, a fifty-line receipt against a dead service is fifty
         lookups times two attempts times a thirty-second timeout — the user
         waits minutes to be told nothing. After a run of consecutive failures
         the remaining calls are skipped, and one is let through periodically to
         notice when the service comes back.
+
+        Tracked per endpoint, because on this API they fail independently:
+        `/products/search` 504s reliably while `/products/barcode` answers every
+        time. One shared counter lets the dead endpoint trip the breaker for the
+        working one, which turns a receipt that could be half-priced into one
+        that is not priced at all.
         """
         with self._lock:
-            if self._failures < CIRCUIT_BREAKER_THRESHOLD:
+            if self._failures.get(circuit, 0) < CIRCUIT_BREAKER_THRESHOLD:
                 return False
-            if (time.monotonic() - self._opened_at) >= CIRCUIT_BREAKER_COOLDOWN_SECONDS:
+            opened = self._opened_at.get(circuit, 0.0)
+            if (time.monotonic() - opened) >= CIRCUIT_BREAKER_COOLDOWN_SECONDS:
                 # Half-open: let one call through and see. Stepping back to just
                 # below the threshold rather than resetting means a single
                 # failure re-opens it — a host that has been down for an hour
                 # should cost one probe per cooldown, not another full run of
                 # timeouts before we believe it again.
-                self._failures = CIRCUIT_BREAKER_THRESHOLD - 1
-                self._opened_at = time.monotonic()
+                self._failures[circuit] = CIRCUIT_BREAKER_THRESHOLD - 1
+                self._opened_at[circuit] = time.monotonic()
                 return False
             return True
 
-    def _record_success(self) -> None:
+    def _record_success(self, circuit: str) -> None:
         with self._lock:
-            self._failures = 0
+            self._failures[circuit] = 0
 
-    def _record_failure(self) -> None:
+    def _record_failure(self, circuit: str) -> None:
         with self._lock:
-            self._failures += 1
-            if self._failures == CIRCUIT_BREAKER_THRESHOLD:
-                self._opened_at = time.monotonic()
+            count = self._failures.get(circuit, 0) + 1
+            self._failures[circuit] = count
+            if count == CIRCUIT_BREAKER_THRESHOLD:
+                self._opened_at[circuit] = time.monotonic()
                 logger.warning(
-                    "%s failed %d times in a row; pausing calls for %ds",
+                    "%s%s failed %d times in a row; pausing it for %ds",
                     self._base_url,
-                    self._failures,
+                    circuit,
+                    count,
                     int(CIRCUIT_BREAKER_COOLDOWN_SECONDS),
                 )
 
-    def product_by_barcode(self, barcode: str) -> dict[str, Any] | None:
-        """Look one barcode up exactly; None when the catalogue has no such row.
+    def find_product(self, barcode: str) -> ProductLookup:
+        """Look one barcode up, saying whether the database actually answered.
 
         Cached for the process: a barcode maps to the same catalogue row for
         far longer than a session, the hosted service takes seconds per lookup,
@@ -197,13 +275,13 @@ class SupermarketsCatalog:
         with self._lock:
             cached = self._products.get(barcode, _MISSING)
         if cached is not _MISSING:
-            return cached  # type: ignore[return-value]
+            return ProductLookup(cached, True)  # type: ignore[arg-type]
 
         payload = self._get(f"/products/barcode/{barcode}", tolerate_errors=True)
         if payload is _FAILED:
             # We never got an answer, so we have learned nothing. Caching this
             # as "absent" would keep the product missing for the whole process.
-            return None
+            return ProductLookup(None, False)
 
         product = None
         if isinstance(payload, dict):
@@ -211,7 +289,11 @@ class SupermarketsCatalog:
             product = found if isinstance(found, dict) else None
         with self._lock:
             self._products[barcode] = product
-        return product
+        return ProductLookup(product, True)
+
+    def product_by_barcode(self, barcode: str) -> dict[str, Any] | None:
+        """The product for a barcode, or None whether absent or unreachable."""
+        return self.find_product(barcode).product
 
     def search_products(
         self,
@@ -342,4 +424,29 @@ class SupermarketsCatalog:
         ]
 
 
-__all__ = ["CatalogUnavailableError", "SupermarketsCatalog"]
+_DEFAULT: SupermarketsCatalog | None = None
+_DEFAULT_LOCK = threading.Lock()
+
+
+def default_catalog() -> SupermarketsCatalog:
+    """The process-wide catalogue.
+
+    Everything that makes this client usable is per-instance state — the
+    connection pool, the barcode cache, the circuit breaker — so building one
+    per request throws all three away each time. The pool matters most: a fresh
+    instance means a cold TLS handshake per product, which is the shape of load
+    the hosted service refuses.
+    """
+    global _DEFAULT
+    with _DEFAULT_LOCK:
+        if _DEFAULT is None:
+            _DEFAULT = SupermarketsCatalog()
+        return _DEFAULT
+
+
+__all__ = [
+    "CatalogUnavailableError",
+    "ProductLookup",
+    "SupermarketsCatalog",
+    "default_catalog",
+]

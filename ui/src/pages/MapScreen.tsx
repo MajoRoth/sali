@@ -250,11 +250,15 @@ interface CardProps {
 
 function StoreCard({ store, selected, best, receiptTotal, onClick, ref }: CardProps) {
   const diff = receiptTotal - store.bestPrice
+  // The pin for an approximate store sits on the city centre, so a distance
+  // would be measured to the wrong point. Name the city instead.
   const sub = store.online
     ? store.deliveryFee === 0
       ? 'משלוח חינם'
       : `משלוח ${formatPrice(store.deliveryFee)}`
-    : formatDistance((store as StoreOnMap).distanceM)
+    : store.approxLocation
+      ? (store.source.city ?? 'מיקום משוער')
+      : formatDistance((store as StoreOnMap).distanceM)
 
   return (
     <button

@@ -209,16 +209,53 @@ The join is partial: a branch the pricing instance does not list is still drawn
 on the map, just without prices. That is the intended degradation — an unpriced
 map is useful, an empty one is not.
 
+**City-level placement.** The chains that actually carry price data are largely
+missing from the coordinate instance, so an exact join alone leaves them
+invisible. Between them the two instances publish enough to fix that: the
+pricing instance names the city a branch is in, the coordinate instance says
+where hundreds of shared branches are, and averaging those yields a centre for
+every city. A priced branch with no coordinates is placed at its city centre
+and flagged `approximateLocation: true`; the API then returns `distanceM: null`
+and the UI names the city instead of quoting a distance it cannot support.
+
+Branches that leave the city column empty usually write it into the shop name
+(`סיטי מרקט טאוור בע"מ, משה דיין 2 תל אביב`), so the name is scanned for a known
+city. Matching goes through aliases, because the two instances disagree on
+spelling — the directory says `תל אביב - יפו` and the shop name says `תל אביב`.
+An alias two cities share is discarded rather than guessed.
+
+**Do not read store lists from `/stores/nearby`.** It caps at 100 rows and —
+measured — returns an arbitrary hundred rather than the nearest. With price
+coverage as thin as it is, that cap is very likely to drop exactly the branch
+the shopper needed. The directory is assembled chain by chain instead.
+
 #### Upstream reliability
 
 The pricing instance is slow and frequently down. A single barcode lookup takes
 about five seconds when healthy, and there is no bulk endpoint, so the client:
 
+* keeps **one pooled client** and reuses it. This is the single thing that
+  makes the host usable: the same request volume that succeeds over a warm pool
+  gets refused when every call opens its own TLS connection. Measured, eighteen
+  barcode lookups take 4.7s pooled and trip the breaker after four unpooled.
 * runs lookups concurrently and caches them for the process,
 * retries once, then tolerates a failure rather than failing the whole cart,
 * and trips a **circuit breaker** after `CIRCUIT_BREAKER_THRESHOLD` consecutive
   failures, so a fifty-line receipt against a dead host costs one fast failure
   instead of fifty timeouts.
+
+The breaker is **per endpoint**, which matters because these fail
+independently: `/products/search` 504s reliably while `/products/barcode`
+answers every time. A shared counter would let the dead endpoint gate the
+working one and turn a receipt that could be mostly priced into one that is not
+priced at all. For the same reason the catalogue, its pool, its cache, and its
+breaker are process-wide (`default_catalog()`) rather than rebuilt per request.
+
+An **incomplete** pricing index is cached for minutes rather than hours: one
+built while the pricing instance was half-down would otherwise keep the
+branches it missed unpriceable all day, and those are exactly the branches that
+carry prices. The directory is also warmed on startup so the first shopper does
+not pay for assembling it.
 
 When nothing can be priced the response says so explicitly:
 

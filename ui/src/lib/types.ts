@@ -38,7 +38,9 @@ export interface Supermarket {
   swaps: number;
   deliveryFee: number;
   /** available / requested, 0..1. Ranking puts coverage before price. */
-  coverage: number;
+  coverage: number
+  /** Position is the city centre, not the branch. Distance is unknown. */
+  approxLocation: boolean;
   /** How many matched products this store had no price for. */
   unavailableCount: number;
   /** The backend record, for screens that need the per-line detail. */

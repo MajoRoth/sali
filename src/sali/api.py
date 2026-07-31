@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import uuid
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import FastAPI, File, Form, Query, Request, UploadFile
@@ -23,7 +25,7 @@ from sali.nearby.models import (
     NearbyResponse,
     NearbyUrlRequest,
 )
-from sali.nearby.service import NearbyService
+from sali.nearby.service import default_service
 from sali.nearby.stores import default_directory
 from sali.receipt_extraction.errors import (
     HostedReceiptError,
@@ -113,9 +115,28 @@ class ApiErrorResponse(BaseModel):
 logger = logging.getLogger("sali.api")
 
 
+#: Any loopback origin, on any port.
+#:
+#: A browser treats `http://localhost:5173` and `http://127.0.0.1:5173` as two
+#: different origins even though they are one machine, and Vite silently moves to
+#: 5174 when 5173 is taken. Pinning a single string meant the preflight came back
+#: as a bare `400 Disallowed CORS origin`, which in the browser surfaces only as a
+#: failed fetch — indistinguishable from the API being down.
+_LOOPBACK_ORIGIN = r"http://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?"
+
+
 def _cors_origins() -> list[str]:
-    configured = os.environ.get("SALI_CORS_ORIGINS", "http://localhost:5173")
+    configured = os.environ.get("SALI_CORS_ORIGINS", "")
     return [origin.strip() for origin in configured.split(",") if origin.strip()]
+
+
+def _cors_origin_regex() -> str | None:
+    """Trust loopback unless the deployment names its origins explicitly.
+
+    Setting `SALI_CORS_ORIGINS` turns this off, so a deployed API allows exactly
+    what it was configured to allow and nothing else.
+    """
+    return None if _cors_origins() else _LOOPBACK_ORIGIN
 
 
 def _logs_failure_detail() -> bool:
@@ -213,6 +234,18 @@ def _safe_failure_message(code: str, *, is_image: bool) -> str:
     )
 
 
+#: Anywhere real; the directory it builds is nationwide and shared, so the
+#: point only decides which rows get filtered, not which get fetched.
+_WARM_POINT = (32.0853, 34.7818)
+
+
+def _warm_directory() -> None:
+    try:
+        default_directory().nearby(_WARM_POINT, 1)
+    except Exception:  # noqa: BLE001 - warming is best-effort by definition
+        logger.warning("store directory warm-up failed; it will build on demand")
+
+
 def _default_price_nearby(
     document: ReceiptDocument,
     location: GeoPoint,
@@ -220,7 +253,7 @@ def _default_price_nearby(
     limit: int,
     include_online: bool,
 ) -> NearbyResponse:
-    return NearbyService().price(
+    return default_service().price(
         document,
         location=location,
         radius_m=radius_m,
@@ -274,7 +307,23 @@ def create_app(
     )
     nearby_pricer = price_nearby or _default_price_nearby
     store_lister = list_nearby_stores or _default_list_nearby_stores
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        """Assemble the store directory before the first shopper needs it.
+
+        It is around sixty upstream calls and a good fifteen seconds, cached for
+        hours afterwards — so whoever arrives first would otherwise pay for
+        everyone. Done on a daemon thread because it is an optimisation: if it
+        is slow or fails, requests still work, they just build it themselves.
+        """
+        warm = threading.Thread(
+            target=_warm_directory, name="sali-warm-directory", daemon=True
+        )
+        warm.start()
+        yield
+
     app = FastAPI(
+        lifespan=lifespan,
         title="sali Receipt API",
         version="0.2.0",
         description=(
@@ -286,6 +335,7 @@ def create_app(
     app.add_middleware(
         CORSMiddleware,
         allow_origins=_cors_origins(),
+        allow_origin_regex=_cors_origin_regex(),
         allow_credentials=False,
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],

@@ -138,6 +138,11 @@ class NearbyStore(_Wire):
     #: not. Clients must label it; they must never present it as a real price.
     simulated: bool = False
 
+    #: True when `location` is the centre of the branch's city rather than the
+    #: branch itself, because no coordinates are published for it. `distanceM`
+    #: is null in that case: the city is known, the walk is not.
+    approximate_location: bool = False
+
     same_cart: Cart
     optimal_cart: OptimalCart
 

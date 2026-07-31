@@ -15,7 +15,14 @@
  * ours — it is documented in `src/sali/nearby/models.py`.
  */
 
-const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/$/, '')
+/**
+ * `127.0.0.1`, not `localhost`, and that is not a style choice.
+ *
+ * The dev server binds IPv4 loopback only, while `localhost` resolves to `::1`
+ * first on macOS — so every call spent a refused IPv6 connection before falling
+ * back, and anything stricter than a browser about that fallback just failed.
+ */
+const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000').replace(/\/$/, '')
 
 /* ------------------------------------------------------------------ */
 /* Receipt Document — the extraction contract (snake_case).            */
@@ -117,6 +124,12 @@ export interface NearbyStore {
    * is real, the money is not. Must be labelled wherever it is shown.
    */
   simulated?: boolean
+  /**
+   * `location` is the centre of the branch's city, not the branch — no
+   * coordinates are published for it. `distanceM` is null when this is set,
+   * because the city is known and the walk is not.
+   */
+  approximateLocation?: boolean
   sameCart: Cart
   optimalCart: OptimalCart
 }
@@ -174,7 +187,7 @@ const MESSAGES: Record<string, string> = {
   refused: 'לא הצלחנו לעבד את הקבלה.',
   extraction_unavailable: 'שירות חילוץ הקבלות אינו זמין כרגע. נסו שוב בעוד רגע.',
   price_database_unavailable: 'מאגר המחירים אינו זמין כרגע. נסו שוב בעוד רגע.',
-  network: 'לא הצלחנו להתחבר לשרת. ודאו שה־API רץ על http://localhost:8000.',
+  network: 'לא הצלחנו להתחבר לשרת. ודאו שה־API רץ על http://127.0.0.1:8000.',
 }
 
 function messageFor(code: string, fallback: string): string {
@@ -273,6 +286,10 @@ export function isApiError(error: unknown): error is ApiError {
  * Returns null for a warning that should not be surfaced.
  */
 export function warningText(warning: string): string | null {
+  const unreachable = /^(\d+) of (\d+) receipt lines could not be checked at all/.exec(warning)
+  if (unreachable) {
+    return `${unreachable[1]} מתוך ${unreachable[2]} שורות בקבלה לא נבדקו כלל — מאגר המחירים לא הגיב. זו תקלה זמנית במאגר, לא קביעה לגבי המוצרים שלכם.`
+  }
   const unmatched = /^(\d+) of (\d+) receipt lines could not be matched/.exec(warning)
   if (unmatched) {
     // Simulated totals are built from the receipt, so those lines *are* priced —
@@ -284,6 +301,10 @@ export function warningText(warning: string): string | null {
   }
   if (warning.startsWith('demo prices:')) {
     return 'מאגר המחירים אינו זמין כרגע. הסכומים המוצגים הם הדגמה בלבד — הם מחושבים מהקבלה שלכם ואינם מחירים אמיתיים בסניפים.'
+  }
+  const unplaceable = /^prices were found at (\d+) branches/.exec(warning)
+  if (unplaceable) {
+    return `נמצאו מחירים ב־${unplaceable[1]} סניפים, אבל אף אחד מהם לא ניתן למיקום ברדיוס שלכם — מאגר המחירים ומאגר המיקומים לא מכסים את אותן רשתות.`
   }
   if (warning.startsWith('no store prices')) {
     return 'מאגר המחירים אינו מכיל כרגע מחירים בפועל לאף אחד מהמוצרים בקבלה.'

@@ -59,6 +59,12 @@ BARCODE_LENGTHS = frozenset({12, 13, 14})
 #: waits on a broken one, which is why it is not more generous than that.
 CATALOG_TIMEOUT_SECONDS = 15.0
 
+#: `/products/search` gets a shorter leash than the rest. It is the optional
+#: half of matching — a line it cannot resolve is reported unmatched, not
+#: failed — and it is also the endpoint that hangs, so waiting the full budget
+#: on it buys nothing and costs the shopper the whole request.
+SEARCH_TIMEOUT_SECONDS = 8.0
+
 #: How many times a call is attempted before giving up. The hosted service
 #: answers a barcode lookup in about five seconds and occasionally 504s under
 #: that load, so one retry converts most failures into answers; more than that
@@ -68,9 +74,20 @@ CATALOG_RETRY_ATTEMPTS = 2
 CATALOG_RETRY_BACKOFF_SECONDS = 0.4
 
 #: Concurrent barcode lookups. The hosted catalogue has no bulk endpoint and
-#: takes seconds per barcode, so a fifty-line receipt resolved serially takes
-#: minutes — measured, 16 workers turn that into roughly twenty seconds.
-BARCODE_LOOKUP_WORKERS = 16
+#: takes a second or two per barcode, so a fifty-line receipt resolved serially
+#: takes minutes. Measured over a warm connection pool, eighteen lookups take
+#: 8.5s at 2 workers and 4.7s at 8; past that the curve is flat, so this is the
+#: point where more concurrency stops buying anything and only adds load.
+BARCODE_LOOKUP_WORKERS = 8
+
+#: Sockets kept open to each host. What actually makes the hosted service
+#: usable: the same request volume that succeeds over a warm pool gets refused
+#: when every call opens its own connection.
+CONNECTION_POOL_SIZE = 16
+
+#: Long enough that the pool survives between the phases of one request —
+#: matching, then pricing, then swap search.
+KEEPALIVE_EXPIRY_SECONDS = 60.0
 
 #: How many receipt lines are searched for a cheaper alternative. Each search is
 #: a slow catalogue call, and swaps only pay off on the expensive lines, so the

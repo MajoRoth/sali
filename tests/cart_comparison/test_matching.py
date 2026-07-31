@@ -2,6 +2,22 @@
 
 from typing import Any
 
+import httpx
+
+from sali.cart_comparison.catalog import SupermarketsCatalog
+
+
+def catalog_against(handler) -> tuple[SupermarketsCatalog, list[httpx.Request]]:
+    seen: list[httpx.Request] = []
+
+    def record(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return handler(request)
+
+    client = httpx.Client(transport=httpx.MockTransport(record))
+    return SupermarketsCatalog("http://prices.test", client=client), seen
+
+
 from sali.cart_comparison.matching import CartMatcher, is_barcode, similarity
 from sali.receipt_extraction.models import Item
 
@@ -162,3 +178,28 @@ def test_a_usable_row_still_wins_when_a_broken_one_scores_the_same() -> None:
 
 def test_an_unrelated_product_scores_below_the_floor() -> None:
     assert similarity("מלפפון", "שוקולד מריר מעולה") == 0.0
+
+
+def test_an_outage_is_not_reported_as_a_missing_product() -> None:
+    """"Not in the database" is a claim about the shopper's shopping.
+
+    Making it because somebody else's server was down tells them their milk
+    is not sold anywhere, which is both false and unfalsifiable from the UI.
+    """
+    catalog, _ = catalog_against(lambda _request: httpx.Response(503))
+
+    match = CartMatcher(catalog).match(line("חלב תנובה 3%", "7290000000001"))
+
+    assert match.product is None
+    assert match.reason is not None
+    assert "could not be reached" in match.reason
+    assert "is not in the price database" not in match.reason
+
+
+def test_a_genuinely_absent_barcode_still_says_so() -> None:
+    catalog, _ = catalog_against(lambda _request: httpx.Response(404))
+
+    match = CartMatcher(catalog).match(line("חלב תנובה 3%", "7290000000001"))
+
+    assert match.product is None
+    assert match.reason == "barcode 7290000000001 is not in the price database"

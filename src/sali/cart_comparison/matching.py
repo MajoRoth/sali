@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any
 
-from sali.cart_comparison.catalog import SupermarketsCatalog
+from sali.cart_comparison.catalog import ProductLookup, SupermarketsCatalog
 from sali.cart_comparison.configuration import (
     BARCODE_LENGTHS,
     BARCODE_LOOKUP_WORKERS,
@@ -179,11 +179,23 @@ class CartMatcher:
             return list(pool.map(self.match, items))
 
     def _from_barcode(self, barcode: str) -> LineMatch:
-        raw = self._catalog.product_by_barcode(barcode)
-        if raw is not None:
-            product = _to_product(raw)
+        found = self._lookup(barcode)
+        if found.product is not None:
+            product = _to_product(found.product)
             if product is not None:
                 return LineMatch(product, "barcode", 1.0, None)
+
+        if not found.answered:
+            # We never got to ask. Reporting this as "not in the price database"
+            # would be a claim about the shopper's shopping, made on the basis
+            # of somebody else's outage.
+            return LineMatch(
+                None,
+                None,
+                0.0,
+                f"the price database could not be reached to look up {barcode}",
+            )
+
         # A printed barcode the catalogue does not know is a real gap, not a
         # reason to guess by name: the name is usually the merchant's own
         # abbreviation of a product the database simply does not carry.
@@ -193,6 +205,13 @@ class CartMatcher:
             0.0,
             f"barcode {barcode} is not in the price database",
         )
+
+    def _lookup(self, barcode: str) -> ProductLookup:
+        """Ask the catalogue, tolerating a client that cannot say if it answered."""
+        finder = getattr(self._catalog, "find_product", None)
+        if finder is None:
+            return ProductLookup(self._catalog.product_by_barcode(barcode), True)
+        return finder(barcode)
 
     def _match_by_name(self, name: str) -> LineMatch:
         candidates = self._candidates(name)

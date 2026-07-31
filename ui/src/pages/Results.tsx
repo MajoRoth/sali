@@ -348,11 +348,15 @@ function StoreRow({
 }) {
   const diff = receiptTotal - store.bestPrice
 
+  // An approximate position is the city centre, so there is no distance to
+  // quote — naming the city is the honest version of the same information.
   const where = store.online
     ? store.deliveryFee === 0
       ? 'משלוח חינם'
       : `משלוח ${formatPrice(store.deliveryFee)}`
-    : formatDistance((store as StoreOnMap).distanceM)
+    : store.approxLocation
+      ? (store.source.city ?? 'מיקום משוער')
+      : formatDistance((store as StoreOnMap).distanceM)
 
   return (
     <li
@@ -383,12 +387,26 @@ function StoreRow({
         )}
       </div>
 
-      {/* Savings — the headline value, left side (RTL end). */}
+      {/* Left side (RTL end). A saving is only meaningful for a store that
+          actually stocks the cart: "save ₪552" off a basket holding 11% of the
+          items is the price of the missing 89%, not a discount. Partial stores
+          therefore show what they cover and nothing else. */}
       <div className="row-savings">
-        <SavingBadge amount={Math.abs(diff)} save={diff > 0} size="lg" />
-        <span className="price-xy mono" dir="ltr">
-          {formatPrice(store.cartTotal)} / {formatPrice(store.bestPrice)}
-        </span>
+        {store.coverage < 1 ? (
+          <>
+            <span className="row-partial mono" dir="ltr">
+              {formatPrice(store.bestPrice)}
+            </span>
+            <span className="price-xy">עבור {Math.round(store.coverage * 100)}% מהעגלה</span>
+          </>
+        ) : (
+          <>
+            <SavingBadge amount={Math.abs(diff)} save={diff > 0} size="lg" />
+            <span className="price-xy mono" dir="ltr">
+              {formatPrice(store.cartTotal)} / {formatPrice(store.bestPrice)}
+            </span>
+          </>
+        )}
       </div>
     </li>
   )

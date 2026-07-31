@@ -13,11 +13,16 @@ different errand. Coverage outranks price, always.
 from __future__ import annotations
 
 import logging
+import threading
 from collections import defaultdict
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
-from sali.cart_comparison.catalog import CatalogUnavailableError, SupermarketsCatalog
+from sali.cart_comparison.catalog import (
+    CatalogUnavailableError,
+    SupermarketsCatalog,
+    default_catalog,
+)
 from sali.cart_comparison.configuration import CONFIDENT_NAME_MATCH_SCORE
 from sali.cart_comparison.matching import CartMatcher
 from sali.cart_comparison.models import MatchedLine, UnmatchedLine
@@ -73,7 +78,7 @@ class NearbyService:
         matcher: CartMatcher | None = None,
         directory: StoreDirectory | None = None,
     ) -> None:
-        self._catalog = catalog or SupermarketsCatalog()
+        self._catalog = catalog or default_catalog()
         self._matcher = matcher or CartMatcher(self._catalog)
         self._directory = directory or default_directory()
 
@@ -108,6 +113,8 @@ class NearbyService:
                 in_radius=in_radius,
                 include_online=include_online,
                 warnings=warnings,
+                here=here,
+                radius_m=radius_m,
             )
         except CatalogUnavailableError:
             if not fallback.enabled():
@@ -162,6 +169,8 @@ class NearbyService:
         in_radius: list[NearbyRecord],
         include_online: bool,
         warnings: list[str],
+        here: tuple[float, float],
+        radius_m: float,
     ) -> list[NearbyStore]:
         """The real answer: carts priced from the price database."""
         prices = self._read_prices(matched)
@@ -177,14 +186,31 @@ class NearbyService:
                 [option.product.product_id for option in swap_options]
             )
 
-        return self._build_stores(
+        built = self._build_stores(
             matched=matched,
             items=items,
             prices=prices,
             in_radius=in_radius,
             swap_options=swap_options,
             include_online=include_online,
+            here=here,
+            radius_m=radius_m,
         )
+
+        if prices and not built:
+            # Prices came back, but not one of the branches quoting them could be
+            # placed near the shopper. Worth saying as its own thing: it is a
+            # different problem from "nothing you bought is sold anywhere", and
+            # an empty list alone implies the wrong one.
+            quoted = len({(p.chain_id, p.store_id) for p in prices if p.store_id})
+            warnings.append(
+                f"prices were found at {quoted} branches, but none of them could "
+                "be placed within your radius: the instance that publishes prices "
+                "and the one that publishes coordinates do not cover the same "
+                "chains"
+            )
+
+        return built
 
     # -- resolution ----------------------------------------------------------
 
@@ -246,6 +272,8 @@ class NearbyService:
         in_radius: list[NearbyRecord],
         swap_options: list,
         include_online: bool,
+        here: tuple[float, float],
+        radius_m: float,
     ) -> list[NearbyStore]:
         if not matched or not prices:
             return []
@@ -264,6 +292,19 @@ class NearbyService:
             (record.store.chain_id, record.store.store_id): record
             for record in in_radius
         }
+        # A store that quoted a price but is not in `in_radius` may still be
+        # near: the map instance's listing is capped, and price coverage is thin
+        # enough that the missing branch is often exactly the one that matters.
+        # Locate it directly rather than dropping it.
+        for key in by_store:
+            if key in reachable or key[1] is None:
+                continue
+            found = self._directory.locate(key[0], key[1])
+            if found is None:
+                continue
+            distance = distance_meters(here, (found.store.lat, found.store.lng))
+            if distance <= radius_m:
+                reachable[key] = NearbyRecord(found.store, distance)
         quantities = {
             line.position: _quantity(items[line.position])
             for line in matched
@@ -383,7 +424,16 @@ class NearbyService:
                 and record.store.lng is not None
                 else None
             ),
-            distance_m=round(record.distance_m, 1) if record is not None else None,
+            # A city-centre position cannot support a distance: quoting "1.2 km"
+            # for a branch we only know the city of would be inventing precision.
+            distance_m=(
+                round(record.distance_m, 1)
+                if record is not None and not record.store.approximate_location
+                else None
+            ),
+            approximate_location=(
+                record.store.approximate_location if record is not None else False
+            ),
             # The price database publishes shelf prices, not delivery terms.
             delivery_fee=0.0,
             city=record.store.city if record else None,
@@ -576,6 +626,16 @@ class NearbyService:
                     f"on a name match scoring {line.confidence:.2f}"
                 )
 
+        unreachable = sum(
+            1 for line in unmatched if "could not be reached" in line.reason
+        )
+        if unreachable:
+            warnings.append(
+                f"{unreachable} of {len(document.receipt.items)} receipt lines "
+                "could not be checked at all because the price database did not "
+                "respond; this is an outage, not a verdict on those products"
+            )
+
         if unmatched:
             # A simulated cart is built from the receipt itself, so it contains
             # every line whether or not the catalogue knew it. Claiming they
@@ -602,4 +662,17 @@ class NearbyService:
         return warnings
 
 
-__all__ = ["NearbyService"]
+_SERVICE: NearbyService | None = None
+_SERVICE_LOCK = threading.Lock()
+
+
+def default_service() -> NearbyService:
+    """The process-wide pricer, so its catalogue's pool and caches survive."""
+    global _SERVICE
+    with _SERVICE_LOCK:
+        if _SERVICE is None:
+            _SERVICE = NearbyService()
+        return _SERVICE
+
+
+__all__ = ["NearbyService", "default_service"]

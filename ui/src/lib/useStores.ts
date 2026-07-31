@@ -63,6 +63,7 @@ function toSupermarket(store: NearbyStore): Supermarket {
     swaps: store.optimalCart.swaps.length,
     deliveryFee: store.deliveryFee,
     coverage: store.sameCart.coverage,
+    approxLocation: store.approximateLocation ?? false,
     unavailableCount: store.sameCart.unavailableCount,
     source: store,
   }
@@ -199,7 +200,13 @@ export function useStores(
       online,
       // The backend already ranks coverage-first; preserve that order.
       ranked: stores,
-      cheapestBest: stores.length ? Math.min(...stores.map((s) => s.bestPrice)) : null,
+      // Only complete carts. A partial basket is cheap because it is missing
+      // things, so headlining it as the best price advertises a saving that
+      // does not exist.
+      cheapestBest: (() => {
+        const whole = stores.filter((s) => s.coverage >= 1)
+        return whole.length ? Math.min(...whole.map((s) => s.bestPrice)) : null
+      })(),
       branches,
       loading,
       error,

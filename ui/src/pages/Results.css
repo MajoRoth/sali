@@ -545,3 +545,10 @@
   font-size: 13px;
   line-height: 1.5;
 }
+
+/* A partial store shows what it covers, never a saving — see StoreRow. */
+.row-partial {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink, #1a1a1a);
+}
