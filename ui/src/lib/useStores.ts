@@ -199,7 +199,7 @@ export function useStores(
     const requestedCount = document?.receipt.items.length ?? 0
     const stores = (response?.stores ?? [])
       .map((store) => toSupermarket(store, requestedCount))
-      .sort((left, right) => right.coverage - left.coverage || left.bestPrice - right.bestPrice)
+      .sort((left, right) => left.bestPrice - right.bestPrice || right.coverage - left.coverage)
     const physical: StoreOnMap[] = stores
       .filter((s): s is Supermarket & { source: NearbyStore } => !s.online && s.source.location !== null)
       .map((s) => ({
@@ -213,7 +213,7 @@ export function useStores(
     return {
       physical,
       online,
-      // Coverage first: a partial cart is not a cheaper version of a full one.
+      // Strict price order; partial carts still say what they're missing in-row.
       ranked: stores,
       // Only complete carts. A partial basket is cheap because it is missing
       // things, so headlining it as the best price advertises a saving that
