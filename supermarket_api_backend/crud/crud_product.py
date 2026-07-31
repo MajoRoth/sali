@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.product import ItemModel
@@ -63,5 +63,31 @@ async def search_products(
 
     stmt = select(ItemModel).filter(and_(*conditions)).offset(offset).limit(limit)
     result = await db.execute(stmt)
+    rows = result.scalars().all()
+    return [_map_item_to_product(row) for row in rows]
+
+
+async def get_similar_products(
+    db: AsyncSession, item_code: str, limit: int = 5
+) -> list[Product]:
+    # Ensure the target item has an embedding
+    check_stmt = text(
+        "SELECT 1 FROM items WHERE item_code = :item_code AND embedding IS NOT NULL"
+    )
+    res = await db.execute(check_stmt, {"item_code": item_code})
+    if not res.scalar():
+        return []
+
+    stmt = (
+        select(ItemModel)
+        .where(ItemModel.item_code != item_code, text("embedding IS NOT NULL"))
+        .order_by(
+            text(
+                "embedding <-> (SELECT embedding FROM items WHERE item_code = :item_code)"
+            )
+        )
+        .limit(limit)
+    )
+    result = await db.execute(stmt, {"item_code": item_code})
     rows = result.scalars().all()
     return [_map_item_to_product(row) for row in rows]
