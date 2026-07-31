@@ -580,5 +580,4 @@ app = create_app()
 def main() -> None:
     """Run the trusted local development server."""
     import uvicorn
-
     uvicorn.run("sali.api:app", host="127.0.0.1", port=8000, reload=True)
