@@ -11,7 +11,7 @@ from ..types import UNSET, Unset
 if TYPE_CHECKING:
     from ..models.chain import Chain
     from ..models.chain_statistics import ChainStatistics
-    from ..models.store import Store
+    from ..models.chain_store import ChainStore
 
 
 T = TypeVar("T", bound="ChainResponse")
@@ -19,16 +19,15 @@ T = TypeVar("T", bound="ChainResponse")
 
 @_attrs_define
 class ChainResponse:
-    """Response for GET /chains
-
+    """
     Attributes:
-        chain (Chain): Chain information matching Prisma model
-        stores (list[Store] | None | Unset):
+        chain (Chain):
+        stores (list[ChainStore] | None | Unset):
         statistics (ChainStatistics | None | Unset):
     """
 
     chain: Chain
-    stores: list[Store] | None | Unset = UNSET
+    stores: list[ChainStore] | None | Unset = UNSET
     statistics: ChainStatistics | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -75,12 +74,12 @@ class ChainResponse:
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.chain import Chain
         from ..models.chain_statistics import ChainStatistics
-        from ..models.store import Store
+        from ..models.chain_store import ChainStore
 
         d = dict(src_dict)
         chain = Chain.from_dict(d.pop("chain"))
 
-        def _parse_stores(data: object) -> list[Store] | None | Unset:
+        def _parse_stores(data: object) -> list[ChainStore] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -91,14 +90,14 @@ class ChainResponse:
                 stores_type_0 = []
                 _stores_type_0 = data
                 for stores_type_0_item_data in _stores_type_0:
-                    stores_type_0_item = Store.from_dict(stores_type_0_item_data)
+                    stores_type_0_item = ChainStore.from_dict(stores_type_0_item_data)
 
                     stores_type_0.append(stores_type_0_item)
 
                 return stores_type_0
             except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(list[Store] | None | Unset, data)
+            return cast(list[ChainStore] | None | Unset, data)
 
         stores = _parse_stores(d.pop("stores", UNSET))
 

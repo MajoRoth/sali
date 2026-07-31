@@ -70,13 +70,11 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     stale_threshold_hours: int | Unset = 24,
 ) -> Response[ChainDataStatus | HTTPValidationError]:
-    """Get Chain Pipeline Stats
-
-     Get pipeline stats (store count, listing counts, staleness) for a single chain.
+    """Get Chain Pipeline Status
 
     Args:
         chain_id (str):
-        stale_threshold_hours (int | Unset): Hours before data is considered stale Default: 24.
+        stale_threshold_hours (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -104,13 +102,11 @@ def sync(
     client: AuthenticatedClient | Client,
     stale_threshold_hours: int | Unset = 24,
 ) -> ChainDataStatus | HTTPValidationError | None:
-    """Get Chain Pipeline Stats
-
-     Get pipeline stats (store count, listing counts, staleness) for a single chain.
+    """Get Chain Pipeline Status
 
     Args:
         chain_id (str):
-        stale_threshold_hours (int | Unset): Hours before data is considered stale Default: 24.
+        stale_threshold_hours (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -133,13 +129,11 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     stale_threshold_hours: int | Unset = 24,
 ) -> Response[ChainDataStatus | HTTPValidationError]:
-    """Get Chain Pipeline Stats
-
-     Get pipeline stats (store count, listing counts, staleness) for a single chain.
+    """Get Chain Pipeline Status
 
     Args:
         chain_id (str):
-        stale_threshold_hours (int | Unset): Hours before data is considered stale Default: 24.
+        stale_threshold_hours (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -165,13 +159,11 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     stale_threshold_hours: int | Unset = 24,
 ) -> ChainDataStatus | HTTPValidationError | None:
-    """Get Chain Pipeline Stats
-
-     Get pipeline stats (store count, listing counts, staleness) for a single chain.
+    """Get Chain Pipeline Status
 
     Args:
         chain_id (str):
-        stale_threshold_hours (int | Unset): Hours before data is considered stale Default: 24.
+        stale_threshold_hours (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

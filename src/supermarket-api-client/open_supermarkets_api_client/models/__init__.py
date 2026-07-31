@@ -7,7 +7,9 @@ from .chain_price_data import ChainPriceData
 from .chain_price_data_store_prices_item import ChainPriceDataStorePricesItem
 from .chain_response import ChainResponse
 from .chain_statistics import ChainStatistics
+from .chain_store import ChainStore
 from .compare_prices_response import ComparePricesResponse
+from .coordinates import Coordinates
 from .cross_chain_price_comparison_response import CrossChainPriceComparisonResponse
 from .data_freshness import DataFreshness
 from .get_chains_response import GetChainsResponse
@@ -44,7 +46,9 @@ __all__ = (
     "ChainPriceDataStorePricesItem",
     "ChainResponse",
     "ChainStatistics",
+    "ChainStore",
     "ComparePricesResponse",
+    "Coordinates",
     "CrossChainPriceComparisonResponse",
     "DataFreshness",
     "GetChainsResponse",

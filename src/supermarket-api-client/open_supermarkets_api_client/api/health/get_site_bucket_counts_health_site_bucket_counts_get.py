@@ -86,17 +86,12 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | SiteBucketCountsResponse]:
     """Get Site Bucket Counts
 
-     Compute per-bucket file counts and row metrics for a single site.
-
-    Cached for 60 seconds. Also called internally by /processing-timeline and /row-processing-timeline.
-
     Args:
-        site (str): extracted_from_site value to query
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        bucket_minutes (int): Time bucket size in minutes
-        use_extracted_date (bool | Unset): If True, file counts use extracted_date; row metrics
-            always use created_at Default: False.
+        site (str):
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
+        use_extracted_date (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -132,17 +127,12 @@ def sync(
 ) -> HTTPValidationError | SiteBucketCountsResponse | None:
     """Get Site Bucket Counts
 
-     Compute per-bucket file counts and row metrics for a single site.
-
-    Cached for 60 seconds. Also called internally by /processing-timeline and /row-processing-timeline.
-
     Args:
-        site (str): extracted_from_site value to query
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        bucket_minutes (int): Time bucket size in minutes
-        use_extracted_date (bool | Unset): If True, file counts use extracted_date; row metrics
-            always use created_at Default: False.
+        site (str):
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
+        use_extracted_date (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -173,17 +163,12 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | SiteBucketCountsResponse]:
     """Get Site Bucket Counts
 
-     Compute per-bucket file counts and row metrics for a single site.
-
-    Cached for 60 seconds. Also called internally by /processing-timeline and /row-processing-timeline.
-
     Args:
-        site (str): extracted_from_site value to query
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        bucket_minutes (int): Time bucket size in minutes
-        use_extracted_date (bool | Unset): If True, file counts use extracted_date; row metrics
-            always use created_at Default: False.
+        site (str):
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
+        use_extracted_date (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -217,17 +202,12 @@ async def asyncio(
 ) -> HTTPValidationError | SiteBucketCountsResponse | None:
     """Get Site Bucket Counts
 
-     Compute per-bucket file counts and row metrics for a single site.
-
-    Cached for 60 seconds. Also called internally by /processing-timeline and /row-processing-timeline.
-
     Args:
-        site (str): extracted_from_site value to query
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        bucket_minutes (int): Time bucket size in minutes
-        use_extracted_date (bool | Unset): If True, file counts use extracted_date; row metrics
-            always use created_at Default: False.
+        site (str):
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
+        use_extracted_date (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

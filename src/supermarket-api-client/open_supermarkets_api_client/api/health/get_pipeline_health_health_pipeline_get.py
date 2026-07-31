@@ -67,18 +67,8 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | PipelineHealthResponse]:
     """Get Pipeline Health
 
-     Check pipeline health and data freshness.
-
-    Returns information about:
-    - Last data update times per chain
-    - Number of data sources processed
-    - Data staleness indicators
-    - Overall pipeline health status
-
-    Per-chain results cached 30 min via FastAPICache in compute_chain_data_status.
-
     Args:
-        stale_threshold_hours (int | Unset): Hours before data is considered stale Default: 24.
+        stale_threshold_hours (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -106,18 +96,8 @@ def sync(
 ) -> HTTPValidationError | PipelineHealthResponse | None:
     """Get Pipeline Health
 
-     Check pipeline health and data freshness.
-
-    Returns information about:
-    - Last data update times per chain
-    - Number of data sources processed
-    - Data staleness indicators
-    - Overall pipeline health status
-
-    Per-chain results cached 30 min via FastAPICache in compute_chain_data_status.
-
     Args:
-        stale_threshold_hours (int | Unset): Hours before data is considered stale Default: 24.
+        stale_threshold_hours (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -140,18 +120,8 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | PipelineHealthResponse]:
     """Get Pipeline Health
 
-     Check pipeline health and data freshness.
-
-    Returns information about:
-    - Last data update times per chain
-    - Number of data sources processed
-    - Data staleness indicators
-    - Overall pipeline health status
-
-    Per-chain results cached 30 min via FastAPICache in compute_chain_data_status.
-
     Args:
-        stale_threshold_hours (int | Unset): Hours before data is considered stale Default: 24.
+        stale_threshold_hours (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -177,18 +147,8 @@ async def asyncio(
 ) -> HTTPValidationError | PipelineHealthResponse | None:
     """Get Pipeline Health
 
-     Check pipeline health and data freshness.
-
-    Returns information about:
-    - Last data update times per chain
-    - Number of data sources processed
-    - Data staleness indicators
-    - Overall pipeline health status
-
-    Per-chain results cached 30 min via FastAPICache in compute_chain_data_status.
-
     Args:
-        stale_threshold_hours (int | Unset): Hours before data is considered stale Default: 24.
+        stale_threshold_hours (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

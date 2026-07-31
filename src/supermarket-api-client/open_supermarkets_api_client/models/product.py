@@ -14,8 +14,7 @@ T = TypeVar("T", bound="Product")
 
 @_attrs_define
 class Product:
-    """Product information matching Prisma model
-
+    """
     Attributes:
         id (str):
         product_barcode (int):

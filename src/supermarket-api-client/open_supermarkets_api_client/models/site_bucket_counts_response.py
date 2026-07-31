@@ -16,8 +16,7 @@ T = TypeVar("T", bound="SiteBucketCountsResponse")
 
 @_attrs_define
 class SiteBucketCountsResponse:
-    """Per-bucket file counts and row metrics for a single extracted_from_site value.
-
+    """
     Attributes:
         site (str):
         start_time (datetime.datetime):

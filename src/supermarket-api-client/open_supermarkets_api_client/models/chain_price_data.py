@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
     from ..models.chain_price_data_store_prices_item import ChainPriceDataStorePricesItem
 
@@ -15,38 +17,34 @@ T = TypeVar("T", bound="ChainPriceData")
 
 @_attrs_define
 class ChainPriceData:
-    """Chain price data for comparison
-
+    """
     Attributes:
         chain_id (str):
         chain_name (str):
-        chain_code (None | str):
         store_count (int):
         min_price (float):
         max_price (float):
         avg_price (float):
         price_range (float):
         store_prices (list[ChainPriceDataStorePricesItem]):
+        chain_code (None | str | Unset):
     """
 
     chain_id: str
     chain_name: str
-    chain_code: None | str
     store_count: int
     min_price: float
     max_price: float
     avg_price: float
     price_range: float
     store_prices: list[ChainPriceDataStorePricesItem]
+    chain_code: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         chain_id = self.chain_id
 
         chain_name = self.chain_name
-
-        chain_code: None | str
-        chain_code = self.chain_code
 
         store_count = self.store_count
 
@@ -63,13 +61,18 @@ class ChainPriceData:
             store_prices_item = store_prices_item_data.to_dict()
             store_prices.append(store_prices_item)
 
+        chain_code: None | str | Unset
+        if isinstance(self.chain_code, Unset):
+            chain_code = UNSET
+        else:
+            chain_code = self.chain_code
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "chainId": chain_id,
                 "chainName": chain_name,
-                "chainCode": chain_code,
                 "storeCount": store_count,
                 "minPrice": min_price,
                 "maxPrice": max_price,
@@ -78,6 +81,8 @@ class ChainPriceData:
                 "storePrices": store_prices,
             }
         )
+        if chain_code is not UNSET:
+            field_dict["chainCode"] = chain_code
 
         return field_dict
 
@@ -89,13 +94,6 @@ class ChainPriceData:
         chain_id = d.pop("chainId")
 
         chain_name = d.pop("chainName")
-
-        def _parse_chain_code(data: object) -> None | str:
-            if data is None:
-                return data
-            return cast(None | str, data)
-
-        chain_code = _parse_chain_code(d.pop("chainCode"))
 
         store_count = d.pop("storeCount")
 
@@ -114,16 +112,25 @@ class ChainPriceData:
 
             store_prices.append(store_prices_item)
 
+        def _parse_chain_code(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        chain_code = _parse_chain_code(d.pop("chainCode", UNSET))
+
         chain_price_data = cls(
             chain_id=chain_id,
             chain_name=chain_name,
-            chain_code=chain_code,
             store_count=store_count,
             min_price=min_price,
             max_price=max_price,
             avg_price=avg_price,
             price_range=price_range,
             store_prices=store_prices,
+            chain_code=chain_code,
         )
 
         chain_price_data.additional_properties = d

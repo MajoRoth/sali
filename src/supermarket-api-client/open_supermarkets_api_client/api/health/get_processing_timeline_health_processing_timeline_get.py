@@ -7,7 +7,7 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
-from ...models.unique_sites_response import UniqueSitesResponse
+from ...models.processing_timeline_response import ProcessingTimelineResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -15,6 +15,7 @@ def _get_kwargs(
     *,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
+    bucket_minutes: int,
     use_extracted_date: bool | Unset = False,
 ) -> dict[str, Any]:
 
@@ -26,13 +27,15 @@ def _get_kwargs(
     json_end_time = end_time.isoformat()
     params["end_time"] = json_end_time
 
+    params["bucket_minutes"] = bucket_minutes
+
     params["use_extracted_date"] = use_extracted_date
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/health/sites",
+        "url": "/health/processing-timeline",
         "params": params,
     }
 
@@ -41,9 +44,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | UniqueSitesResponse | None:
+) -> HTTPValidationError | ProcessingTimelineResponse | None:
     if response.status_code == 200:
-        response_200 = UniqueSitesResponse.from_dict(response.json())
+        response_200 = ProcessingTimelineResponse.from_dict(response.json())
 
         return response_200
 
@@ -60,7 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | UniqueSitesResponse]:
+) -> Response[HTTPValidationError | ProcessingTimelineResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -74,29 +77,29 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
+    bucket_minutes: int,
     use_extracted_date: bool | Unset = False,
-) -> Response[HTTPValidationError | UniqueSitesResponse]:
-    """Get Unique Sites Endpoint
-
-     Return all unique extracted_from_site values that have data in the given time range.
+) -> Response[HTTPValidationError | ProcessingTimelineResponse]:
+    """Get Processing Timeline
 
     Args:
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        use_extracted_date (bool | Unset): If True, filter by extracted_date; if False, filter by
-            created_at Default: False.
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
+        use_extracted_date (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | UniqueSitesResponse]
+        Response[HTTPValidationError | ProcessingTimelineResponse]
     """
 
     kwargs = _get_kwargs(
         start_time=start_time,
         end_time=end_time,
+        bucket_minutes=bucket_minutes,
         use_extracted_date=use_extracted_date,
     )
 
@@ -112,30 +115,30 @@ def sync(
     client: AuthenticatedClient | Client,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
+    bucket_minutes: int,
     use_extracted_date: bool | Unset = False,
-) -> HTTPValidationError | UniqueSitesResponse | None:
-    """Get Unique Sites Endpoint
-
-     Return all unique extracted_from_site values that have data in the given time range.
+) -> HTTPValidationError | ProcessingTimelineResponse | None:
+    """Get Processing Timeline
 
     Args:
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        use_extracted_date (bool | Unset): If True, filter by extracted_date; if False, filter by
-            created_at Default: False.
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
+        use_extracted_date (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | UniqueSitesResponse
+        HTTPValidationError | ProcessingTimelineResponse
     """
 
     return sync_detailed(
         client=client,
         start_time=start_time,
         end_time=end_time,
+        bucket_minutes=bucket_minutes,
         use_extracted_date=use_extracted_date,
     ).parsed
 
@@ -145,29 +148,29 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
+    bucket_minutes: int,
     use_extracted_date: bool | Unset = False,
-) -> Response[HTTPValidationError | UniqueSitesResponse]:
-    """Get Unique Sites Endpoint
-
-     Return all unique extracted_from_site values that have data in the given time range.
+) -> Response[HTTPValidationError | ProcessingTimelineResponse]:
+    """Get Processing Timeline
 
     Args:
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        use_extracted_date (bool | Unset): If True, filter by extracted_date; if False, filter by
-            created_at Default: False.
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
+        use_extracted_date (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | UniqueSitesResponse]
+        Response[HTTPValidationError | ProcessingTimelineResponse]
     """
 
     kwargs = _get_kwargs(
         start_time=start_time,
         end_time=end_time,
+        bucket_minutes=bucket_minutes,
         use_extracted_date=use_extracted_date,
     )
 
@@ -181,24 +184,23 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
+    bucket_minutes: int,
     use_extracted_date: bool | Unset = False,
-) -> HTTPValidationError | UniqueSitesResponse | None:
-    """Get Unique Sites Endpoint
-
-     Return all unique extracted_from_site values that have data in the given time range.
+) -> HTTPValidationError | ProcessingTimelineResponse | None:
+    """Get Processing Timeline
 
     Args:
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        use_extracted_date (bool | Unset): If True, filter by extracted_date; if False, filter by
-            created_at Default: False.
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
+        use_extracted_date (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | UniqueSitesResponse
+        HTTPValidationError | ProcessingTimelineResponse
     """
 
     return (
@@ -206,6 +208,7 @@ async def asyncio(
             client=client,
             start_time=start_time,
             end_time=end_time,
+            bucket_minutes=bucket_minutes,
             use_extracted_date=use_extracted_date,
         )
     ).parsed

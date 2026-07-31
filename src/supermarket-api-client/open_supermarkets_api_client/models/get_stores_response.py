@@ -15,8 +15,7 @@ T = TypeVar("T", bound="GetStoresResponse")
 
 @_attrs_define
 class GetStoresResponse:
-    """Response for GET /stores
-
+    """
     Attributes:
         stores (list[Store]):
     """

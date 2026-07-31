@@ -6,20 +6,29 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.cross_chain_price_comparison_response import CrossChainPriceComparisonResponse
 from ...models.http_validation_error import HTTPValidationError
-from ...models.product_barcode_response import ProductBarcodeResponse
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
-    barcode: int,
+    product_barcode: int,
+    *,
+    current_only: bool | Unset = True,
 ) -> dict[str, Any]:
+
+    params: dict[str, Any] = {}
+
+    params["current_only"] = current_only
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/products/barcode/{barcode}".format(
-            barcode=quote(str(barcode), safe=""),
+        "url": "/analytics/price-comparison/cross-chain/{product_barcode}".format(
+            product_barcode=quote(str(product_barcode), safe=""),
         ),
+        "params": params,
     }
 
     return _kwargs
@@ -27,9 +36,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | ProductBarcodeResponse | None:
+) -> CrossChainPriceComparisonResponse | HTTPValidationError | None:
     if response.status_code == 200:
-        response_200 = ProductBarcodeResponse.from_dict(response.json())
+        response_200 = CrossChainPriceComparisonResponse.from_dict(response.json())
 
         return response_200
 
@@ -46,7 +55,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | ProductBarcodeResponse]:
+) -> Response[CrossChainPriceComparisonResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -56,27 +65,28 @@ def _build_response(
 
 
 def sync_detailed(
-    barcode: int,
+    product_barcode: int,
     *,
     client: AuthenticatedClient | Client,
-) -> Response[HTTPValidationError | ProductBarcodeResponse]:
-    """Find By Barcode
-
-     Find product by barcode.
+    current_only: bool | Unset = True,
+) -> Response[CrossChainPriceComparisonResponse | HTTPValidationError]:
+    """Get Cross Chain Price Comparison
 
     Args:
-        barcode (int):
+        product_barcode (int):
+        current_only (bool | Unset):  Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ProductBarcodeResponse]
+        Response[CrossChainPriceComparisonResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
-        barcode=barcode,
+        product_barcode=product_barcode,
+        current_only=current_only,
     )
 
     response = client.get_httpx_client().request(
@@ -87,53 +97,55 @@ def sync_detailed(
 
 
 def sync(
-    barcode: int,
+    product_barcode: int,
     *,
     client: AuthenticatedClient | Client,
-) -> HTTPValidationError | ProductBarcodeResponse | None:
-    """Find By Barcode
-
-     Find product by barcode.
+    current_only: bool | Unset = True,
+) -> CrossChainPriceComparisonResponse | HTTPValidationError | None:
+    """Get Cross Chain Price Comparison
 
     Args:
-        barcode (int):
+        product_barcode (int):
+        current_only (bool | Unset):  Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ProductBarcodeResponse
+        CrossChainPriceComparisonResponse | HTTPValidationError
     """
 
     return sync_detailed(
-        barcode=barcode,
+        product_barcode=product_barcode,
         client=client,
+        current_only=current_only,
     ).parsed
 
 
 async def asyncio_detailed(
-    barcode: int,
+    product_barcode: int,
     *,
     client: AuthenticatedClient | Client,
-) -> Response[HTTPValidationError | ProductBarcodeResponse]:
-    """Find By Barcode
-
-     Find product by barcode.
+    current_only: bool | Unset = True,
+) -> Response[CrossChainPriceComparisonResponse | HTTPValidationError]:
+    """Get Cross Chain Price Comparison
 
     Args:
-        barcode (int):
+        product_barcode (int):
+        current_only (bool | Unset):  Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | ProductBarcodeResponse]
+        Response[CrossChainPriceComparisonResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
-        barcode=barcode,
+        product_barcode=product_barcode,
+        current_only=current_only,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -142,28 +154,29 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    barcode: int,
+    product_barcode: int,
     *,
     client: AuthenticatedClient | Client,
-) -> HTTPValidationError | ProductBarcodeResponse | None:
-    """Find By Barcode
-
-     Find product by barcode.
+    current_only: bool | Unset = True,
+) -> CrossChainPriceComparisonResponse | HTTPValidationError | None:
+    """Get Cross Chain Price Comparison
 
     Args:
-        barcode (int):
+        product_barcode (int):
+        current_only (bool | Unset):  Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | ProductBarcodeResponse
+        CrossChainPriceComparisonResponse | HTTPValidationError
     """
 
     return (
         await asyncio_detailed(
-            barcode=barcode,
+            product_barcode=product_barcode,
             client=client,
+            current_only=current_only,
         )
     ).parsed

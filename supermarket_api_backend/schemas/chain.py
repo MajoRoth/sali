@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
-class Store(BaseModel):
+class ChainStore(BaseModel):
     id: str
     storeNumber: int
     storeName: str
@@ -26,7 +26,7 @@ class ChainBase(BaseModel):
 
 
 class Chain(ChainBase):
-    stores: list[Store] | None = None
+    stores: list[ChainStore] | None = None
 
     class Config:
         from_attributes = True
@@ -39,7 +39,7 @@ class ChainStatistics(BaseModel):
 
 class ChainResponse(BaseModel):
     chain: Chain
-    stores: list[Store] | None = None
+    stores: list[ChainStore] | None = None
     statistics: ChainStatistics | None = None
 
 

@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
     from ..models.chain_data_status import ChainDataStatus
     from ..models.pipeline_health_response_datasourcestats import PipelineHealthResponseDatasourcestats
@@ -20,36 +22,27 @@ class PipelineHealthResponse:
     """
     Attributes:
         status (str):
-        last_overall_update (datetime.datetime | None):
-        hours_since_last_update (float | None):
         total_chains (int):
         chains_with_recent_data (int):
         chains_with_stale_data (int):
         chain_statuses (list[ChainDataStatus]):
         data_source_stats (PipelineHealthResponseDatasourcestats):
+        last_overall_update (datetime.datetime | None | Unset):
+        hours_since_last_update (float | None | Unset):
     """
 
     status: str
-    last_overall_update: datetime.datetime | None
-    hours_since_last_update: float | None
     total_chains: int
     chains_with_recent_data: int
     chains_with_stale_data: int
     chain_statuses: list[ChainDataStatus]
     data_source_stats: PipelineHealthResponseDatasourcestats
+    last_overall_update: datetime.datetime | None | Unset = UNSET
+    hours_since_last_update: float | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         status = self.status
-
-        last_overall_update: None | str
-        if isinstance(self.last_overall_update, datetime.datetime):
-            last_overall_update = self.last_overall_update.isoformat()
-        else:
-            last_overall_update = self.last_overall_update
-
-        hours_since_last_update: float | None
-        hours_since_last_update = self.hours_since_last_update
 
         total_chains = self.total_chains
 
@@ -64,13 +57,25 @@ class PipelineHealthResponse:
 
         data_source_stats = self.data_source_stats.to_dict()
 
+        last_overall_update: None | str | Unset
+        if isinstance(self.last_overall_update, Unset):
+            last_overall_update = UNSET
+        elif isinstance(self.last_overall_update, datetime.datetime):
+            last_overall_update = self.last_overall_update.isoformat()
+        else:
+            last_overall_update = self.last_overall_update
+
+        hours_since_last_update: float | None | Unset
+        if isinstance(self.hours_since_last_update, Unset):
+            hours_since_last_update = UNSET
+        else:
+            hours_since_last_update = self.hours_since_last_update
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "status": status,
-                "lastOverallUpdate": last_overall_update,
-                "hoursSinceLastUpdate": hours_since_last_update,
                 "totalChains": total_chains,
                 "chainsWithRecentData": chains_with_recent_data,
                 "chainsWithStaleData": chains_with_stale_data,
@@ -78,6 +83,10 @@ class PipelineHealthResponse:
                 "dataSourceStats": data_source_stats,
             }
         )
+        if last_overall_update is not UNSET:
+            field_dict["lastOverallUpdate"] = last_overall_update
+        if hours_since_last_update is not UNSET:
+            field_dict["hoursSinceLastUpdate"] = hours_since_last_update
 
         return field_dict
 
@@ -88,28 +97,6 @@ class PipelineHealthResponse:
 
         d = dict(src_dict)
         status = d.pop("status")
-
-        def _parse_last_overall_update(data: object) -> datetime.datetime | None:
-            if data is None:
-                return data
-            try:
-                if not isinstance(data, str):
-                    raise TypeError()
-                last_overall_update_type_0 = datetime.datetime.fromisoformat(data)
-
-                return last_overall_update_type_0
-            except (TypeError, ValueError, AttributeError, KeyError):
-                pass
-            return cast(datetime.datetime | None, data)
-
-        last_overall_update = _parse_last_overall_update(d.pop("lastOverallUpdate"))
-
-        def _parse_hours_since_last_update(data: object) -> float | None:
-            if data is None:
-                return data
-            return cast(float | None, data)
-
-        hours_since_last_update = _parse_hours_since_last_update(d.pop("hoursSinceLastUpdate"))
 
         total_chains = d.pop("totalChains")
 
@@ -126,15 +113,41 @@ class PipelineHealthResponse:
 
         data_source_stats = PipelineHealthResponseDatasourcestats.from_dict(d.pop("dataSourceStats"))
 
+        def _parse_last_overall_update(data: object) -> datetime.datetime | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                last_overall_update_type_0 = datetime.datetime.fromisoformat(data)
+
+                return last_overall_update_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(datetime.datetime | None | Unset, data)
+
+        last_overall_update = _parse_last_overall_update(d.pop("lastOverallUpdate", UNSET))
+
+        def _parse_hours_since_last_update(data: object) -> float | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(float | None | Unset, data)
+
+        hours_since_last_update = _parse_hours_since_last_update(d.pop("hoursSinceLastUpdate", UNSET))
+
         pipeline_health_response = cls(
             status=status,
-            last_overall_update=last_overall_update,
-            hours_since_last_update=hours_since_last_update,
             total_chains=total_chains,
             chains_with_recent_data=chains_with_recent_data,
             chains_with_stale_data=chains_with_stale_data,
             chain_statuses=chain_statuses,
             data_source_stats=data_source_stats,
+            last_overall_update=last_overall_update,
+            hours_since_last_update=hours_since_last_update,
         )
 
         pipeline_health_response.additional_properties = d

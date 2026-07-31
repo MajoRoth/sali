@@ -11,8 +11,7 @@ T = TypeVar("T", bound="OverallStatistics")
 
 @_attrs_define
 class OverallStatistics:
-    """Overall price statistics
-
+    """
     Attributes:
         min_price (float):
         max_price (float):

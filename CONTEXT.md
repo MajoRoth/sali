@@ -60,9 +60,17 @@ _Avoid_: Raw HTML, full page source
 
 ## API Client Regeneration
 
-The API client is auto-generated using openapi-python-client. It lives in src/supermarket-api-client. If the API specification (openapi/supermarkets_openapi.json) changes, you can regenerate the entire package from the root of the project using:
+The API client is auto-generated using openapi-python-client. It lives in src/supermarket-api-client. If the backend API changes, you must first extract the latest OpenAPI specification and then regenerate the client package.
+
+From the root of the project, run:
 
 ```bash
+# 1. Extract the latest OpenAPI specification from the FastAPI backend
+cd supermarket_api_backend
+uv run dump_openapi.py
+cd ..
+
+# 2. Regenerate the Python client
 uvx openapi-python-client generate --path openapi/supermarkets_openapi.json --meta uv --output-path src/supermarket-api-client --overwrite
 ```
 

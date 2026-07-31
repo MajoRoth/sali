@@ -12,7 +12,7 @@ def _get_kwargs() -> dict[str, Any]:
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/health/ready",
+        "url": "/",
     }
 
     return _kwargs
@@ -41,12 +41,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
 ) -> Response[Any]:
-    """Health Ready
-
-     Readiness probe: checks DB connectivity and latency.
-
-    Use for load balancers and Kubernetes readiness probes.
-    Returns 200 if DB is reachable, 503 otherwise.
+    """Read Root
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -69,12 +64,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
 ) -> Response[Any]:
-    """Health Ready
-
-     Readiness probe: checks DB connectivity and latency.
-
-    Use for load balancers and Kubernetes readiness probes.
-    Returns 200 if DB is reachable, 503 otherwise.
+    """Read Root
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

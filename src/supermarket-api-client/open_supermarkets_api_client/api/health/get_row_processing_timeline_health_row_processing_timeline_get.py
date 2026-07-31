@@ -78,15 +78,10 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | RowProcessingTimelineResponse]:
     """Get Row Processing Timeline
 
-     Get row processing timeline for all unique extracted_from_site values.
-
-    Returns total rows loaded and published per site per time bucket.
-    Delegates per-site computation to /site-bucket-counts (shared cache).
-
     Args:
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        bucket_minutes (int): Time bucket size in minutes
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -118,15 +113,10 @@ def sync(
 ) -> HTTPValidationError | RowProcessingTimelineResponse | None:
     """Get Row Processing Timeline
 
-     Get row processing timeline for all unique extracted_from_site values.
-
-    Returns total rows loaded and published per site per time bucket.
-    Delegates per-site computation to /site-bucket-counts (shared cache).
-
     Args:
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        bucket_minutes (int): Time bucket size in minutes
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -153,15 +143,10 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | RowProcessingTimelineResponse]:
     """Get Row Processing Timeline
 
-     Get row processing timeline for all unique extracted_from_site values.
-
-    Returns total rows loaded and published per site per time bucket.
-    Delegates per-site computation to /site-bucket-counts (shared cache).
-
     Args:
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        bucket_minutes (int): Time bucket size in minutes
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -191,15 +176,10 @@ async def asyncio(
 ) -> HTTPValidationError | RowProcessingTimelineResponse | None:
     """Get Row Processing Timeline
 
-     Get row processing timeline for all unique extracted_from_site values.
-
-    Returns total rows loaded and published per site per time bucket.
-    Delegates per-site computation to /site-bucket-counts (shared cache).
-
     Args:
-        start_time (datetime.datetime): Start time of the range (ISO format)
-        end_time (datetime.datetime): End time of the range (ISO format)
-        bucket_minutes (int): Time bucket size in minutes
+        start_time (datetime.datetime):
+        end_time (datetime.datetime):
+        bucket_minutes (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

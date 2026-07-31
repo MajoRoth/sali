@@ -88,15 +88,14 @@ def sync_detailed(
     product_id: None | str | Unset = UNSET,
     city: None | str | Unset = UNSET,
 ) -> Response[GetStoresResponse | HTTPValidationError]:
-    """Get Stores
+    """List Stores
 
      Get all stores with optional filtering.
 
     Args:
         chain_id (None | str | Unset): Filter by chainId or chainCode
         product_id (None | str | Unset): Filter by productId
-        city (None | str | Unset): Filter by city. Non-ASCII values (e.g. Hebrew) must be URL-
-            encoded.
+        city (None | str | Unset): Filter by city
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -126,15 +125,14 @@ def sync(
     product_id: None | str | Unset = UNSET,
     city: None | str | Unset = UNSET,
 ) -> GetStoresResponse | HTTPValidationError | None:
-    """Get Stores
+    """List Stores
 
      Get all stores with optional filtering.
 
     Args:
         chain_id (None | str | Unset): Filter by chainId or chainCode
         product_id (None | str | Unset): Filter by productId
-        city (None | str | Unset): Filter by city. Non-ASCII values (e.g. Hebrew) must be URL-
-            encoded.
+        city (None | str | Unset): Filter by city
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -159,15 +157,14 @@ async def asyncio_detailed(
     product_id: None | str | Unset = UNSET,
     city: None | str | Unset = UNSET,
 ) -> Response[GetStoresResponse | HTTPValidationError]:
-    """Get Stores
+    """List Stores
 
      Get all stores with optional filtering.
 
     Args:
         chain_id (None | str | Unset): Filter by chainId or chainCode
         product_id (None | str | Unset): Filter by productId
-        city (None | str | Unset): Filter by city. Non-ASCII values (e.g. Hebrew) must be URL-
-            encoded.
+        city (None | str | Unset): Filter by city
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -195,15 +192,14 @@ async def asyncio(
     product_id: None | str | Unset = UNSET,
     city: None | str | Unset = UNSET,
 ) -> GetStoresResponse | HTTPValidationError | None:
-    """Get Stores
+    """List Stores
 
      Get all stores with optional filtering.
 
     Args:
         chain_id (None | str | Unset): Filter by chainId or chainCode
         product_id (None | str | Unset): Filter by productId
-        city (None | str | Unset): Filter by city. Non-ASCII values (e.g. Hebrew) must be URL-
-            encoded.
+        city (None | str | Unset): Filter by city
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

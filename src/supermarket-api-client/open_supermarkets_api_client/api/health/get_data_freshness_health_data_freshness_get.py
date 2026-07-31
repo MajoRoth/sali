@@ -5,30 +5,30 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.compare_prices_response import ComparePricesResponse
+from ...models.data_freshness import DataFreshness
 from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     *,
-    product_ids: list[str],
-    current_only: bool | Unset = True,
+    chain_id: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
 
     params: dict[str, Any] = {}
 
-    json_product_ids = product_ids
-
-    params["product_ids"] = json_product_ids
-
-    params["current_only"] = current_only
+    json_chain_id: None | str | Unset
+    if isinstance(chain_id, Unset):
+        json_chain_id = UNSET
+    else:
+        json_chain_id = chain_id
+    params["chain_id"] = json_chain_id
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/products/compare-prices",
+        "url": "/health/data-freshness",
         "params": params,
     }
 
@@ -37,9 +37,14 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> ComparePricesResponse | HTTPValidationError | None:
+) -> HTTPValidationError | list[DataFreshness] | None:
     if response.status_code == 200:
-        response_200 = ComparePricesResponse.from_dict(response.json())
+        response_200 = []
+        _response_200 = response.json()
+        for response_200_item_data in _response_200:
+            response_200_item = DataFreshness.from_dict(response_200_item_data)
+
+            response_200.append(response_200_item)
 
         return response_200
 
@@ -56,7 +61,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[ComparePricesResponse | HTTPValidationError]:
+) -> Response[HTTPValidationError | list[DataFreshness]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -68,26 +73,23 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    product_ids: list[str],
-    current_only: bool | Unset = True,
-) -> Response[ComparePricesResponse | HTTPValidationError]:
-    """Compare Prices
+    chain_id: None | str | Unset = UNSET,
+) -> Response[HTTPValidationError | list[DataFreshness]]:
+    """Get Data Freshness
 
     Args:
-        product_ids (list[str]): List of product IDs to compare prices for
-        current_only (bool | Unset): Compare only current prices Default: True.
+        chain_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ComparePricesResponse | HTTPValidationError]
+        Response[HTTPValidationError | list[DataFreshness]]
     """
 
     kwargs = _get_kwargs(
-        product_ids=product_ids,
-        current_only=current_only,
+        chain_id=chain_id,
     )
 
     response = client.get_httpx_client().request(
@@ -100,53 +102,47 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    product_ids: list[str],
-    current_only: bool | Unset = True,
-) -> ComparePricesResponse | HTTPValidationError | None:
-    """Compare Prices
+    chain_id: None | str | Unset = UNSET,
+) -> HTTPValidationError | list[DataFreshness] | None:
+    """Get Data Freshness
 
     Args:
-        product_ids (list[str]): List of product IDs to compare prices for
-        current_only (bool | Unset): Compare only current prices Default: True.
+        chain_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ComparePricesResponse | HTTPValidationError
+        HTTPValidationError | list[DataFreshness]
     """
 
     return sync_detailed(
         client=client,
-        product_ids=product_ids,
-        current_only=current_only,
+        chain_id=chain_id,
     ).parsed
 
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    product_ids: list[str],
-    current_only: bool | Unset = True,
-) -> Response[ComparePricesResponse | HTTPValidationError]:
-    """Compare Prices
+    chain_id: None | str | Unset = UNSET,
+) -> Response[HTTPValidationError | list[DataFreshness]]:
+    """Get Data Freshness
 
     Args:
-        product_ids (list[str]): List of product IDs to compare prices for
-        current_only (bool | Unset): Compare only current prices Default: True.
+        chain_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[ComparePricesResponse | HTTPValidationError]
+        Response[HTTPValidationError | list[DataFreshness]]
     """
 
     kwargs = _get_kwargs(
-        product_ids=product_ids,
-        current_only=current_only,
+        chain_id=chain_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -157,27 +153,24 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    product_ids: list[str],
-    current_only: bool | Unset = True,
-) -> ComparePricesResponse | HTTPValidationError | None:
-    """Compare Prices
+    chain_id: None | str | Unset = UNSET,
+) -> HTTPValidationError | list[DataFreshness] | None:
+    """Get Data Freshness
 
     Args:
-        product_ids (list[str]): List of product IDs to compare prices for
-        current_only (bool | Unset): Compare only current prices Default: True.
+        chain_id (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        ComparePricesResponse | HTTPValidationError
+        HTTPValidationError | list[DataFreshness]
     """
 
     return (
         await asyncio_detailed(
             client=client,
-            product_ids=product_ids,
-            current_only=current_only,
+            chain_id=chain_id,
         )
     ).parsed

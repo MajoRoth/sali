@@ -97,16 +97,13 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | ProductSearchPage]:
     """Search Products
 
-     Search for products by name with optional store/chain filtering.
-
     Args:
         query (str): Search query for product name
         store_id (None | str | Unset): Filter by store ID
         chain_id (None | str | Unset): Filter by chain ID
-        active (bool | Unset): Show only products that have at least one active listing Default:
-            False.
-        limit (int | Unset): Maximum number of products to return (max 100) Default: 10.
-        offset (int | Unset): Number of products to skip Default: 0.
+        active (bool | Unset): Show only products that have active listing Default: False.
+        limit (int | Unset): Max items (max 100) Default: 10.
+        offset (int | Unset): Items to skip Default: 0.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -144,16 +141,13 @@ def sync(
 ) -> HTTPValidationError | ProductSearchPage | None:
     """Search Products
 
-     Search for products by name with optional store/chain filtering.
-
     Args:
         query (str): Search query for product name
         store_id (None | str | Unset): Filter by store ID
         chain_id (None | str | Unset): Filter by chain ID
-        active (bool | Unset): Show only products that have at least one active listing Default:
-            False.
-        limit (int | Unset): Maximum number of products to return (max 100) Default: 10.
-        offset (int | Unset): Number of products to skip Default: 0.
+        active (bool | Unset): Show only products that have active listing Default: False.
+        limit (int | Unset): Max items (max 100) Default: 10.
+        offset (int | Unset): Items to skip Default: 0.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -186,16 +180,13 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | ProductSearchPage]:
     """Search Products
 
-     Search for products by name with optional store/chain filtering.
-
     Args:
         query (str): Search query for product name
         store_id (None | str | Unset): Filter by store ID
         chain_id (None | str | Unset): Filter by chain ID
-        active (bool | Unset): Show only products that have at least one active listing Default:
-            False.
-        limit (int | Unset): Maximum number of products to return (max 100) Default: 10.
-        offset (int | Unset): Number of products to skip Default: 0.
+        active (bool | Unset): Show only products that have active listing Default: False.
+        limit (int | Unset): Max items (max 100) Default: 10.
+        offset (int | Unset): Items to skip Default: 0.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -231,16 +222,13 @@ async def asyncio(
 ) -> HTTPValidationError | ProductSearchPage | None:
     """Search Products
 
-     Search for products by name with optional store/chain filtering.
-
     Args:
         query (str): Search query for product name
         store_id (None | str | Unset): Filter by store ID
         chain_id (None | str | Unset): Filter by chain ID
-        active (bool | Unset): Show only products that have at least one active listing Default:
-            False.
-        limit (int | Unset): Maximum number of products to return (max 100) Default: 10.
-        offset (int | Unset): Number of products to skip Default: 0.
+        active (bool | Unset): Show only products that have active listing Default: False.
+        limit (int | Unset): Max items (max 100) Default: 10.
+        offset (int | Unset): Items to skip Default: 0.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

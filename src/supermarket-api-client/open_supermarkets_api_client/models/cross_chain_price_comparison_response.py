@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
     from ..models.chain_price_data import ChainPriceData
     from ..models.overall_statistics import OverallStatistics
@@ -16,32 +18,28 @@ T = TypeVar("T", bound="CrossChainPriceComparisonResponse")
 
 @_attrs_define
 class CrossChainPriceComparisonResponse:
-    """Response for GET /analytics/price-comparison/cross-chain
-
+    """
     Attributes:
         product_barcode (int):
         product_name (str):
-        manufacturer (None | str):
         current_only (bool):
-        overall_statistics (OverallStatistics): Overall price statistics
+        overall_statistics (OverallStatistics):
         chain_comparison (list[ChainPriceData]):
+        manufacturer (None | str | Unset):
     """
 
     product_barcode: int
     product_name: str
-    manufacturer: None | str
     current_only: bool
     overall_statistics: OverallStatistics
     chain_comparison: list[ChainPriceData]
+    manufacturer: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         product_barcode = self.product_barcode
 
         product_name = self.product_name
-
-        manufacturer: None | str
-        manufacturer = self.manufacturer
 
         current_only = self.current_only
 
@@ -52,18 +50,25 @@ class CrossChainPriceComparisonResponse:
             chain_comparison_item = chain_comparison_item_data.to_dict()
             chain_comparison.append(chain_comparison_item)
 
+        manufacturer: None | str | Unset
+        if isinstance(self.manufacturer, Unset):
+            manufacturer = UNSET
+        else:
+            manufacturer = self.manufacturer
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "productBarcode": product_barcode,
                 "productName": product_name,
-                "manufacturer": manufacturer,
                 "currentOnly": current_only,
                 "overallStatistics": overall_statistics,
                 "chainComparison": chain_comparison,
             }
         )
+        if manufacturer is not UNSET:
+            field_dict["manufacturer"] = manufacturer
 
         return field_dict
 
@@ -77,13 +82,6 @@ class CrossChainPriceComparisonResponse:
 
         product_name = d.pop("productName")
 
-        def _parse_manufacturer(data: object) -> None | str:
-            if data is None:
-                return data
-            return cast(None | str, data)
-
-        manufacturer = _parse_manufacturer(d.pop("manufacturer"))
-
         current_only = d.pop("currentOnly")
 
         overall_statistics = OverallStatistics.from_dict(d.pop("overallStatistics"))
@@ -95,13 +93,22 @@ class CrossChainPriceComparisonResponse:
 
             chain_comparison.append(chain_comparison_item)
 
+        def _parse_manufacturer(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        manufacturer = _parse_manufacturer(d.pop("manufacturer", UNSET))
+
         cross_chain_price_comparison_response = cls(
             product_barcode=product_barcode,
             product_name=product_name,
-            manufacturer=manufacturer,
             current_only=current_only,
             overall_statistics=overall_statistics,
             chain_comparison=chain_comparison,
+            manufacturer=manufacturer,
         )
 
         cross_chain_price_comparison_response.additional_properties = d

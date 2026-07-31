@@ -15,8 +15,7 @@ T = TypeVar("T", bound="GetChainsResponse")
 
 @_attrs_define
 class GetChainsResponse:
-    """Response for GET /chains
-
+    """
     Attributes:
         chains (list[ChainResponse]):
     """

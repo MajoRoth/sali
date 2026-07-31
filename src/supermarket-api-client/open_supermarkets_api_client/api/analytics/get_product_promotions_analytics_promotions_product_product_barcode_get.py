@@ -90,14 +90,11 @@ def sync_detailed(
 ) -> Response[HTTPValidationError | ProductPromotionsResponse]:
     """Get Product Promotions
 
-     Get all promotions for a specific product, including complex group logic.
-    This endpoint demonstrates how to query the new promotion structure with groups.
-
     Args:
         product_barcode (int):
-        store_id (None | str | Unset): Filter by specific store
-        chain_id (None | str | Unset): Filter by specific chain
-        current_only (bool | Unset): Show only current/active promotions Default: True.
+        store_id (None | str | Unset):
+        chain_id (None | str | Unset):
+        current_only (bool | Unset):  Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -131,14 +128,11 @@ def sync(
 ) -> HTTPValidationError | ProductPromotionsResponse | None:
     """Get Product Promotions
 
-     Get all promotions for a specific product, including complex group logic.
-    This endpoint demonstrates how to query the new promotion structure with groups.
-
     Args:
         product_barcode (int):
-        store_id (None | str | Unset): Filter by specific store
-        chain_id (None | str | Unset): Filter by specific chain
-        current_only (bool | Unset): Show only current/active promotions Default: True.
+        store_id (None | str | Unset):
+        chain_id (None | str | Unset):
+        current_only (bool | Unset):  Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -167,14 +161,11 @@ async def asyncio_detailed(
 ) -> Response[HTTPValidationError | ProductPromotionsResponse]:
     """Get Product Promotions
 
-     Get all promotions for a specific product, including complex group logic.
-    This endpoint demonstrates how to query the new promotion structure with groups.
-
     Args:
         product_barcode (int):
-        store_id (None | str | Unset): Filter by specific store
-        chain_id (None | str | Unset): Filter by specific chain
-        current_only (bool | Unset): Show only current/active promotions Default: True.
+        store_id (None | str | Unset):
+        chain_id (None | str | Unset):
+        current_only (bool | Unset):  Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -206,14 +197,11 @@ async def asyncio(
 ) -> HTTPValidationError | ProductPromotionsResponse | None:
     """Get Product Promotions
 
-     Get all promotions for a specific product, including complex group logic.
-    This endpoint demonstrates how to query the new promotion structure with groups.
-
     Args:
         product_barcode (int):
-        store_id (None | str | Unset): Filter by specific store
-        chain_id (None | str | Unset): Filter by specific chain
-        current_only (bool | Unset): Show only current/active promotions Default: True.
+        store_id (None | str | Unset):
+        chain_id (None | str | Unset):
+        current_only (bool | Unset):  Default: True.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

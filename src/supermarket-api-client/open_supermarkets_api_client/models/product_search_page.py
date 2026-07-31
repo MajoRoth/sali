@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
+from ..types import UNSET, Unset
+
 if TYPE_CHECKING:
     from ..models.product import Product
 
@@ -15,21 +17,20 @@ T = TypeVar("T", bound="ProductSearchPage")
 
 @_attrs_define
 class ProductSearchPage:
-    """Response for GET /products/search (cursor-style, no total count)
-
+    """
     Attributes:
         items (list[Product]):
         limit (int):
         offset (int):
         has_more (bool):
-        next_offset (int | None):
+        next_offset (int | None | Unset):
     """
 
     items: list[Product]
     limit: int
     offset: int
     has_more: bool
-    next_offset: int | None
+    next_offset: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -44,8 +45,11 @@ class ProductSearchPage:
 
         has_more = self.has_more
 
-        next_offset: int | None
-        next_offset = self.next_offset
+        next_offset: int | None | Unset
+        if isinstance(self.next_offset, Unset):
+            next_offset = UNSET
+        else:
+            next_offset = self.next_offset
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -55,9 +59,10 @@ class ProductSearchPage:
                 "limit": limit,
                 "offset": offset,
                 "has_more": has_more,
-                "next_offset": next_offset,
             }
         )
+        if next_offset is not UNSET:
+            field_dict["next_offset"] = next_offset
 
         return field_dict
 
@@ -79,12 +84,14 @@ class ProductSearchPage:
 
         has_more = d.pop("has_more")
 
-        def _parse_next_offset(data: object) -> int | None:
+        def _parse_next_offset(data: object) -> int | None | Unset:
             if data is None:
                 return data
-            return cast(int | None, data)
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
 
-        next_offset = _parse_next_offset(d.pop("next_offset"))
+        next_offset = _parse_next_offset(d.pop("next_offset", UNSET))
 
         product_search_page = cls(
             items=items,

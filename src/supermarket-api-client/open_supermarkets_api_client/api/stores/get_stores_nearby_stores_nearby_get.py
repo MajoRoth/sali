@@ -5,38 +5,39 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.get_chains_response import GetChainsResponse
+from ...models.get_stores_response import GetStoresResponse
 from ...models.http_validation_error import HTTPValidationError
 from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     *,
-    include_stores: bool | None | Unset = False,
-    include_stats: bool | None | Unset = False,
+    lat: float,
+    lng: float,
+    radius: float,
+    chain_id: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
 
     params: dict[str, Any] = {}
 
-    json_include_stores: bool | None | Unset
-    if isinstance(include_stores, Unset):
-        json_include_stores = UNSET
-    else:
-        json_include_stores = include_stores
-    params["includeStores"] = json_include_stores
+    params["lat"] = lat
 
-    json_include_stats: bool | None | Unset
-    if isinstance(include_stats, Unset):
-        json_include_stats = UNSET
+    params["lng"] = lng
+
+    params["radius"] = radius
+
+    json_chain_id: None | str | Unset
+    if isinstance(chain_id, Unset):
+        json_chain_id = UNSET
     else:
-        json_include_stats = include_stats
-    params["includeStats"] = json_include_stats
+        json_chain_id = chain_id
+    params["chain_id"] = json_chain_id
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/chains/",
+        "url": "/stores/nearby",
         "params": params,
     }
 
@@ -45,9 +46,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> GetChainsResponse | HTTPValidationError | None:
+) -> GetStoresResponse | HTTPValidationError | None:
     if response.status_code == 200:
-        response_200 = GetChainsResponse.from_dict(response.json())
+        response_200 = GetStoresResponse.from_dict(response.json())
 
         return response_200
 
@@ -64,7 +65,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[GetChainsResponse | HTTPValidationError]:
+) -> Response[GetStoresResponse | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -76,28 +77,34 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    include_stores: bool | None | Unset = False,
-    include_stats: bool | None | Unset = False,
-) -> Response[GetChainsResponse | HTTPValidationError]:
-    """Get Chains
+    lat: float,
+    lng: float,
+    radius: float,
+    chain_id: None | str | Unset = UNSET,
+) -> Response[GetStoresResponse | HTTPValidationError]:
+    """Get Stores Nearby
 
-     Get all chains with optional store information and statistics.
+     Get all stores within a given radius (in meters) of a location.
 
     Args:
-        include_stores (bool | None | Unset): Include store information Default: False.
-        include_stats (bool | None | Unset): Include chain statistics Default: False.
+        lat (float): Latitude of the center point
+        lng (float): Longitude of the center point
+        radius (float): Radius in meters to search within
+        chain_id (None | str | Unset): Filter by chainId or chainCode
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetChainsResponse | HTTPValidationError]
+        Response[GetStoresResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
-        include_stores=include_stores,
-        include_stats=include_stats,
+        lat=lat,
+        lng=lng,
+        radius=radius,
+        chain_id=chain_id,
     )
 
     response = client.get_httpx_client().request(
@@ -110,57 +117,69 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    include_stores: bool | None | Unset = False,
-    include_stats: bool | None | Unset = False,
-) -> GetChainsResponse | HTTPValidationError | None:
-    """Get Chains
+    lat: float,
+    lng: float,
+    radius: float,
+    chain_id: None | str | Unset = UNSET,
+) -> GetStoresResponse | HTTPValidationError | None:
+    """Get Stores Nearby
 
-     Get all chains with optional store information and statistics.
+     Get all stores within a given radius (in meters) of a location.
 
     Args:
-        include_stores (bool | None | Unset): Include store information Default: False.
-        include_stats (bool | None | Unset): Include chain statistics Default: False.
+        lat (float): Latitude of the center point
+        lng (float): Longitude of the center point
+        radius (float): Radius in meters to search within
+        chain_id (None | str | Unset): Filter by chainId or chainCode
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetChainsResponse | HTTPValidationError
+        GetStoresResponse | HTTPValidationError
     """
 
     return sync_detailed(
         client=client,
-        include_stores=include_stores,
-        include_stats=include_stats,
+        lat=lat,
+        lng=lng,
+        radius=radius,
+        chain_id=chain_id,
     ).parsed
 
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    include_stores: bool | None | Unset = False,
-    include_stats: bool | None | Unset = False,
-) -> Response[GetChainsResponse | HTTPValidationError]:
-    """Get Chains
+    lat: float,
+    lng: float,
+    radius: float,
+    chain_id: None | str | Unset = UNSET,
+) -> Response[GetStoresResponse | HTTPValidationError]:
+    """Get Stores Nearby
 
-     Get all chains with optional store information and statistics.
+     Get all stores within a given radius (in meters) of a location.
 
     Args:
-        include_stores (bool | None | Unset): Include store information Default: False.
-        include_stats (bool | None | Unset): Include chain statistics Default: False.
+        lat (float): Latitude of the center point
+        lng (float): Longitude of the center point
+        radius (float): Radius in meters to search within
+        chain_id (None | str | Unset): Filter by chainId or chainCode
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[GetChainsResponse | HTTPValidationError]
+        Response[GetStoresResponse | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
-        include_stores=include_stores,
-        include_stats=include_stats,
+        lat=lat,
+        lng=lng,
+        radius=radius,
+        chain_id=chain_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -171,29 +190,35 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    include_stores: bool | None | Unset = False,
-    include_stats: bool | None | Unset = False,
-) -> GetChainsResponse | HTTPValidationError | None:
-    """Get Chains
+    lat: float,
+    lng: float,
+    radius: float,
+    chain_id: None | str | Unset = UNSET,
+) -> GetStoresResponse | HTTPValidationError | None:
+    """Get Stores Nearby
 
-     Get all chains with optional store information and statistics.
+     Get all stores within a given radius (in meters) of a location.
 
     Args:
-        include_stores (bool | None | Unset): Include store information Default: False.
-        include_stats (bool | None | Unset): Include chain statistics Default: False.
+        lat (float): Latitude of the center point
+        lng (float): Longitude of the center point
+        radius (float): Radius in meters to search within
+        chain_id (None | str | Unset): Filter by chainId or chainCode
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        GetChainsResponse | HTTPValidationError
+        GetStoresResponse | HTTPValidationError
     """
 
     return (
         await asyncio_detailed(
             client=client,
-            include_stores=include_stores,
-            include_stats=include_stats,
+            lat=lat,
+            lng=lng,
+            radius=radius,
+            chain_id=chain_id,
         )
     ).parsed

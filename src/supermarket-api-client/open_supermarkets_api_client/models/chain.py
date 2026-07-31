@@ -10,7 +10,7 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.store import Store
+    from ..models.chain_store import ChainStore
 
 
 T = TypeVar("T", bound="Chain")
@@ -18,8 +18,7 @@ T = TypeVar("T", bound="Chain")
 
 @_attrs_define
 class Chain:
-    """Chain information matching Prisma model
-
+    """
     Attributes:
         id (str):
         chain_code (int):
@@ -28,7 +27,7 @@ class Chain:
         sub_chain_name (str):
         observed_at (datetime.datetime):
         store_count (int):
-        stores (list[Store] | None | Unset):
+        stores (list[ChainStore] | None | Unset):
     """
 
     id: str
@@ -38,7 +37,7 @@ class Chain:
     sub_chain_name: str
     observed_at: datetime.datetime
     store_count: int
-    stores: list[Store] | None | Unset = UNSET
+    stores: list[ChainStore] | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -88,7 +87,7 @@ class Chain:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.store import Store
+        from ..models.chain_store import ChainStore
 
         d = dict(src_dict)
         id = d.pop("id")
@@ -105,7 +104,7 @@ class Chain:
 
         store_count = d.pop("storeCount")
 
-        def _parse_stores(data: object) -> list[Store] | None | Unset:
+        def _parse_stores(data: object) -> list[ChainStore] | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -116,14 +115,14 @@ class Chain:
                 stores_type_0 = []
                 _stores_type_0 = data
                 for stores_type_0_item_data in _stores_type_0:
-                    stores_type_0_item = Store.from_dict(stores_type_0_item_data)
+                    stores_type_0_item = ChainStore.from_dict(stores_type_0_item_data)
 
                     stores_type_0.append(stores_type_0_item)
 
                 return stores_type_0
             except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(list[Store] | None | Unset, data)
+            return cast(list[ChainStore] | None | Unset, data)
 
         stores = _parse_stores(d.pop("stores", UNSET))
 

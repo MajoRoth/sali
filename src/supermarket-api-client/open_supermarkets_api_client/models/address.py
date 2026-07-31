@@ -11,8 +11,7 @@ T = TypeVar("T", bound="Address")
 
 @_attrs_define
 class Address:
-    """Address information matching Prisma model
-
+    """
     Attributes:
         store_address (str):
         website (str):

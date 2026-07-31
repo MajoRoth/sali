@@ -17,8 +17,7 @@ T = TypeVar("T", bound="ComparePricesResponse")
 
 @_attrs_define
 class ComparePricesResponse:
-    """Response for GET /products/compare-prices
-
+    """
     Attributes:
         comparisons (list[CrossChainPriceComparisonResponse]):
         not_found_product_ids (list[str] | Unset):

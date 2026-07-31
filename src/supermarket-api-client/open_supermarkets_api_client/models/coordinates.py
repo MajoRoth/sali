@@ -6,32 +6,32 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-T = TypeVar("T", bound="ChainStatistics")
+T = TypeVar("T", bound="Coordinates")
 
 
 @_attrs_define
-class ChainStatistics:
+class Coordinates:
     """
     Attributes:
-        store_count (int):
-        current_product_listings (int):
+        lat (float):
+        lng (float):
     """
 
-    store_count: int
-    current_product_listings: int
+    lat: float
+    lng: float
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        store_count = self.store_count
+        lat = self.lat
 
-        current_product_listings = self.current_product_listings
+        lng = self.lng
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
-                "storeCount": store_count,
-                "currentProductListings": current_product_listings,
+                "lat": lat,
+                "lng": lng,
             }
         )
 
@@ -40,17 +40,17 @@ class ChainStatistics:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        store_count = d.pop("storeCount")
+        lat = d.pop("lat")
 
-        current_product_listings = d.pop("currentProductListings")
+        lng = d.pop("lng")
 
-        chain_statistics = cls(
-            store_count=store_count,
-            current_product_listings=current_product_listings,
+        coordinates = cls(
+            lat=lat,
+            lng=lng,
         )
 
-        chain_statistics.additional_properties = d
-        return chain_statistics
+        coordinates.additional_properties = d
+        return coordinates
 
     @property
     def additional_keys(self) -> list[str]:

@@ -2,65 +2,42 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from ..types import UNSET, Unset
-
-if TYPE_CHECKING:
-    from ..models.address import Address
-    from ..models.coordinates import Coordinates
-
-
-T = TypeVar("T", bound="Store")
+T = TypeVar("T", bound="ChainStore")
 
 
 @_attrs_define
-class Store:
+class ChainStore:
     """
     Attributes:
         id (str):
         store_number (int):
         store_name (str):
-        address (Address):
         last_observed_at (datetime.datetime):
         chain_id (str):
-        coordinates (Coordinates | None | Unset):
     """
 
     id: str
     store_number: int
     store_name: str
-    address: Address
     last_observed_at: datetime.datetime
     chain_id: str
-    coordinates: Coordinates | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.coordinates import Coordinates
-
         id = self.id
 
         store_number = self.store_number
 
         store_name = self.store_name
 
-        address = self.address.to_dict()
-
         last_observed_at = self.last_observed_at.isoformat()
 
         chain_id = self.chain_id
-
-        coordinates: dict[str, Any] | None | Unset
-        if isinstance(self.coordinates, Unset):
-            coordinates = UNSET
-        elif isinstance(self.coordinates, Coordinates):
-            coordinates = self.coordinates.to_dict()
-        else:
-            coordinates = self.coordinates
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -69,21 +46,15 @@ class Store:
                 "id": id,
                 "storeNumber": store_number,
                 "storeName": store_name,
-                "address": address,
                 "lastObservedAt": last_observed_at,
                 "chainId": chain_id,
             }
         )
-        if coordinates is not UNSET:
-            field_dict["coordinates"] = coordinates
 
         return field_dict
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.address import Address
-        from ..models.coordinates import Coordinates
-
         d = dict(src_dict)
         id = d.pop("id")
 
@@ -91,41 +62,20 @@ class Store:
 
         store_name = d.pop("storeName")
 
-        address = Address.from_dict(d.pop("address"))
-
         last_observed_at = datetime.datetime.fromisoformat(d.pop("lastObservedAt"))
 
         chain_id = d.pop("chainId")
 
-        def _parse_coordinates(data: object) -> Coordinates | None | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            try:
-                if not isinstance(data, dict):
-                    raise TypeError()
-                coordinates_type_0 = Coordinates.from_dict(data)
-
-                return coordinates_type_0
-            except (TypeError, ValueError, AttributeError, KeyError):
-                pass
-            return cast(Coordinates | None | Unset, data)
-
-        coordinates = _parse_coordinates(d.pop("coordinates", UNSET))
-
-        store = cls(
+        chain_store = cls(
             id=id,
             store_number=store_number,
             store_name=store_name,
-            address=address,
             last_observed_at=last_observed_at,
             chain_id=chain_id,
-            coordinates=coordinates,
         )
 
-        store.additional_properties = d
-        return store
+        chain_store.additional_properties = d
+        return chain_store
 
     @property
     def additional_keys(self) -> list[str]:

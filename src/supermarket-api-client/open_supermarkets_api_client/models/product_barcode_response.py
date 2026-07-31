@@ -15,10 +15,9 @@ T = TypeVar("T", bound="ProductBarcodeResponse")
 
 @_attrs_define
 class ProductBarcodeResponse:
-    """Response for GET /products/barcode/{barcode}
-
+    """
     Attributes:
-        product (Product): Product information matching Prisma model
+        product (Product):
     """
 
     product: Product
