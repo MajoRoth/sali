@@ -25,6 +25,20 @@ class CatalogProduct(_StrictModel):
     manufacturer: str | None
 
 
+class AlternateProduct(_StrictModel):
+    """Another catalogue product that reads the same receipt line equally well.
+
+    Produce is the reason this exists: every chain keys its bananas on its own
+    internal code, so the single best match can only ever be priced inside one
+    chain, and every other chain shows the line as unavailable. An alternate is
+    admitted only when it is as good a reading of the receipt text as the
+    primary, or confidently good on its own — never as a looser guess.
+    """
+
+    product: CatalogProduct
+    confidence: Annotated[float, Field(ge=0.0, le=1.0)]
+
+
 class MatchedLine(_StrictModel):
     """A receipt line resolved to a catalogue product."""
 
@@ -36,6 +50,9 @@ class MatchedLine(_StrictModel):
     product: CatalogProduct
     matched_by: MatchMethod
     confidence: Annotated[float, Field(ge=0.0, le=1.0)]
+    #: Equally-valid catalogue readings of this line, used so a store that
+    #: stocks the same thing under a different code can still price it.
+    alternates: list[AlternateProduct] = []
 
 
 class UnmatchedLine(_StrictModel):
@@ -91,6 +108,7 @@ class CartComparison(_StrictModel):
 
 
 __all__ = [
+    "AlternateProduct",
     "CartComparison",
     "CatalogProduct",
     "MatchedLine",

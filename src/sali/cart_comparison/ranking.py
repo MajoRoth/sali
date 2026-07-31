@@ -39,6 +39,14 @@ def store_directory(stores: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return directory
 
 
+def _line_barcodes(line: MatchedLine) -> list[int]:
+    """Every barcode that reads this line equally well, primary first."""
+    return [
+        line.product.barcode,
+        *(alternate.product.barcode for alternate in line.alternates),
+    ]
+
+
 def rank_carts(
     matched: list[MatchedLine],
     prices: list[StorePrice],
@@ -48,9 +56,7 @@ def rank_carts(
 ) -> tuple[list[StoreCart], list[StoreCart]]:
     """Return (complete carts, partial carts), each cheapest first."""
     directory = stores or {}
-    wanted: dict[int, str] = {
-        line.product.barcode: line.product.name for line in matched
-    }
+    wanted = {barcode for line in matched for barcode in _line_barcodes(line)}
     if not wanted or not prices:
         return [], []
 
@@ -77,17 +83,25 @@ def rank_carts(
         if city and store_city and store_city.strip() != city.strip():
             continue
 
+        # A line counts as priced when any of its readings is: the store that
+        # keys the same produce under its own code still supplies the line.
         total = Decimal(0)
+        priced_lines = 0
+        missing: list[MissingProduct] = []
         for line in matched:
-            price = priced.get(line.product.barcode)
-            if price is not None:
-                total += _quantity(line) * price.price
+            quotes = [
+                price
+                for barcode in _line_barcodes(line)
+                if (price := priced.get(barcode)) is not None
+            ]
+            if quotes:
+                priced_lines += 1
+                total += _quantity(line) * min(quote.price for quote in quotes)
+            else:
+                missing.append(
+                    MissingProduct(barcode=line.product.barcode, name=line.product.name)
+                )
 
-        missing = [
-            MissingProduct(barcode=barcode, name=name)
-            for barcode, name in wanted.items()
-            if barcode not in priced
-        ]
         cart = StoreCart(
             store_id=store_id,
             store_name=sample.store_name
@@ -98,10 +112,10 @@ def rank_carts(
             chain_id=chain_id,
             chain_name=sample.chain_name,
             complete=not missing,
-            priced_items=len(priced),
-            total_items=len(wanted),
-            total=_money(total),
+            priced_items=priced_lines,
+            total_items=len(matched),
             missing=missing,
+            total=_money(total),
             chain_level_estimate=sample.chain_level,
         )
         (complete if cart.complete else partial).append(cart)

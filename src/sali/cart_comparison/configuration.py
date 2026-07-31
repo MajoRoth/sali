@@ -1,30 +1,29 @@
 """Configuration for talking to the Open Supermarkets price database.
 
-Two deployments of this API exist and they are not interchangeable — each has
-exactly what the other is missing:
+One deployment now serves both halves of the question: the Cloud Run backend
+publishes prices (`compare-prices` with per-store breakdowns), store
+coordinates, and chain listings, all without a token. The price and geocoding
+URLs are still configured separately because the code that joins them — see
+`sali.nearby.stores` — was built for the era when they were two hosts with
+disjoint data, and keeping the seam costs nothing while allowing either side
+to be swapped out again.
 
-* The hosted service at `data.openisraelisupermarkets.co.il` **has prices**,
-  every store in one unpaginated response, and real city names. It needs a
-  bearer token, and it publishes **no store coordinates at all**.
-* The open instance at `34.165.235.189:8000` needs no token and **does publish
-  coordinates**, but its price pipeline has never run: `/health/pipeline`
-  reports zero chains, and `compare-prices` returns an empty comparison for
-  every product in its own catalogue.
-
-So prices come from the first and map pins from the second, joined on
-`(chainCode, storeNumber)` — see `sali.nearby.stores`.
+Measured against real receipts (July 2026): 14 of its 58 chains publish
+prices. The rest — שופרסל, רמי לוי, קרפור, אושר עד among them — have branches
+and coordinates but no listings, which is the ceiling on how many stores any
+cart can be priced at.
 """
 
 from __future__ import annotations
 
 import os
 
-#: The instance that actually publishes prices.
-DEFAULT_CATALOG_URL = "https://data.openisraelisupermarkets.co.il"
+#: The instance that publishes prices.
+DEFAULT_CATALOG_URL = "https://sali-backend-api-930679045173.me-west1.run.app"
 
-#: The instance that publishes store coordinates. Used only to place branches
-#: on a map; nothing priced ever comes from here.
-DEFAULT_GEOCODING_URL = "http://34.165.235.189:8000"
+#: The instance store coordinates are read from. Currently the same deployment
+#: as the prices; kept separate so map pins can outlive a pricing outage.
+DEFAULT_GEOCODING_URL = "https://sali-backend-api-930679045173.me-west1.run.app"
 
 #: Shipped so the app runs out of the box against the public dataset. Anyone
 #: needing their own quota sets `SUPERMARKET_API_KEY`.
@@ -48,6 +47,18 @@ MIN_NAME_MATCH_SCORE = 0.5
 #: the floor the product is priced but reported as uncertain: `תפו"א לבן`
 #: matching `תפוא אדום` is the shape of error only a human can see.
 CONFIDENT_NAME_MATCH_SCORE = 0.8
+
+#: Floor for pricing a line by name when its *printed barcode* is not in the
+#: catalogue. Higher than the weighed-goods floor on purpose: a PLU line has no
+#: other route, but a barcode line names an exact product, so a name is only
+#: trusted here when it is nearly beyond doubt — the store-brand פתי בר whose
+#: barcode the database lacks, not a loose lookalike.
+BARCODE_MISS_NAME_SCORE = 0.75
+
+#: How many equally-valid readings ride along with a name match. Each one costs
+#: a slot in the `compare-prices` batches, and past a few the extras are the
+#: same generic produce name repeated across chains.
+ALTERNATE_MATCH_LIMIT = 4
 
 #: A receipt code is treated as a barcode only at these lengths. Shorter codes
 #: on Israeli receipts are merchant-internal PLUs for weighed goods, which the

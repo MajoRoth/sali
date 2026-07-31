@@ -261,18 +261,35 @@ export default function Results() {
         )}
 
         {!pricing && ranked.length > 0 && (
-          <ol className="store-list">
-            {ranked.map((store, i) => (
-              <StoreRow
-                key={store.id}
-                store={store}
-                best={store.bestPrice === cheapestBest}
-                receiptTotal={receiptTotal}
-                style={{ animationDelay: `${Math.min(i, 6) * 55}ms` }}
-                onOpen={() => openCart(pricedStore(store.source, active.items))}
-              />
-            ))}
-          </ol>
+          <>
+            <ol className="store-list">
+              {ranked.map((store, i) => (
+                <StoreRow
+                  key={store.id}
+                  store={store}
+                  best={store.bestPrice === cheapestBest}
+                  receiptTotal={receiptTotal}
+                  style={{ animationDelay: `${Math.min(i, 6) * 55}ms` }}
+                  onOpen={() => openCart(pricedStore(store.source, active.items))}
+                />
+              ))}
+            </ol>
+            {/*
+              What the ranking left out, said under it: lines the price database
+              could not match, and the branches whose chains publish no prices.
+              Without this, a missing שופרסל reads as the app ignoring it.
+            */}
+            <div className="store-list-notes">
+              {warnings
+                .map(warningText)
+                .filter((text): text is string => text !== null)
+                .map((note) => (
+                  <p key={note} className="stores-empty-note">
+                    {note}
+                  </p>
+                ))}
+            </div>
+          </>
         )}
       </div>
 
@@ -350,13 +367,16 @@ function StoreRow({
 
   // An approximate position is the city centre, so there is no distance to
   // quote — naming the city is the honest version of the same information.
+  // The list renders plain Supermarkets, whose distance lives on the server
+  // response (`source.distanceM`); only map rows carry their own copy.
+  const meters = (store as StoreOnMap).distanceM ?? store.source.distanceM
   const where = store.online
     ? store.deliveryFee === 0
       ? 'משלוח חינם'
       : `משלוח ${formatPrice(store.deliveryFee)}`
-    : store.approxLocation
+    : store.approxLocation || meters == null
       ? (store.source.city ?? 'מיקום משוער')
-      : formatDistance((store as StoreOnMap).distanceM)
+      : formatDistance(meters)
 
   return (
     <li

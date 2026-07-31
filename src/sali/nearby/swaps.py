@@ -13,14 +13,14 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from sali.cart_comparison.catalog import SupermarketsCatalog
 from sali.cart_comparison.configuration import (
     SWAP_SEARCH_LINES,
     SWAP_SEARCH_WORKERS,
 )
-from sali.cart_comparison.matching import similarity
+from sali.cart_comparison.matching import similarity, to_product
 from sali.cart_comparison.models import CatalogProduct, MatchedLine
 
 #: Name agreement below which two products are not the same thing. Set high on
@@ -55,34 +55,36 @@ def _candidates_for(
 
     scored: list[SwapOption] = []
     for raw in catalog.search_products(query):
-        identifier = raw.get("id")
-        barcode = raw.get("productBarcode")
-        name = raw.get("productName")
-        if not isinstance(identifier, str) or not isinstance(barcode, int):
+        product = to_product(raw)
+        if product is None or product.barcode == line.product.barcode:
             continue
-        if isinstance(barcode, bool) or barcode <= 0:
-            continue
-        if barcode == line.product.barcode:
-            continue
-        score = similarity(line.product.name, str(name or ""))
+        score = similarity(line.product.name, product.name)
         if score < SWAP_SIMILARITY_FLOOR:
             continue
-        manufacturer = raw.get("manufacturerOrImporterName")
         scored.append(
             SwapOption(
                 position=line.position,
-                product=CatalogProduct(
-                    product_id=identifier,
-                    barcode=barcode,
-                    name=str(name or ""),
-                    manufacturer=str(manufacturer) if manufacturer else None,
-                ),
+                product=product,
                 similarity=round(score, 3),
             )
         )
 
     scored.sort(key=lambda option: option.similarity, reverse=True)
     return scored[:per_line]
+
+
+def _paid(line: MatchedLine) -> Decimal:
+    """What the line cost, as a number.
+
+    `paid` is the receipt's own string. Sorting the strings looked the same in
+    review and quietly sent the swap-search budget to the lexicographically
+    largest lines — "9.90" outranking "69.00" — which is precisely the cheap
+    tail the search is supposed to skip.
+    """
+    try:
+        return Decimal(line.paid)
+    except InvalidOperation:
+        return Decimal(0)
 
 
 def find_candidates(
@@ -104,7 +106,7 @@ def find_candidates(
     whole feature is worth — and a swap on a ₪2 line cannot repay it. Ranking by
     what was paid puts the search where the savings are.
     """
-    ranked = sorted(matched, key=lambda line: line.paid, reverse=True)[:max_lines]
+    ranked = sorted(matched, key=_paid, reverse=True)[:max_lines]
     if not ranked:
         return []
 
@@ -139,12 +141,19 @@ def choose_swaps(
     quantities: dict[int, Decimal],
     store_prices: dict[int, Decimal],
     options: list[SwapOption],
+    *,
+    readings: dict[int, tuple[CatalogProduct, Decimal]] | None = None,
 ) -> dict[int, AppliedSwap]:
     """Pick the best substitution per line, using one store's own prices.
 
     A candidate the store does not stock is not an option there, and a candidate
     it stocks at a higher price is not a saving — so this is evaluated per store
     rather than once for the cart.
+
+    `readings` names what the store's cart actually shows for each line — which
+    may be an alternate of the matched product, priced differently — so a swap
+    is measured against the price on the cart, never against a product the
+    store does not sell.
     """
     by_position: dict[int, list[SwapOption]] = {}
     for option in options:
@@ -152,8 +161,11 @@ def choose_swaps(
 
     chosen: dict[int, AppliedSwap] = {}
     for line in matched:
-        original = store_prices.get(line.product.barcode)
-        if original is None:
+        if readings is not None:
+            replaced, original = readings.get(line.position, (None, None))
+        else:
+            replaced, original = line.product, store_prices.get(line.product.barcode)
+        if replaced is None or original is None:
             # The store cannot price what was actually bought, so there is no
             # baseline to beat and swapping would compare against nothing.
             continue
@@ -166,7 +178,7 @@ def choose_swaps(
                 continue
             candidate = AppliedSwap(
                 position=line.position,
-                replaced=line.product,
+                replaced=replaced,
                 replacement=option.product,
                 original_unit_price=original,
                 swapped_unit_price=replacement_price,

@@ -8,7 +8,7 @@ names its fields slightly differently.
 
 from decimal import Decimal
 
-from sali.cart_comparison.models import CatalogProduct, MatchedLine
+from sali.cart_comparison.models import AlternateProduct, CatalogProduct, MatchedLine
 from sali.cart_comparison.pricing import read_store_prices
 from sali.cart_comparison.ranking import rank_carts, store_directory
 
@@ -285,3 +285,34 @@ def test_no_listings_yields_no_carts_rather_than_an_empty_free_shop() -> None:
 
     assert complete == []
     assert partial == []
+
+
+def test_a_store_keying_a_line_under_its_own_code_still_supplies_it() -> None:
+    # Chains key identical produce on their own internal codes. The alternate
+    # is what lets a ויקטורי quote its own tomato against a receipt matched to
+    # another chain's code — without it this cart would rank as incomplete.
+    tomato = matched(935, "עגבניה").model_copy(
+        update={
+            "alternates": [
+                AlternateProduct(
+                    product=CatalogProduct(
+                        product_id="777",
+                        barcode=777,
+                        name="עגבניה",
+                        manufacturer=None,
+                    ),
+                    confidence=1.0,
+                )
+            ]
+        }
+    )
+    prices = read_store_prices(
+        [comparison(777, [chain("c2", "ויקטורי", [{"storeId": "s9", "price": 4.2}])])]
+    )
+
+    complete, partial = rank_carts([tomato], prices)
+
+    assert partial == []
+    assert len(complete) == 1
+    assert complete[0].complete
+    assert complete[0].total == "4.20"

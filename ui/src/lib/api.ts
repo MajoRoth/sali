@@ -306,6 +306,10 @@ export function warningText(warning: string): string | null {
   if (unplaceable) {
     return `נמצאו מחירים ב־${unplaceable[1]} סניפים, אבל אף אחד מהם לא ניתן למיקום ברדיוס שלכם — מאגר המחירים ומאגר המיקומים לא מכסים את אותן רשתות.`
   }
+  const silent = /^(\d+) of (\d+) branches within your radius belong to chains that published no price/.exec(warning)
+  if (silent) {
+    return `${silent[1]} מתוך ${silent[2]} הסניפים בסביבתכם שייכים לרשתות שלא פרסמו מחיר לאף פריט בקבלה — הם מוצגים על המפה אך לא ניתן לדרג אותם.`
+  }
   if (warning.startsWith('no store prices')) {
     return 'מאגר המחירים אינו מכיל כרגע מחירים בפועל לאף אחד מהמוצרים בקבלה.'
   }

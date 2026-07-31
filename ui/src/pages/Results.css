@@ -526,6 +526,11 @@
   opacity: 0.9;
 }
 
+/* The ranking's fine print: what could not be compared, and why. */
+.store-list-notes {
+  margin: 14px 4px 0;
+}
+
 /* A store that cannot supply the whole cart says so on its own row. */
 .row-gap {
   font-size: 11px;

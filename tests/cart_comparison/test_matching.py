@@ -90,15 +90,58 @@ def test_a_printed_barcode_matches_exactly_and_skips_the_name_search() -> None:
     assert catalog.queries == []
 
 
-def test_a_barcode_the_catalogue_lacks_is_reported_rather_than_guessed_by_name() -> (
-    None
-):
+def test_an_unknown_barcode_is_rescued_by_a_near_certain_name() -> None:
+    # Store brands print real barcodes the catalogue lacks, but the line still
+    # names the product, and another maker's identical פתי בר can stand in for
+    # it — at a floor high enough to exclude lookalikes.
+    catalog = FakeCatalog(
+        by_query={"פתי בר קלאסי 500 גרם": [product(2, "אסם פתי בר קלאסי 500")]}
+    )
+    match = CartMatcher(catalog).match(line("פתי בר קלאסי 500 גרם", "7290117765234"))
+
+    assert match.matched_by == "name"
+    assert match.product is not None
+    assert match.product.barcode == 2
+    assert match.confidence >= 0.75
+
+
+def test_an_unknown_barcode_with_only_a_loose_name_stays_unmatched() -> None:
+    # 'פתי בר' alone scores 0.57 against the receipt line — enough for a
+    # weighed-goods search, not enough to stand in for an exact barcode.
     catalog = FakeCatalog(by_query={"פתי בר קלאסי 500 גרם": [product(1, "פתי בר")]})
     match = CartMatcher(catalog).match(line("פתי בר קלאסי 500 גרם", "7290117765234"))
 
     assert match.product is None
     assert "not in the price database" in (match.reason or "")
-    assert catalog.queries == []
+
+
+def test_a_name_match_keeps_equally_good_readings_as_alternates() -> None:
+    # Two chains keying identical produce under their own codes are one product
+    # twice; keeping both is what lets the line be priced at either chain.
+    catalog = FakeCatalog(
+        by_query={
+            "עגבניה": [
+                product(935, "עגבניה"),
+                product(7290001, "עגבניה"),
+                product(7290002, "עגבניה מגי"),
+            ]
+        }
+    )
+    match = CartMatcher(catalog).match(line("עגבניה", "18"))
+
+    assert match.product is not None
+    assert match.product.barcode == 935
+    assert [alt.product.barcode for alt in match.alternates] == [7290001]
+
+
+def test_a_repeated_barcode_is_one_reading_not_two() -> None:
+    catalog = FakeCatalog(
+        by_query={"עגבניה": [product(935, "עגבניה"), product(935, "עגבניה")]}
+    )
+    match = CartMatcher(catalog).match(line("עגבניה", "18"))
+
+    assert match.product is not None
+    assert match.alternates == ()
 
 
 def test_a_weighed_line_falls_back_to_the_name_search() -> None:
@@ -140,23 +183,6 @@ def test_a_differing_pack_size_loses_to_the_matching_one() -> None:
 
 def test_a_truncated_receipt_word_still_matches_its_full_spelling() -> None:
     assert similarity("עגבניות שרי לובלו", "עגבניות שרי לובלו אר") > 0.8
-
-
-def test_catalogue_rows_that_cannot_be_priced_are_never_matched() -> None:
-    # The live catalogue returns rows like {"id": "7290000041179.0",
-    # "productBarcode": 0}. They price against nothing, and because they all
-    # share barcode 0 they would merge distinct products into one cart line.
-    broken = {
-        "id": "7290000041179.0",
-        "productBarcode": 0,
-        "productName": "מלפפון",
-        "manufacturerOrImporterName": "",
-    }
-    catalog = FakeCatalog(by_query={"מלפפון": [broken]})
-
-    match = CartMatcher(catalog).match(line("מלפפון", "695"))
-
-    assert match.product is None
 
 
 def test_a_usable_row_still_wins_when_a_broken_one_scores_the_same() -> None:
@@ -203,3 +229,36 @@ def test_a_genuinely_absent_barcode_still_says_so() -> None:
 
     assert match.product is None
     assert match.reason == "barcode 7290000000001 is not in the price database"
+
+
+def test_a_broken_row_with_a_numeric_id_recovers_its_barcode() -> None:
+    # One catalogue row in eight arrives with productBarcode 0 and its real
+    # barcode float-formatted into the id. Refusing it outright loses a
+    # product the price database can quote at hundreds of stores.
+    broken = {
+        "id": "7290000074184.0",
+        "productBarcode": 0,
+        "productName": "אסם פתי בר קלאסי 500",
+        "manufacturerOrImporterName": "",
+    }
+    catalog = FakeCatalog(by_query={"פתי בר קלאסי 500 גרם": [broken]})
+
+    match = CartMatcher(catalog).match(line("פתי בר קלאסי 500 גרם", "7290117765234"))
+
+    assert match.product is not None
+    assert match.product.barcode == 7290000074184
+    assert match.product.product_id == "7290000074184"
+
+
+def test_a_broken_row_with_an_opaque_id_is_still_refused() -> None:
+    broken = {
+        "id": "cmlftahii00v7gdqvf17rt2bw",
+        "productBarcode": 0,
+        "productName": "מלפפון",
+        "manufacturerOrImporterName": "",
+    }
+    catalog = FakeCatalog(by_query={"מלפפון": [broken]})
+
+    match = CartMatcher(catalog).match(line("מלפפון", "695"))
+
+    assert match.product is None

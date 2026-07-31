@@ -1,28 +1,38 @@
 """Resolve receipt lines to products in the price database.
 
 Barcode first: a receipt that prints a 12-14 digit code names the exact product,
-and the catalogue is keyed on that code, so the match is free and certain.
+and the catalogue is keyed on that code, so the match is free and certain. A
+printed barcode the catalogue lacks — usually a store brand — falls back to the
+name, but at a floor high enough that only a near-certain reading is accepted.
 
 Name second: weighed goods (produce, deli, bakery) carry a merchant-internal PLU
 instead, which means nothing outside that chain. Those lines are searched by
 name, and because a wrong match silently corrupts a store's cart total, a
 candidate is only accepted above a confidence floor.
+
+A name match also keeps its *alternates*: other catalogue products that read the
+receipt text just as well. Chains key identical produce on their own internal
+codes, so without alternates a matched banana can only ever be priced inside one
+chain and every other store shows it as missing.
 """
 
 from __future__ import annotations
 
 import re
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from sali.cart_comparison.catalog import ProductLookup, SupermarketsCatalog
 from sali.cart_comparison.configuration import (
+    ALTERNATE_MATCH_LIMIT,
     BARCODE_LENGTHS,
     BARCODE_LOOKUP_WORKERS,
+    BARCODE_MISS_NAME_SCORE,
+    CONFIDENT_NAME_MATCH_SCORE,
     MIN_NAME_MATCH_SCORE,
 )
-from sali.cart_comparison.models import CatalogProduct, MatchMethod
+from sali.cart_comparison.models import AlternateProduct, CatalogProduct, MatchMethod
 from sali.receipt_extraction.models import Item
 
 #: Characters Hebrew receipts use decoratively around abbreviations. Stripping
@@ -104,7 +114,21 @@ def similarity(receipt_name: str, product_name: str) -> float:
     return score
 
 
-def _to_product(raw: dict[str, Any]) -> CatalogProduct | None:
+#: A numeric id, possibly float-formatted (`7290000074184.0`). The digits are
+#: the product's real code, exported through a float column upstream.
+_NUMERIC_ID = re.compile(r"^(\d+)(?:\.0+)?$")
+
+
+def _recovered_barcode(identifier: str) -> int | None:
+    """The barcode a broken row's id encodes, if it encodes one."""
+    matched = _NUMERIC_ID.match(identifier)
+    if matched is None:
+        return None
+    value = int(matched.group(1))
+    return value if value > 0 else None
+
+
+def to_product(raw: dict[str, Any]) -> CatalogProduct | None:
     """Read a catalogue row, refusing the ones that cannot be priced.
 
     Two id shapes are in play and both are legitimate. The hosted service keys
@@ -114,17 +138,24 @@ def _to_product(raw: dict[str, Any]) -> CatalogProduct | None:
     handle to pass back to `compare-prices`, and demanding it look like a
     number rejects the entire hosted catalogue.
 
-    A barcode of 0 is the real failure: around one row in eight comes back with
-    a float-formatted name and `productBarcode: 0`, and since they all share
-    that barcode, admitting two would silently merge two different products
-    into one line of the cart.
+    Around one row in eight arrives broken — `productBarcode: 0` and a
+    float-formatted id like `7290000074184.0`. Admitting those as they stand
+    would merge every such product into one barcode-0 cart line, but the id's
+    digits *are* the real barcode, exported through a float column. Recovered,
+    the row prices normally — and against the clean id the price database
+    answers with its full cross-chain comparison, where the broken id got the
+    barcode-0 remnant.
     """
     identifier = raw.get("id")
     barcode = raw.get("productBarcode")
     if not isinstance(identifier, str) or not identifier:
         return None
     if not isinstance(barcode, int) or isinstance(barcode, bool) or barcode <= 0:
-        return None
+        recovered = _recovered_barcode(identifier)
+        if recovered is None:
+            return None
+        barcode = recovered
+        identifier = str(recovered)
     manufacturer = raw.get("manufacturerOrImporterName")
     return CatalogProduct(
         product_id=identifier,
@@ -142,6 +173,9 @@ class LineMatch:
     matched_by: MatchMethod | None
     confidence: float
     reason: str | None
+    #: Other products that read the line as well as `product` does, so a store
+    #: stocking the same thing under a different code can still price it.
+    alternates: tuple[AlternateProduct, ...] = field(default=())
 
 
 class CartMatcher:
@@ -158,7 +192,7 @@ class CartMatcher:
 
     def match(self, item: Item) -> LineMatch:
         if is_barcode(item.code):
-            return self._from_barcode(item.code or "")
+            return self._from_barcode(item.code or "", item.name)
         return self._match_by_name(item.name)
 
     def match_all(self, items: list[Item]) -> list[LineMatch]:
@@ -178,10 +212,10 @@ class CartMatcher:
         ) as pool:
             return list(pool.map(self.match, items))
 
-    def _from_barcode(self, barcode: str) -> LineMatch:
+    def _from_barcode(self, barcode: str, name: str) -> LineMatch:
         found = self._lookup(barcode)
         if found.product is not None:
-            product = _to_product(found.product)
+            product = to_product(found.product)
             if product is not None:
                 return LineMatch(product, "barcode", 1.0, None)
 
@@ -196,13 +230,19 @@ class CartMatcher:
                 f"the price database could not be reached to look up {barcode}",
             )
 
-        # A printed barcode the catalogue does not know is a real gap, not a
-        # reason to guess by name: the name is usually the merchant's own
-        # abbreviation of a product the database simply does not carry.
+        # A barcode the catalogue lacks is usually a store brand — the exact
+        # product genuinely is not there, but its line still names what it is,
+        # and another maker's identical פתי בר can be. The name is trusted only
+        # at a floor high enough to exclude lookalikes; anything less certain is
+        # reported as the barcode gap it is.
+        fallback = self._match_by_name(name, minimum_score=BARCODE_MISS_NAME_SCORE)
+        if fallback.product is not None:
+            return fallback
+
         return LineMatch(
             None,
             None,
-            0.0,
+            fallback.confidence,
             f"barcode {barcode} is not in the price database",
         )
 
@@ -213,30 +253,50 @@ class CartMatcher:
             return ProductLookup(self._catalog.product_by_barcode(barcode), True)
         return finder(barcode)
 
-    def _match_by_name(self, name: str) -> LineMatch:
+    def _match_by_name(
+        self,
+        name: str,
+        *,
+        minimum_score: float | None = None,
+    ) -> LineMatch:
+        floor = self._minimum_score if minimum_score is None else minimum_score
         candidates = self._candidates(name)
         if not candidates:
             return LineMatch(None, None, 0.0, "no catalogue product matched the name")
 
-        best_product: CatalogProduct | None = None
-        best_score = 0.0
+        # Best score per barcode: two rows sharing a barcode are one product,
+        # and letting both through would price the same thing against itself.
+        scored: dict[int, tuple[CatalogProduct, float]] = {}
         for raw in candidates:
-            product = _to_product(raw)
+            product = to_product(raw)
             if product is None:
                 continue
             score = similarity(name, product.name)
-            if score > best_score:
-                best_product, best_score = product, score
+            current = scored.get(product.barcode)
+            if current is None or score > current[1]:
+                scored[product.barcode] = (product, score)
 
-        if best_product is None or best_score < self._minimum_score:
+        ranked = sorted(scored.values(), key=lambda pair: pair[1], reverse=True)
+        best_score = ranked[0][1] if ranked else 0.0
+        if not ranked or best_score < floor:
             return LineMatch(
                 None,
                 None,
                 best_score,
                 f"best name match scored {best_score:.2f}, below the "
-                f"{self._minimum_score:.2f} confidence floor",
+                f"{floor:.2f} confidence floor",
             )
-        return LineMatch(best_product, "name", best_score, None)
+
+        # An alternate must be as good a reading as the winner, or confident
+        # enough to have needed no second look on its own. Anything looser
+        # would quietly price a different product at some other store.
+        alternates = tuple(
+            AlternateProduct(product=product, confidence=round(score, 3))
+            for product, score in ranked[1 : ALTERNATE_MATCH_LIMIT + 1]
+            if score >= best_score - 1e-9
+            or score >= max(CONFIDENT_NAME_MATCH_SCORE, floor)
+        )
+        return LineMatch(ranked[0][0], "name", best_score, None, alternates)
 
     def _candidates(self, name: str) -> list[dict[str, Any]]:
         """Search the catalogue for anything plausibly this line.
@@ -275,5 +335,6 @@ __all__ = [
     "is_barcode",
     "normalize",
     "similarity",
+    "to_product",
     "tokenize",
 ]

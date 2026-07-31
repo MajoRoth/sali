@@ -46,8 +46,17 @@ class CartComparisonService:
 
         prices = []
         if matched:
+            # Alternates are priced alongside the primary: a store that keys
+            # the same produce under its own code is only priceable through them.
             product_ids = list(
-                dict.fromkeys(line.product.product_id for line in matched)
+                dict.fromkeys(
+                    product.product_id
+                    for line in matched
+                    for product in (
+                        line.product,
+                        *(alternate.product for alternate in line.alternates),
+                    )
+                )
             )
             prices = read_store_prices(self._catalog.compare_prices(product_ids))
 
@@ -130,6 +139,7 @@ class CartComparisonService:
                     product=result.product,
                     matched_by=result.matched_by,
                     confidence=round(result.confidence, 3),
+                    alternates=list(result.alternates),
                 )
             )
 

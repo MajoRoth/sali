@@ -25,7 +25,7 @@ from sali.cart_comparison.catalog import (
 )
 from sali.cart_comparison.configuration import CONFIDENT_NAME_MATCH_SCORE
 from sali.cart_comparison.matching import CartMatcher
-from sali.cart_comparison.models import MatchedLine, UnmatchedLine
+from sali.cart_comparison.models import CatalogProduct, MatchedLine, UnmatchedLine
 from sali.cart_comparison.pricing import StorePrice, read_store_prices
 from sali.nearby import fallback
 from sali.nearby.geo import distance_meters
@@ -67,6 +67,32 @@ def _quantity(item: Item) -> Decimal:
     still cost one of something."""
     quantity = _decimal(item.quantity, Decimal(1))
     return quantity if quantity > 0 else Decimal(1)
+
+
+def _cheapest_reading(
+    line: MatchedLine,
+    store_prices: dict[int, Decimal],
+) -> tuple[CatalogProduct, float | None, Decimal] | None:
+    """How this store sells this line, if it does: the cheapest priced product
+    among the match and its equally-valid alternates.
+
+    The alternates are what let a line cross chains — each chain keys its own
+    bananas on its own code, so the primary match alone can only ever be priced
+    where it was matched. The store's cart line shows whichever product was
+    actually priced, under that product's own name and confidence.
+    """
+    readings = [
+        (line.product, line.confidence if line.matched_by == "name" else None),
+        *((alternate.product, alternate.confidence) for alternate in line.alternates),
+    ]
+    best: tuple[CatalogProduct, float | None, Decimal] | None = None
+    for product, confidence in readings:
+        price = store_prices.get(product.barcode)
+        if price is None:
+            continue
+        if best is None or price < best[2]:
+            best = (product, confidence, price)
+    return best
 
 
 class NearbyService:
@@ -210,6 +236,23 @@ class NearbyService:
                 "chains"
             )
 
+        if prices and in_radius:
+            # The biggest chains publish no prices at all, so their branches sit
+            # on the map unranked. Left unexplained, that reads as this app
+            # ignoring the shopper's usual supermarket rather than as the data
+            # gap it is.
+            quoting_chains = {price.chain_id for price in prices}
+            silent = sum(
+                1 for record in in_radius if record.store.chain_id not in quoting_chains
+            )
+            if silent:
+                warnings.append(
+                    f"{silent} of {len(in_radius)} branches within your radius "
+                    "belong to chains that published no price for any item on "
+                    "this receipt, so they are shown on the map but cannot be "
+                    "ranked"
+                )
+
         return built
 
     # -- resolution ----------------------------------------------------------
@@ -244,6 +287,7 @@ class NearbyService:
                     product=result.product,
                     matched_by=result.matched_by,
                     confidence=round(result.confidence, 3),
+                    alternates=list(result.alternates),
                 )
             )
 
@@ -252,8 +296,19 @@ class NearbyService:
     def _read_prices(self, matched: list[MatchedLine]) -> list[StorePrice]:
         if not matched:
             return []
+        # Alternates are priced alongside the primary: a store that keys the
+        # same produce under its own code can only be priced through them.
         return self._read_prices_for(
-            list(dict.fromkeys(line.product.product_id for line in matched))
+            list(
+                dict.fromkeys(
+                    product.product_id
+                    for line in matched
+                    for product in (
+                        line.product,
+                        *(alternate.product for alternate in line.alternates),
+                    )
+                )
+            )
         )
 
     def _read_prices_for(self, product_ids: list[str]) -> list[StorePrice]:
@@ -339,7 +394,9 @@ class NearbyService:
 
         # Coverage first, then the optimal total: a cart that is cheap because it
         # is missing the expensive half is not the cheapest cart.
-        built.sort(key=lambda store: (-store.same_cart.coverage, store.optimal_cart.total))
+        built.sort(
+            key=lambda store: (-store.same_cart.coverage, store.optimal_cart.total)
+        )
         return built
 
     def _store_cart(
@@ -359,15 +416,18 @@ class NearbyService:
         same_lines: list[CartLine] = []
         same_total = Decimal(0)
         unavailable = 0
+        #: What this store actually sells per line, for the swap baseline: a
+        #: swap must beat the price the cart already shows, not the primary
+        #: product's price at some store that keys the item differently.
+        readings: dict[int, tuple[CatalogProduct, Decimal]] = {}
 
         for line in matched:
             item = items.get(line.position)
             quantity = quantities.get(line.position, Decimal(1))
             unit = normalize_unit(item.unit if item else None)
-            price = store_prices.get(line.product.barcode)
-            confidence = line.confidence if line.matched_by == "name" else None
+            reading = _cheapest_reading(line, store_prices)
 
-            if price is None:
+            if reading is None:
                 unavailable += 1
                 same_lines.append(
                     CartLine(
@@ -378,17 +438,21 @@ class NearbyService:
                         unit_price=None,
                         line_total=None,
                         available=False,
-                        match_confidence=confidence,
+                        match_confidence=(
+                            line.confidence if line.matched_by == "name" else None
+                        ),
                     )
                 )
                 continue
 
+            product, confidence, price = reading
+            readings[line.position] = (product, price)
             line_total = price * quantity
             same_total += line_total
             same_lines.append(
                 CartLine(
-                    barcode=str(line.product.barcode),
-                    name=line.product.name or line.receipt_name,
+                    barcode=str(product.barcode),
+                    name=product.name or line.receipt_name,
                     qty=float(quantity),
                     unit=unit,
                     unit_price=_money(price),
@@ -401,7 +465,9 @@ class NearbyService:
         available = len(matched) - unavailable
         coverage = round(available / len(matched), 4) if matched else 0.0
 
-        applied = choose_swaps(matched, quantities, store_prices, swap_options)
+        applied = choose_swaps(
+            matched, quantities, store_prices, swap_options, readings=readings
+        )
         optimal_lines, optimal_total, swaps = self._apply_swaps(
             matched=matched,
             items=items,
