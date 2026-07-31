@@ -78,6 +78,14 @@
   padding: 14px 16px max(16px, env(safe-area-inset-bottom));
 }
 
+/* Explains the per-item difference badge, above the rows. */
+.cartview-note {
+  margin: 0 2px 2px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
 .citem {
   padding: 14px;
   border-radius: 16px;
@@ -95,6 +103,20 @@
 
 .citem-name {
   font-size: 15.5px;
+  font-weight: 700;
+}
+
+/* Price at this store (prominent) with the saving/diff badge beneath it. */
+.citem-vals {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.citem-price {
+  font-size: 15px;
   font-weight: 700;
 }
 
