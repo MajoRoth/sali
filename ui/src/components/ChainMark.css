@@ -1,0 +1,24 @@
+/* The chain mark is rendered *into* an existing logo slot (`.row-logo`,
+   `.brand-logo`, `.cartview-logo`, …), so it deliberately styles almost
+   nothing: the slot already owns size, radius, background and image capping.
+   Only the monogram fallback needs anything, and its inline background colour
+   is what covers the slot's white. */
+
+.chain-mark.monogram {
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  /* Hebrew monograms read right-to-left; forcing LTR would reverse them. */
+  text-align: center;
+  user-select: none;
+}
+
+/* The smaller slots — map cards and receipt rows — need a proportionate glyph. */
+.receipt-row-logo.monogram,
+.cartview-logo.monogram {
+  font-size: 13px;
+}

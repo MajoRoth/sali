@@ -1,0 +1,3212 @@
+<!DOCTYPE html><html lang="he" dir="rtl"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>סטופמרקט - פשוט חוויה לקנות</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&amp;display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg1: #ff4b6e;
+      --bg2: #ff6f86;
+      --card: #ffffff;
+      --text: #101828;
+      --muted: #667085;
+      --line: #EAECF0;
+      --shadow: 0 18px 55px rgba(16, 24, 40, .22);
+      --shadowSoft: 0 10px 30px rgba(16, 24, 40, .10);
+      --radius: 22px;
+      --yellow: #FFC400;
+      --yellow2: #FFB800;
+      --greenBg: #ECFDF3;
+      --greenBorder: #ABEFC6;
+      --greenText: #067647;
+      --amberBg: #FFF8E7;
+      --amberBorder: #F7D58D;
+      --amberText: #9A6700;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      font-family: "Heebo", Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% 15%, rgba(255, 255, 255, .14), transparent 55%),
+        radial-gradient(900px 500px at 75% 35%, rgba(255, 255, 255, .10), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+    }
+
+    .wrap {
+      min-height: 100%;
+      padding: 18px 14px 28px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 430px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .35);
+      position: relative;
+    }
+
+    .hero {
+      padding: 18px 16px 16px;
+      background:
+        radial-gradient(900px 350px at 30% 0%, rgba(255, 196, 0, .22), transparent 60%),
+        linear-gradient(135deg, rgba(255, 76, 110, .10), rgba(255, 196, 0, .08));
+      border-bottom: 1px solid rgba(234, 236, 240, .8);
+      text-align: center;
+    }
+
+    .heroTop {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .logo {
+      width: 92px;
+      height: 92px;
+      border-radius: 26px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, var(--yellow), var(--yellow2));
+      box-shadow: 0 14px 30px rgba(255, 196, 0, .38);
+      overflow: hidden;
+      border: 1px solid rgba(255, 184, 0, .35);
+    }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block
+    }
+
+    .logo.isStore7 img {
+      width: 100%;
+      height: 40%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .receiptTitle {
+      font-weight: 900;
+      font-size: 15px;
+      color: #111827;
+      margin-top: 2px;
+    }
+
+    .receiptNo {
+      margin-top: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(17, 24, 39, .08);
+      border: 1px solid rgba(17, 24, 39, .10);
+      font-weight: 900;
+      color: #111827;
+      font-size: 13px;
+      direction: rtl;
+      justify-content: flex-start;
+      text-align: right;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace
+    }
+
+    .receiptNo .mono {
+      direction: ltr;
+      unicode-bidi: embed;
+    }
+
+    .storeBox {
+      margin-top: 6px;
+      display: grid;
+      gap: 3px;
+      text-align: center;
+    }
+
+    .storeName {
+      font-weight: 900;
+      font-size: 14px;
+      color: #111827;
+    }
+
+    .storeSub {
+      font-size: 12px;
+      color: #475467;
+      line-height: 1.25;
+    }
+
+    .metaBox {
+      margin-top: 12px;
+      display: grid;
+      gap: 10px;
+      text-align: initial;
+      width: 100%;
+    }
+
+    .metaGrid {
+      background: #F9FAFB;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .metaLine {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      color: #344054;
+    }
+
+    .metaLine strong {
+      color: #101828;
+      font-weight: 800
+    }
+
+    .section {
+      padding: 14px 16px 16px;
+      padding-bottom: 20px;
+    }
+
+    .h3 {
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .h3 h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: .2px;
+    }
+
+    .countPill {
+      font-size: 12px;
+      color: #344054;
+      background: #F2F4F7;
+      border: 1px solid var(--line);
+      padding: 5px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .err {
+      background: #fff1f1;
+      border: 1px solid #ffd2d2;
+      color: #a40000;
+      padding: 12px;
+      border-radius: 16px;
+      font-size: 13px;
+    }
+
+    .loading {
+      padding: 18px 16px;
+      color: #333;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .bottomBar {
+      padding: 12px 12px;
+      background: rgba(255, 255, 255, .92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .socialRow {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .socialBtn {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #F2F4F7;
+      border: 1px solid var(--line);
+      box-shadow: 0 10px 22px rgba(16, 24, 40, .08);
+      text-decoration: none;
+    }
+
+    .socialBtn svg {
+      width: 22px;
+      height: 22px;
+      display: block;
+    }
+
+    .socialBtn:active {
+      transform: scale(.98);
+    }
+
+    .itemsWrap {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .itemsHeader {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(54px, 72px) minmax(86px, 104px);
+      gap: 8px;
+      padding: 10px 12px;
+      background: #F9FAFB;
+      border-bottom: 1px solid var(--line);
+      font-weight: 800;
+      color: #344054;
+      font-size: 13px;
+      align-items: start;
+    }
+
+    .itemsHeader .hName {
+      text-align: right;
+    }
+
+    .itemsHeader .hQty {
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .itemsHeader .hTotal {
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .itemRow {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(54px, 72px) minmax(86px, 104px);
+      gap: 8px;
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--line);
+      align-items: start;
+    }
+
+    .itemRow:last-child {
+      border-bottom: none
+    }
+
+    .itemInfo {
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .itemName {
+      font-weight: 900;
+      font-size: 14px;
+      line-height: 1.3;
+      color: #101828;
+      text-align: right;
+
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
+    }
+
+    .itemCode {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+      direction: ltr;
+    }
+
+    .itemQty {
+      text-align: center;
+      font-weight: 900;
+      color: #101828;
+      font-size: 14px;
+      white-space: normal;
+      line-height: 1.25;
+    }
+
+    .itemTotal {
+      text-align: left;
+      font-weight: 900;
+      color: #101828;
+      font-size: 14px;
+      white-space: nowrap;
+      direction: rtl;
+    }
+
+    .itemUnit {
+      margin-top: 3px;
+      text-align: left;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      direction: rtl;
+    }
+
+    .itemExtraFullRow {
+      grid-column: 1 / -1;
+      margin-top: -6px;
+      padding: 0 12px 12px;
+      font-size: 12px;
+      color: #344054;
+      border-top: 1px dashed rgba(234, 236, 240, .9);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .itemExtraText {
+      text-align: right;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+      flex: 1 1 auto;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .itemExtraAmt {
+      text-align: left;
+      font-weight: 900;
+      white-space: nowrap;
+      direction: ltr;
+      flex: 0 0 auto;
+    }
+
+    .discWrap {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .discHeader {
+      display: grid;
+      grid-template-columns: 120px 1fr 120px;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #F9FAFB;
+      border-bottom: 1px solid var(--line);
+      font-weight: 800;
+      color: #344054;
+      font-size: 13px;
+      align-items: center;
+    }
+
+    .discHeader .dAmt {
+      text-align: left;
+    }
+
+    .discRow {
+      display: grid;
+      grid-template-columns: 120px 1fr 120px;
+      gap: 10px;
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .discRow:last-child {
+      border-bottom: none
+    }
+
+    .discAmt {
+      text-align: left;
+      font-weight: 900;
+      white-space: nowrap;
+      direction: rtl;
+    }
+
+    .discCode {
+      direction: ltr;
+      text-align: right;
+      color: #111827;
+    }
+
+    .discName {
+      color: #101828;
+    }
+
+    .payWrap {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      overflow: hidden;
+      margin-top: 14px;
+    }
+
+    .payHeader {
+      display: grid;
+      grid-template-columns: 1fr 120px;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #F9FAFB;
+      border-bottom: 1px solid var(--line);
+      font-weight: 800;
+      color: #344054;
+      font-size: 13px;
+      align-items: center;
+    }
+
+    .payHeader .pAmt {
+      text-align: left;
+    }
+
+    .payRow {
+      display: grid;
+      grid-template-columns: 1fr 120px;
+      gap: 10px;
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .payRow:last-child {
+      border-bottom: none
+    }
+
+    .payName {
+      color: #101828;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .payInfo {
+      margin-top: 3px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .payAmt {
+      text-align: left;
+      font-weight: 900;
+      white-space: nowrap;
+      direction: ltr;
+    }
+
+    .totalsBottom {
+      margin-top: 14px;
+      border-radius: 18px;
+      padding: 12px 12px;
+      background: linear-gradient(180deg, #fff7cc, #ffe89a);
+      border: 1px solid rgba(255, 184, 0, .35);
+      box-shadow: var(--shadowSoft);
+    }
+
+    .totalRow {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin: 7px 0;
+      font-size: 13px;
+      color: #3a2a00;
+    }
+
+    .totalRow strong {
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .totalRow .big {
+      font-size: 20px;
+      font-weight: 900;
+      direction: rtl;
+    }
+
+    .notesWrap {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .notesHeader {
+      padding: 10px 12px;
+      background: #F9FAFB;
+      border-bottom: 1px solid var(--line);
+      font-weight: 900;
+      color: #344054;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .notesBody {
+      padding: 12px 12px;
+      font-size: 12px;
+      color: #344054;
+      line-height: 1.35;
+      text-align: right;
+      word-break: break-word;
+    }
+
+    .notesBody .kvRow {
+      margin: 6px 0;
+    }
+
+    .notesBody .kvRow strong {
+      color: #101828;
+      font-weight: 900;
+    }
+
+    .loyaltyPill {
+      margin-top: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 196, 0, .18);
+      border: 1px solid rgba(255, 184, 0, .35);
+      font-weight: 900;
+      color: #3a2a00;
+      font-size: 13px;
+    }
+
+    .bannerCard {
+      margin-bottom: 12px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .35);
+    }
+
+    .bannerSquare {
+      width: 100%;
+      height: auto;
+      position: relative;
+    }
+
+    .bannerSquare img {
+      width: 100%;
+      height: 350px;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    .exitBarcodeWrap {
+      margin-top: 10px;
+      padding: 10px 10px 8px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    #exitBarcodeSvg {
+      width: 100%;
+      height: 74px;
+      display: block;
+    }
+
+    .exitBarcodeText {
+      margin-top: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      direction: ltr;
+      unicode-bidi: embed;
+      color: #101828;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .creditWrap {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .creditHeader {
+      padding: 10px 12px;
+      background: #F9FAFB;
+      border-bottom: 1px solid var(--line);
+      font-weight: 900;
+      color: #344054;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .creditBody {
+      padding: 14px 12px 16px;
+      text-align: center;
+    }
+
+    .creditAmt {
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 8px;
+      margin: 6px auto 12px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 196, 0, .18);
+      border: 1px solid rgba(255, 184, 0, .35);
+      color: #3a2a00;
+      font-weight: 900;
+      font-size: 16px;
+    }
+
+    .creditHint {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #667085;
+      line-height: 1.35;
+    }
+
+    .barcodeBox {
+      margin: 10px auto 0;
+      padding: 12px 10px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      overflow: hidden;
+    }
+
+    #creditBarcodeSvg {
+      width: 100%;
+      height: 120px;
+      display: block;
+    }
+
+    .creditBarcodeText {
+      margin-top: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 14px;
+      direction: ltr;
+      unicode-bidi: embed;
+      color: #101828;
+      font-weight: 900;
+    }
+
+    .slipHost {
+      margin-top: 12px;
+    }
+
+    .slipCard {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadowSoft);
+      border: 1px solid rgba(255, 255, 255, .45);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slipTear {
+      height: 14px;
+      background:
+        radial-gradient(circle at 12px 7px, transparent 7px, #fff 7px) 0 0/24px 14px repeat-x,
+        linear-gradient(180deg, rgba(16, 24, 40, .06), rgba(16, 24, 40, .02));
+      border-bottom: 1px dashed rgba(102, 112, 133, .35);
+    }
+
+    .slipHeader {
+      padding: 10px 12px;
+      background: #F9FAFB;
+      border-bottom: 1px solid var(--line);
+      font-weight: 900;
+      color: #344054;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .slipBody {
+      padding: 12px 12px 14px;
+      display: grid;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .slipPill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 0 auto;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 196, 0, .18);
+      border: 1px solid rgba(255, 184, 0, .35);
+      color: #3a2a00;
+      font-weight: 900;
+      font-size: 14px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .slipHint {
+      font-size: 12px;
+      color: #667085;
+      line-height: 1.35;
+    }
+
+    .slipHint strong {
+      color: #101828;
+      font-weight: 900;
+    }
+
+    .stampsBarcodeWrap {
+      margin-top: 8px;
+      padding: 10px 10px 8px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    #stampsBarcodeSvg {
+      width: 100%;
+      height: 92px;
+      display: block;
+    }
+
+    .stampsBarcodeText {
+      margin-top: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
+      direction: ltr;
+      unicode-bidi: embed;
+      color: #101828;
+      font-weight: 900;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    .stampsRedeemedBox {
+      margin-top: 8px;
+      padding: 14px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--greenBorder);
+      background: var(--greenBg);
+      color: var(--greenText);
+      text-align: center;
+      font-weight: 900;
+      line-height: 1.5;
+    }
+
+    .stampsRedeemedTitle {
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .stampsRedeemedTime {
+      font-size: 13px;
+    }
+
+    .stampsPendingBox {
+      margin-top: 8px;
+      padding: 14px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--amberBorder);
+      background: var(--amberBg);
+      color: var(--amberText);
+      text-align: center;
+      font-weight: 900;
+      line-height: 1.5;
+    }
+
+    .stampsPendingTitle {
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .stampsPendingTime {
+      font-size: 13px;
+    }
+
+
+    .highlightItem {
+      background: #fff3b0;
+      border-right: 6px solid #ffb800;
+      padding-right: 6px;
+      border-radius: 10px;
+    }
+
+    .highlightItem .itemName {
+      font-weight: 900;
+      color: #b54708;
+    }
+
+    @media (max-width: 420px) {
+      .wrap {
+        padding: 14px 12px 22px;
+      }
+
+      .hero {
+        padding: 16px 14px 14px;
+      }
+
+      .section {
+        padding: 12px 14px 140px;
+      }
+
+      .itemsHeader {
+        grid-template-columns: minmax(0, 1.8fr) minmax(48px, 64px) minmax(78px, 92px);
+        gap: 6px;
+        align-items: start;
+      }
+
+      .itemRow {
+        grid-template-columns: minmax(0, 1.8fr) minmax(48px, 64px) minmax(78px, 92px);
+        gap: 6px;
+        align-items: start;
+      }
+
+      .itemName {
+        font-size: 13px;
+        line-height: 1.35;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+        overflow: hidden;
+      }
+
+      .itemQty,
+      .itemTotal {
+        font-size: 13px;
+      }
+
+      .itemCode,
+      .itemUnit {
+        font-size: 11px;
+      }
+
+      .discHeader {
+        grid-template-columns: 96px 1fr 96px;
+      }
+
+      .discRow {
+        grid-template-columns: 96px 1fr 96px;
+      }
+
+      .payHeader {
+        grid-template-columns: 1fr 96px;
+      }
+
+      .payRow {
+        grid-template-columns: 1fr 96px;
+      }
+
+      .logo {
+        width: 84px;
+        height: 84px;
+        border-radius: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="phone">
+      <div id="bannerCard" class="bannerCard" style="display: block;">
+        <div class="bannerSquare">
+          <img id="topBanner" src="/BANNER-SITE.d110a0.webp" alt="סטופמרקט">
+        </div>
+      </div>
+
+      <div class="card" id="app">
+          <div class="hero">
+            <div class="heroTop">
+              <div class="logo " title="לוגו">
+                <img src="/logo.png" alt="Logo">
+              </div>
+
+              <div class="receiptTitle">פשוט חוויה לקנות</div>
+
+              <div class="receiptNo">
+                <span>מס׳ פתקית</span>
+                <span class="mono">#6343</span>
+              </div>
+
+              
+
+                    <div class="storeBox">
+                <div class="storeName">סניף ראשון לציון</div>
+                <div class="storeSub">, ראשון לציון</div>
+                <div class="storeSub"><a href="tel:036073344" style="color:inherit;text-decoration:none;">03-6073344</a></div>
+              </div>
+
+              <div class="metaBox">
+                <div class="metaGrid">
+                  <div class="metaLine"><span>תאריך</span><strong>23.4.2026, 12:10:56</strong></div>
+                  <div class="metaLine"><span>מס׳ קופה</span><strong>6</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            
+              <div class="h3">
+                <h3>פריטים</h3>
+                <div class="countPill">51 פריטים</div>
+              </div>
+
+              <div class="itemsWrap">
+                <div class="itemsHeader">
+                  <div class="hName">שם פריט</div>
+                  <div class="hQty">כמות</div>
+                  <div class="hTotal">סכום לתשלום</div>
+                </div>
+
+              
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">אפרסק</div>
+            <div class="itemCode mono">595</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">565 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  18.59 ₪
+</div>
+
+  <div class="itemUnit">32.90 ₪ לק"ג</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">מימוש 100 שח</div>
+          <div class="itemExtraAmt">-9.33</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">נקטרינה</div>
+            <div class="itemCode mono">846</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">670 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  22.04 ₪
+</div>
+
+  <div class="itemUnit">32.90 ₪ לק"ג</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">תפוח עץ קריספ פינק</div>
+            <div class="itemCode mono">756</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">1.235 ק"ג</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  24.58 ₪
+</div>
+
+  <div class="itemUnit">19.90 ₪ לק"ג</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">הנחת זיכוי אריזה</div>
+          <div class="itemExtraAmt">-0.16</div>
+        </div>
+      
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">מימוש 100 שח</div>
+          <div class="itemExtraAmt">-24.41</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">חמצוצים/ליקריץ</div>
+            <div class="itemCode mono">9951417</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">318 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  18.76 ₪
+</div>
+
+  <div class="itemUnit">59.00 ₪ לק"ג</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">עגבניות שרי לובלו</div>
+            <div class="itemCode mono">16</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">870 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  26.01 ₪
+</div>
+
+  <div class="itemUnit">29.90 ₪ לק"ג</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">מימוש 100 שח</div>
+          <div class="itemExtraAmt">-26.01</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">נבטי חמניה ארוז א.אד</div>
+            <div class="itemCode mono">7290012864001</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  9.90 ₪
+</div>
+
+  <div class="itemUnit">9.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">עגבניות</div>
+            <div class="itemCode mono">12</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">355 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  3.87 ₪
+</div>
+
+  <div class="itemUnit">10.90 ₪ לק"ג</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">מימוש 100 שח</div>
+          <div class="itemExtraAmt">-3.86</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">כוסברה ארוזה א.אדמה</div>
+            <div class="itemCode mono">7290010051168</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  4.90 ₪
+</div>
+
+  <div class="itemUnit">4.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">א.אדמה ירק ארוז 3 ב 12 שח</div>
+          <div class="itemExtraAmt">-0.90</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">פטרוזיליה ארוזה א.אד</div>
+            <div class="itemCode mono">7290010051052</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  4.90 ₪
+</div>
+
+  <div class="itemUnit">4.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">א.אדמה ירק ארוז 3 ב 12 שח</div>
+          <div class="itemExtraAmt">-0.90</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">תמר מגהול ענק</div>
+            <div class="itemCode mono">978765</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">405 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  21.47 ₪
+</div>
+
+  <div class="itemUnit">53.00 ₪ לק"ג</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">רביעיית מגבוני בייבי</div>
+            <div class="itemCode mono">7290014855434</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  16.90 ₪
+</div>
+
+  <div class="itemUnit">16.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">נוזל כביסה גל פרסיל</div>
+            <div class="itemCode mono">7290016509847</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  35.90 ₪
+</div>
+
+  <div class="itemUnit">35.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">הנקל גל כביסה פרסיל 2.5ליטר 2ב55 שח</div>
+          <div class="itemExtraAmt">-8.40</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">גרעין דלעת מקולף טבע</div>
+            <div class="itemCode mono">960340</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">294 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  19.11 ₪
+</div>
+
+  <div class="itemUnit">65.00 ₪ לק"ג</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">חמניות קלופות טבעי</div>
+            <div class="itemCode mono">9068955</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">282 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  15.51 ₪
+</div>
+
+  <div class="itemUnit">55.00 ₪ לק"ג</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">שוקולד לינדט אקסלנס</div>
+            <div class="itemCode mono">3046920028004</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  22.90 ₪
+</div>
+
+  <div class="itemUnit">22.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">סידס שוקולד לינדט טעמים 100 גר ב19.90 שח</div>
+          <div class="itemExtraAmt">-3.00</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">כוסברה ארוזה א.אדמה</div>
+            <div class="itemCode mono">7290010051168</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  4.90 ₪
+</div>
+
+  <div class="itemUnit">4.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">א.אדמה ירק ארוז 3 ב 12 שח</div>
+          <div class="itemExtraAmt">-0.90</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">פלפלונים שטופים משק</div>
+            <div class="itemCode mono">7290112843043</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">360 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  10.44 ₪
+</div>
+
+  <div class="itemUnit">29.00 ₪ לק"ג</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">הנחת זיכוי אריזה</div>
+          <div class="itemExtraAmt">-0.17</div>
+        </div>
+      
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">מימוש 100 שח</div>
+          <div class="itemExtraAmt">-10.26</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">תפוח עץ מוזהב</div>
+            <div class="itemCode mono">777</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">630 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  7.50 ₪
+</div>
+
+  <div class="itemUnit">11.90 ₪ לק"ג</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">מימוש 100 שח</div>
+          <div class="itemExtraAmt">-7.49</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">קישוא זוקיני</div>
+            <div class="itemCode mono">185</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">980 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  12.64 ₪
+</div>
+
+  <div class="itemUnit">12.90 ₪ לק"ג</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">מימוש 100 שח</div>
+          <div class="itemExtraAmt">-12.64</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">נוזל כביסה גל פרסיל</div>
+            <div class="itemCode mono">7290016509823</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  35.90 ₪
+</div>
+
+  <div class="itemUnit">35.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">הנקל גל כביסה פרסיל 2.5ליטר 2ב55 שח</div>
+          <div class="itemExtraAmt">-8.40</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">בננות</div>
+            <div class="itemCode mono">540</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">505 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  6.01 ₪
+</div>
+
+  <div class="itemUnit">11.90 ₪ לק"ג</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">מימוש 100 שח</div>
+          <div class="itemExtraAmt">-6.00</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">אבקת רוטב פטריות 30</div>
+            <div class="itemCode mono">7290000493183</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  5.20 ₪
+</div>
+
+  <div class="itemUnit">5.20 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">אבקת רוטב פטריות 30</div>
+            <div class="itemCode mono">7290000493183</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  5.20 ₪
+</div>
+
+  <div class="itemUnit">5.20 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">סטיק הודו וכבש פרמיו</div>
+            <div class="itemCode mono">7290006562906</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  6.90 ₪
+</div>
+
+  <div class="itemUnit">6.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">רנדי חטיפים לחתול 15 גר 2ב10 שח</div>
+          <div class="itemExtraAmt">-1.90</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">סטיק עוף וברווז פרמי</div>
+            <div class="itemCode mono">7290006562913</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  6.90 ₪
+</div>
+
+  <div class="itemUnit">6.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">רנדי חטיפים לחתול 15 גר 2ב10 שח</div>
+          <div class="itemExtraAmt">-1.90</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">חסה ערבית שדות בעמק</div>
+            <div class="itemCode mono">7290017487519</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  5.90 ₪
+</div>
+
+  <div class="itemUnit">5.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">שקיות אשפה 65/52 ניק</div>
+            <div class="itemCode mono">7290000189536</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  17.50 ₪
+</div>
+
+  <div class="itemUnit">17.50 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">קמח שטיבל רגיל 1 קג</div>
+            <div class="itemCode mono">7290002971009</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  4.50 ₪
+</div>
+
+  <div class="itemUnit">4.50 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">מגן תחתון אולוויז פר</div>
+            <div class="itemCode mono">8006540769973</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  23.90 ₪
+</div>
+
+  <div class="itemUnit">23.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">פטריות שמפיניון</div>
+            <div class="itemCode mono">61</div>
+          </div>
+
+    <div class="itemQty">
+        
+        <div style="display:block;margin-top:0;font-size:12px;color:#101828;font-weight:700;line-height:1.2;">430 גרם</div>
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  17.16 ₪
+</div>
+
+  <div class="itemUnit">39.90 ₪ לק"ג</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">אל סבון מדקס אקטיבי</div>
+            <div class="itemCode mono">7290018493083</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  26.90 ₪
+</div>
+
+  <div class="itemUnit">26.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">קרם בלסמי מצומצם  גק</div>
+            <div class="itemCode mono">8007178223547</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  22.90 ₪
+</div>
+
+  <div class="itemUnit">22.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">שמפו פינוק שמן מרוקא</div>
+            <div class="itemCode mono">7290112492487</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  13.90 ₪
+</div>
+
+  <div class="itemUnit">13.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">אורז בסמטי דאוואט 1</div>
+            <div class="itemCode mono">8901537024014</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  14.90 ₪
+</div>
+
+  <div class="itemUnit">14.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">ויליפוד אורז בסמטי 1קג דאוואט 2ב24 שח</div>
+          <div class="itemExtraAmt">-2.90</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">אורז בסמטי דאוואט 1</div>
+            <div class="itemCode mono">8901537024014</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  14.90 ₪
+</div>
+
+  <div class="itemUnit">14.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">ויליפוד אורז בסמטי 1קג דאוואט 2ב24 שח</div>
+          <div class="itemExtraAmt">-2.90</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">קמח שטיבל רגיל 1 קג</div>
+            <div class="itemCode mono">7290002971009</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  4.50 ₪
+</div>
+
+  <div class="itemUnit">4.50 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">שלישיית גרעיני תירס</div>
+            <div class="itemCode mono">7290016370843</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  14.90 ₪
+</div>
+
+  <div class="itemUnit">14.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">פרמיו בוגר עוף לחתול</div>
+            <div class="itemCode mono">7290018516270</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  3.90 ₪
+</div>
+
+  <div class="itemUnit">3.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">רנדי פאוץ לחתול טעמים 85 גר 3ב10 שח</div>
+          <div class="itemExtraAmt">-0.56</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">פרמיו סלמון 100 גר</div>
+            <div class="itemCode mono">7290017712758</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  3.90 ₪
+</div>
+
+  <div class="itemUnit">3.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">רנדי פאוץ לחתול טעמים 85 גר 3ב10 שח</div>
+          <div class="itemExtraAmt">-0.57</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">פרמיו סטירליז עוף 10</div>
+            <div class="itemCode mono">7290017712789</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  3.90 ₪
+</div>
+
+  <div class="itemUnit">3.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">רנדי פאוץ לחתול טעמים 85 גר 3ב10 שח</div>
+          <div class="itemExtraAmt">-0.57</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">פריכיות אנרגי תירס ד</div>
+            <div class="itemCode mono">7290112348999</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  12.90 ₪
+</div>
+
+  <div class="itemUnit">12.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">שוקולד פרה מריר 100</div>
+            <div class="itemCode mono">7290000170077</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  8.90 ₪
+</div>
+
+  <div class="itemUnit">8.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">פריכיות אנרגי תירס ד</div>
+            <div class="itemCode mono">7290112348999</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  12.90 ₪
+</div>
+
+  <div class="itemUnit">12.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">פתיתים אפויים אוסם כ</div>
+            <div class="itemCode mono">7290000060576</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  7.90 ₪
+</div>
+
+  <div class="itemUnit">7.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">פתיתים אפויים אוסם ק</div>
+            <div class="itemCode mono">7290000060200</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  7.90 ₪
+</div>
+
+  <div class="itemUnit">7.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">מארז 4 יח שוקולד פרה</div>
+            <div class="itemCode mono">7290000178103</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  27.90 ₪
+</div>
+
+  <div class="itemUnit">27.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">שוקולד לינדט אקסלנס</div>
+            <div class="itemCode mono">3046920028004</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  22.90 ₪
+</div>
+
+  <div class="itemUnit">22.90 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">סידס שוקולד לינדט טעמים 100 גר ב19.90 שח</div>
+          <div class="itemExtraAmt">-3.00</div>
+        </div>
+      
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">תערובת אגוזים קלויים</div>
+            <div class="itemCode mono">7290015652247</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  20.00 ₪
+</div>
+
+  <div class="itemUnit">20.00 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">גל רחצה אקס 400 מל א</div>
+            <div class="itemCode mono">8720181204111</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  13.50 ₪
+</div>
+
+  <div class="itemUnit">13.50 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">חמאת בוטנים טבעית 35</div>
+            <div class="itemCode mono">7290000446547</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  14.90 ₪
+</div>
+
+  <div class="itemUnit">14.90 ₪ ליח׳</div>
+</div>
+
+    
+        </div>
+      
+        <div class="itemRow ">
+          <div class="itemInfo">
+            <div class="itemName">מפעיל הנחה 100 שח למ</div>
+            <div class="itemCode mono">9999</div>
+          </div>
+
+    <div class="itemQty">
+        <div>1</div>
+        
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  0.01 ₪
+</div>
+
+  <div class="itemUnit">0.01 ₪ ליח׳</div>
+</div>
+
+    
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">מימוש 100 שח</div>
+          <div class="itemExtraAmt">-0.01</div>
+        </div>
+      
+        </div>
+      
+
+              </div>
+
+              
+
+              <div class="totalsBottom">
+                <div class="totalRow">
+                  <span>סכום לתשלום</span>
+                  <strong class="big">573.06 ₪</strong>
+                </div>
+              </div>
+            
+
+            
+              <div class="payWrap">
+                <div class="payHeader">
+                  <div>אמצעי תשלום</div>
+                  <div class="pAmt">סכום</div>
+                </div>
+
+                
+                    <div class="payRow">
+                      <div>
+                        <div class="payName">דיינרס</div>
+                        <div class="payInfo">2135</div>
+                      </div>
+                      <div class="payAmt">₪ 573.06 </div>
+                    </div>
+                  
+              </div>
+            
+
+            
+              <div class="notesWrap">
+                <div class="notesHeader">פירוט עסקה</div>
+                <div class="notesBody">סניף ראשון<br>מס. כספיט: 6316525<br>תוכנה: CST002251T<br>מספר עסק: 8970748<br>12:11  23/04/26<br>כאל<br>55580400XXXX2135<br>מס" שובר: 39006029<br>עסקה: חובה<br>0778753 חברה<br>ביצוע: EMV Contactless<br>אשראי: רגיל<br>סכום עיסקה:<br>573.06<br>מטבע: ש"ח<br>UID:26042312113963165250063<br>RRN:516301239<br>ATC:00C4,CSN:00<br>TVR:0000008001<br>AID:A0000000041010<br>Device By Verified<br>*** עותק ללקוח ***<br>תודה ולהתראות!<br><br></div>
+              </div>
+            
+
+            
+        <div class="notesWrap">
+          <div class="notesHeader">מידע נוסף</div>
+          <div class="notesBody">
+            <div class="kvRow">לקוח/ה יקר/ה, בקניה זו חסכת 138.81 שח</div>
+          </div>
+        </div>
+      
+          </div>
+
+          <div class="bottomBar">
+            
+
+            
+        <div class="socialRow" aria-label="social links">
+          <a class="socialBtn" href="https://www.stopmarket.co.il/" target="_blank" rel="noopener" aria-label="אתר סטופמרקט" title="אתר">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" stroke="#101828" stroke-width="2"></path>
+              <path d="M2 12h20" stroke="#101828" stroke-width="2" stroke-linecap="round"></path>
+              <path d="M12 2c2.8 2.7 4.5 6.2 4.5 10s-1.7 7.3-4.5 10c-2.8-2.7-4.5-6.2-4.5-10S9.2 4.7 12 2Z" stroke="#101828" stroke-width="2" stroke-linejoin="round"></path>
+            </svg>
+          </a>
+
+          <a class="socialBtn" href="https://www.facebook.com/stopmarketisrael" target="_blank" rel="noopener" aria-label="פייסבוק" title="Facebook">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M14 9h3V6h-3c-2.2 0-4 1.8-4 4v3H7v3h3v6h3v-6h3l1-3h-4v-3c0-.6.4-1 1-1Z" fill="#101828"></path>
+            </svg>
+          </a>
+
+          <a class="socialBtn" href="https://www.instagram.com/stopmarket_official/" target="_blank" rel="noopener" aria-label="אינסטגרם" title="Instagram">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Z" stroke="#101828" stroke-width="2"></path>
+              <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#101828" stroke-width="2"></path>
+              <path d="M17.5 6.5h.01" stroke="#101828" stroke-width="3" stroke-linecap="round"></path>
+            </svg>
+          </a>
+        </div>
+      
+          </div>
+        </div>
+
+      <div class="slipHost" id="stampsSlipHost"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+  <script>
+    const API_BASE = "https://api.stopmarket.co.il/orders";
+    const STAMPS_POLL_INTERVAL_MS = 1000;
+
+    const SOCIAL_LINKS = {
+      site: "https://www.stopmarket.co.il/",
+      facebook: "https://www.facebook.com/stopmarketisrael",
+      instagram: "https://www.instagram.com/stopmarket_official/",
+    };
+
+    const HIGHLIGHT_ITEMS = [
+      "9771565051035",
+      "5800672",
+      "8719128181734",
+      "7290002793311",
+      "4260051077673",
+      "4260051076683",
+      "902180"
+    ];
+
+    function isHighlightedItem(item) {
+      const code = String(item.ItemCode ?? item.code ?? "").trim();
+      return HIGHLIGHT_ITEMS.includes(code);
+    }
+
+    let stampsPollTimer = null;
+    let stampsPollingActive = false;
+    let stampsCurrentState = "barcode";
+
+    const esc = (s) => String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+
+    const n2 = (x) => {
+      if (x == null || x === "") return "";
+      const num = Number(x);
+      if (!Number.isFinite(num)) return "";
+      return num.toFixed(2);
+    };
+
+    function normalizePhoneForTel(phone) {
+      return String(phone ?? "").replace(/[^\d+]/g, "");
+    }
+
+    function getTokenFromPath() {
+      const p = location.pathname.split("/").filter(Boolean);
+
+      const rIndex = p.indexOf("r");
+      if (rIndex >= 0 && p[rIndex + 1]) return p[rIndex + 1];
+
+      const sIndex = p.indexOf("s");
+      if (sIndex >= 0 && p[sIndex + 1]) return p[sIndex + 1];
+
+      const q = new URLSearchParams(location.search);
+      return q.get("token");
+    }
+
+
+    function toNumberSafe(x) {
+      const n = Number(String(x ?? "").replace(/[^0-9.\-]/g, ""));
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function stampsCountFromTotal(total) {
+      const t = toNumberSafe(total);
+      return Math.floor(t / 200);
+    }
+
+    function formatDateForStampsBarcode(value) {
+      if (!value) {
+        const now = new Date();
+        return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+      }
+
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) {
+        const now = new Date();
+        return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+      }
+
+      return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    function buildStampsBarcodeValue(createdDateUtc, receiptNo, storeInternalId, stamps) {
+      const datePart = formatDateForStampsBarcode(createdDateUtc);
+      const receiptPart = String(receiptNo ?? "").trim();
+      const storePart = String(storeInternalId ?? "").trim();
+      const stampsPart = String(stamps ?? "").trim();
+
+      return `${datePart}/${receiptPart}/${storePart}/${stampsPart}`;
+    }
+
+    function formatRedeemedDateTime(value) {
+      if (!value) return "";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleString("he-IL");
+    }
+
+    async function fetchStampsStatus(barcodeValue) {
+      const url = `${API_BASE}/GetReceipts/receipts/stamps-status?barcode=${encodeURIComponent(barcodeValue)}`;
+      const res = await fetch(url, { method: "GET" });
+
+      if (!res.ok) {
+        throw new Error(`Failed stamps status: ${res.status}`);
+      }
+
+      return res.json();
+    }
+
+    function stopStampsPolling() {
+      stampsPollingActive = false;
+
+      if (stampsPollTimer) {
+        clearTimeout(stampsPollTimer);
+        stampsPollTimer = null;
+      }
+    }
+
+    function renderStampsBarcode(barcodeValue) {
+      const wrap = document.getElementById("stampsBarcodeContainer");
+      if (!wrap) return;
+
+      wrap.innerHTML = `
+        <div class="stampsBarcodeWrap">
+          <svg id="stampsBarcodeSvg"></svg>
+        </div>
+      `;
+
+      const svg = document.getElementById("stampsBarcodeSvg");
+      const val = String(barcodeValue || "").trim();
+      if (svg && val && typeof JsBarcode === "function") {
+        try {
+          JsBarcode(svg, val, { format: "CODE128", displayValue: false, margin: 0, height: 78 });
+        } catch (e) { }
+      }
+
+      stampsCurrentState = "barcode";
+    }
+
+    function renderStampsPending(text) {
+      const wrap = document.getElementById("stampsBarcodeContainer");
+      if (!wrap) return;
+
+      wrap.innerHTML = `
+        <div class="stampsPendingBox">
+          <div class="stampsPendingTitle">הברקוד נסרק</div>
+          <div class="stampsPendingTime">${esc(text || "ממתין לאישור מימוש...")}</div>
+        </div>
+      `;
+
+      stampsCurrentState = "pending";
+    }
+
+    function renderStampsRedeemed(redeemedAtText) {
+      const wrap = document.getElementById("stampsBarcodeContainer");
+      if (!wrap) return;
+
+      wrap.innerHTML = `
+        <div class="stampsRedeemedBox">
+          <div class="stampsRedeemedTitle">ברקוד נסרק ומומש</div>
+          <div class="stampsRedeemedTime">${esc(redeemedAtText || "")}</div>
+        </div>
+      `;
+
+      stampsCurrentState = "redeemed";
+    }
+
+    function scheduleNextStampsPoll(barcodeValue) {
+      if (!stampsPollingActive) return;
+
+      stampsPollTimer = setTimeout(() => {
+        checkAndUpdateStampsStatus(barcodeValue);
+      }, STAMPS_POLL_INTERVAL_MS);
+    }
+
+    async function checkAndUpdateStampsStatus(barcodeValue) {
+      if (!barcodeValue || !stampsPollingActive) return;
+
+      try {
+        const result = await fetchStampsStatus(barcodeValue);
+
+        if (result && result.exists) {
+          const dtText =
+            String(result.redeemedAtText || "").trim() ||
+            formatRedeemedDateTime(result.redeemedAt);
+
+          renderStampsRedeemed(`בתאריך ${dtText}`);
+          stopStampsPolling();
+          return;
+        }
+
+        const normalizedStatus = String(result?.status || result?.state || "").toLowerCase();
+
+        const isPending =
+          result?.pending === true ||
+          result?.scanned === true ||
+          normalizedStatus === "pending" ||
+          normalizedStatus === "scanned";
+
+        if (isPending) {
+          const pendingText =
+            String(result?.pendingText || "").trim() ||
+            "ממתין לאישור מימוש...";
+          renderStampsPending(pendingText);
+        } else if (stampsCurrentState !== "barcode") {
+          renderStampsBarcode(barcodeValue);
+        }
+      } catch (e) {
+        console.warn("stamps status poll failed:", e);
+      }
+
+      scheduleNextStampsPoll(barcodeValue);
+    }
+
+    function startStampsPolling(barcodeValue) {
+      stopStampsPolling();
+
+      if (!barcodeValue) return;
+
+      stampsPollingActive = true;
+      renderStampsBarcode(barcodeValue);
+      checkAndUpdateStampsStatus(barcodeValue);
+    }
+
+    function fmtQty(q) {
+      if (q == null || q === "") return "";
+      const num = Number(q);
+      if (!Number.isFinite(num)) return String(q);
+      return (Math.abs(num - Math.round(num)) < 1e-9) ? String(Math.round(num)) : String(num);
+    }
+
+    function fmtWeight(weightValue, totalLine, unitPrice, qty) {
+      const directWeight = Number(weightValue);
+
+      if (Number.isFinite(directWeight) && directWeight > 0) {
+        if (directWeight >= 1000) {
+          return `${(directWeight / 1000).toFixed(3)} ק"ג`;
+        }
+        return `${Math.round(directWeight)} גרם`;
+      }
+
+      const total = Number(totalLine);
+      const unit = Number(unitPrice);
+      const quantity = Number(qty);
+
+      if (
+        Number.isFinite(total) &&
+        Number.isFinite(unit) &&
+        unit > 0 &&
+        (
+          qty == null ||
+          qty === "" ||
+          !Number.isFinite(quantity) ||
+          quantity === 0
+        )
+      ) {
+        const kg = total / unit;
+
+        if (Number.isFinite(kg) && kg > 0) {
+          if (kg >= 1) {
+            return `${kg.toFixed(3)} ק"ג`;
+          }
+
+          const grams = Math.round(kg * 1000);
+          return `${grams} גרם`;
+        }
+      }
+
+      return "";
+    }
+
+    function normalizePayments(arr) {
+      const paymentsRaw = Array.isArray(arr) ? arr : [];
+      return paymentsRaw.map(p => ({
+        name: p.name ?? p.PaymentName ?? p.paymentName ?? "",
+        amount: (p.amount ?? p.Amount),
+        info: p.info ?? p.Info ?? "",
+        token: p.token ?? p.Token ?? null,
+        index: (p.index ?? p.Index ?? 0)
+      }));
+    }
+
+    const STORES = {
+      "1": { name: "בית חירות", address: "בית חירות – קניון M הדרך", phone: "09-8669333" },
+      "2": { name: "ארנה", address: "קניון ארנה, הרצליה", phone: "09-7886957" },
+      "3": { name: "קריות", address: "צ. קריית אתא, מתחם I-Way", phone: "04-7703388" },
+      "4": { name: "יגור", address: "קיבוץ יגור", phone: "04-8299888" },
+      "5": { name: "קסטרא", address: "רחוב פלימן 8, חיפה", phone: "04-6197012" },
+      "6": { name: "הוד השרון", address: " א.ת נווה נאמן, הוד השרון", phone: "09-8899577" },
+      "7": { name: "איינשטיין", address: "איינשטיין 139 , חיפה", phone: "04-8555988" },
+      "8": { name: "סוהו", address: "מתחם סוהו, נתניה", phone: "09-8909033" },
+      "10": { name: "ראשון לציון", address: ", ראשון לציון", phone: "03-6073344" },
+      "11": { name: "יקנעם", address: "יקנעם  , יקנעם", phone: "04-6739903" },
+      "12": { name: "קרית השרון", address: "קרית השרון, נתניה", phone: "09-8899577" },
+      "99": { name: "לדוגמא", address: "כוכב הצפון, יקנעם", phone: "04-6999999" },
+    };
+
+    function getStoreInfo(storeId) {
+      const key = String(storeId ?? "").trim();
+      const s = STORES[key];
+
+      if (s) return { id: key, ...s, name: `סניף ${s.name}` };
+      return { id: key, name: key ? `סניף ${key}` : "סניף", address: "", phone: "" };
+    }
+
+    function notesHtmlSafe(raw) {
+      const s = String(raw ?? "").trim();
+      if (!s) return "";
+
+      const BR_TOKEN = "__BR__TOKEN__";
+      const withTokens = s.replace(/<br\s*\/?>/gi, BR_TOKEN);
+      const escaped = esc(withTokens);
+      return escaped.replaceAll(BR_TOKEN, "<br/>");
+    }
+
+    function parseAdditionalInfo(raw) {
+      if (!raw) return [];
+      try {
+        const obj = (typeof raw === "string") ? JSON.parse(raw) : raw;
+        if (Array.isArray(obj)) return obj;
+        return [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function renderAdditionalInfo(arr) {
+      const rows = Array.isArray(arr) ? arr : [];
+      const cleaned = rows
+        .map(x => ({
+          key: String(x?.key ?? "").trim(),
+          value: String(x?.value ?? "").trim(),
+        }))
+        .filter(x => x.key || x.value);
+
+      if (!cleaned.length) return "";
+
+      return `
+        <div class="notesWrap">
+          <div class="notesHeader">מידע נוסף</div>
+          <div class="notesBody">
+            ${cleaned.map(x => {
+        if (!x.value) return `<div class="kvRow">${esc(x.key)}</div>`;
+        return `<div class="kvRow"><strong>${esc(x.key)}</strong>: ${esc(x.value)}</div>`;
+      }).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    // function getFirstAdditionalInfoLine(raw) {
+    //   const arr = parseAdditionalInfo(raw);
+    //   if (!arr.length) return "";
+
+    //   const first = arr[0] || {};
+    //   const k = String(first.key ?? "").trim();
+    //   const v = String(first.value ?? "").trim();
+
+    //   if (!k && !v) return "";
+    //   if (k && !v) return k;
+    //   if (!k && v) return v;
+    //   return `${k}: ${v}`;
+    // }
+
+    function splitExtraToTextAndAmount(s) {
+      const str = String(s ?? "").trim();
+      if (!str) return { text: "", amt: "" };
+
+      const m = str.match(/^(.*?)(?:\s+)(-?\d+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?-)\s*$/);
+      if (!m) return { text: str, amt: "" };
+
+      return { text: (m[1] || "").trim(), amt: (m[2] || "").trim() };
+    }
+
+    function normalizeTrailingMinusAmount(s) {
+      const str = String(s ?? "").trim();
+      if (!str) return "";
+
+      const m = str.match(/^(.+?)-$/);
+      if (!m) return str;
+
+      const core = (m[1] || "").trim();
+      if (!core) return str;
+
+      if (core.startsWith("-")) return core;
+      return `-${core}`;
+    }
+
+    function cutUntilFirstShekelWord(text) {
+      const s = String(text ?? "").trim();
+      if (!s) return "";
+
+      const m = /ש["״']?ח:?/i.exec(s);
+      if (!m) return s;
+
+      let out = s.slice(0, m.index + m[0].length).trim();
+      out = out.replace(/(\d)(?=ש["״']?ח)/g, "$1 ");
+      return out;
+    }
+
+    function socialIconsHtml() {
+      return `
+        <div class="socialRow" aria-label="social links">
+          <a class="socialBtn" href="${SOCIAL_LINKS.site}" target="_blank" rel="noopener" aria-label="אתר סטופמרקט" title="אתר">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" stroke="#101828" stroke-width="2"/>
+              <path d="M2 12h20" stroke="#101828" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 2c2.8 2.7 4.5 6.2 4.5 10s-1.7 7.3-4.5 10c-2.8-2.7-4.5-6.2-4.5-10S9.2 4.7 12 2Z" stroke="#101828" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+          </a>
+
+          <a class="socialBtn" href="${SOCIAL_LINKS.facebook}" target="_blank" rel="noopener" aria-label="פייסבוק" title="Facebook">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M14 9h3V6h-3c-2.2 0-4 1.8-4 4v3H7v3h3v6h3v-6h3l1-3h-4v-3c0-.6.4-1 1-1Z" fill="#101828"/>
+            </svg>
+          </a>
+
+          <a class="socialBtn" href="${SOCIAL_LINKS.instagram}" target="_blank" rel="noopener" aria-label="אינסטגרם" title="Instagram">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Z" stroke="#101828" stroke-width="2"/>
+              <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="#101828" stroke-width="2"/>
+              <path d="M17.5 6.5h.01" stroke="#101828" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </a>
+        </div>
+      `;
+    }
+
+    async function load() {
+      const token = getTokenFromPath();
+      const app = document.getElementById("app");
+      const stampsHost = document.getElementById("stampsSlipHost");
+
+      if (!token) {
+        app.innerHTML = '<div style="padding:16px"><div class="err">חסר טוקן בקישור. צריך להיות /r/&lt;token&gt; או ?token=...</div></div>';
+        return;
+      }
+
+      const jsonUrl = `${API_BASE}/GetReceipts/receipts/${encodeURIComponent(token)}`;
+
+
+      // let hasPdf = false;
+
+      // try {
+      //   const pdfUrl = `${API_BASE}/GetReceipts/receipts/${encodeURIComponent(token)}/pdf`;
+      //   const pdfCheck = await fetch(pdfUrl, {
+      //     method: "HEAD"
+      //   });
+
+      //   if (pdfCheck.ok) {
+      //     hasPdf = true;
+      //   }
+      // } catch (err) {
+      //   // מתעלמים אם אין PDF
+      // }
+
+
+      try {
+        function prettyReceiptError(status) {
+          if (status === 401 || status === 403) return "אין הרשאה לצפות בקבלה. ייתכן שהקישור אינו תקף או שפג תוקפו.";
+          if (status === 404) return "הקבלה לא נמצאה או שהקישור פג תוקף. בקשו קישור חדש מהקופה/השירות.";
+          if (status === 410) return "הקישור לקבלה פג תוקף (410). בקשו קישור חדש מהקופה/השירות.";
+          if (status === 429) return "בוצעו יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.";
+          if (status >= 500) return "יש תקלה זמנית בשרת. נסו שוב בעוד כמה דקות.";
+          return "לא הצלחנו לטעון את הקבלה כרגע. נסו לרענן את העמוד או להשתמש בקישור חדש.";
+        }
+
+        async function fetchJsonOrNiceError(url) {
+          const res = await fetch(url, { method: "GET" });
+          if (!res.ok) {
+            let t = "";
+            try { t = await res.text(); } catch (_) { }
+            console.warn("Receipt API error:", res.status, t);
+            throw new Error(prettyReceiptError(res.status));
+          }
+          return res.json();
+        }
+
+        const data = await fetchJsonOrNiceError(jsonUrl);
+        const h = data.header || {};
+        const items = Array.isArray(data.items) ? data.items : [];
+        const discountsRaw = Array.isArray(data.discounts) ? data.discounts : [];
+        const payments = normalizePayments(data.payments);
+
+        const discounts = discountsRaw.filter(d => {
+          const raw = d?.DiscountAmount ?? d?.amount ?? 0;
+          const num = Number(raw);
+          return Number.isFinite(num) && Math.abs(num) > 1e-9;
+        });
+
+        const paymentsToShow = payments.filter(p => {
+          const num = Number(p.amount);
+          return Number.isFinite(num) && Math.abs(num) > 1e-9;
+        });
+
+        const CREDIT_NAME = "זיכויים הנפקה";
+        const creditPayments = paymentsToShow.filter(p => String(p.name || "").trim() === CREDIT_NAME);
+        const hasCredit = creditPayments.length > 0;
+
+        const creditBarcode =
+          String(creditPayments[0]?.info ?? "").trim() ||
+          String(h.Barcode ?? h.barcode ?? "").trim() ||
+          String(data.barcode ?? "").trim();
+
+        const exitBarcode =
+          String(h.Barcode ?? h.barcode ?? "").trim() ||
+          String(data.barcode ?? "").trim();
+
+        const creditAmountRaw = creditPayments.reduce((sum, p) => {
+          const n = Number(p.amount);
+          return sum + (Number.isFinite(n) ? n : 0);
+        }, 0);
+        const creditAmountAbs = Math.abs(creditAmountRaw);
+
+        const created = h.CreatedDateUtc ? new Date(h.CreatedDateUtc) : null;
+        const createdStr = created ? created.toLocaleString("he-IL") : "";
+
+        const receiptNo = h.TransactionID ?? h.ReceiptID ?? h.receiptId ?? "";
+        //const cashierId = h.CashierID ?? h.cashierID ?? "";
+
+        const posInternalId = h.PosInternalID ?? h.posInternalID ?? "";
+        const storeInternalId = h.StoreInternalID ?? h.storeInternalID ?? "";
+        const store = getStoreInfo(storeInternalId);
+
+        const loyaltyId = String(h.LoyaltyID ?? h.loyaltyID ?? "").trim();
+        const loyaltyName = String(h.LoyaltyName ?? h.loyaltyName ?? "").trim();
+        //const showStamps = Number(h.ShowStamps ?? h.showStamps ?? 1) === 1;
+        const showStamps = false;
+        //console.log("Receipt header ShowStamps:", h.ShowStamps, "=>", showStamps);
+
+        const loyaltyBlock = (loyaltyId && loyaltyName) ? `
+          <div class="loyaltyPill" title="חבר מועדון">
+            <span>לקוח/ה</span>
+            <span style="display:none;" class="mono">#${esc(loyaltyId)}</span>
+            <span>·</span>
+            <span>${esc(loyaltyName)}</span>
+          </div>
+        ` : ``;
+
+        const logoSrc = (storeInternalId === "7") ? "/stopcity.d110a0.webp" : "/logo.png";
+        const bannerSrc =
+          (storeInternalId === "7" || storeInternalId === "11")
+            ? "/1.png"
+            : "/BANNER-SITE.d110a0.webp";
+
+        const topBanner = document.getElementById("topBanner");
+        const bannerCard = document.getElementById("bannerCard");
+
+        if (topBanner && bannerCard) {
+          const img = new Image();
+          img.src = bannerSrc;
+
+          img.onload = function () {
+            topBanner.src = bannerSrc;
+            bannerCard.style.display = "block"; // מציג את כל הבאנר
+          };
+
+          img.onerror = function () {
+            //console.log("banner failed:", bannerSrc);
+            bannerCard.style.display = "none";
+          };
+        }
+
+        const rawNotes = h.NotesHtml ?? h.notes ?? "";
+        const notesBlock = notesHtmlSafe(rawNotes);
+
+        const rawAdditionalInfoJson = h.AdditionalInfoJson ?? h.additionalInfoJson ?? null;
+        const additionalInfoArr = parseAdditionalInfo(rawAdditionalInfoJson);
+        const additionalInfoBlock = renderAdditionalInfo(additionalInfoArr);
+
+        const stamps = stampsCountFromTotal(h.Total);
+        const stampsBarcodeValue = buildStampsBarcodeValue(h.CreatedDateUtc, receiptNo, storeInternalId, stamps);
+
+        app.innerHTML = `
+          <div class="hero">
+            <div class="heroTop">
+              <div class="logo ${storeInternalId === "7" ? "isStore7" : ""}" title="לוגו">
+                <img src="${logoSrc}" alt="Logo" />
+              </div>
+
+              <div class="receiptTitle">פשוט חוויה לקנות</div>
+
+              <div class="receiptNo">
+                <span>${hasCredit ? "מס׳ זיכוי" : "מס׳ פתקית"}</span>
+                <span class="mono">#${esc(receiptNo)}</span>
+              </div>
+
+              ${loyaltyBlock}
+
+                    <div class="storeBox">
+                <div class="storeName">${esc(store.name)}</div>
+                ${store.address ? `<div class="storeSub">${esc(store.address)}</div>` : ``}
+                ${store.phone ? `<div class="storeSub"><a href="tel:${esc(normalizePhoneForTel(store.phone))}" style="color:inherit;text-decoration:none;">${esc(store.phone)}</a></div>` : ``}
+              </div>
+
+              <div class="metaBox">
+                <div class="metaGrid">
+                  <div class="metaLine"><span>תאריך</span><strong>${esc(createdStr)}</strong></div>
+                  ${posInternalId ? `<div class="metaLine"><span>מס׳ קופה</span><strong>${esc(posInternalId)}</strong></div>` : ``}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            ${hasCredit ? `
+              <div class="creditWrap">
+                <div class="creditHeader">זיכוי</div>
+                <div class="creditBody">
+                  <div class="creditAmt">
+                    <span>סכום זיכוי</span>
+                    <span>${esc(n2(creditAmountAbs) || "0.00")} ₪</span>
+                  </div>
+
+                  <div class="barcodeBox">
+                    <svg id="creditBarcodeSvg"></svg>
+                    <div class="creditBarcodeText">${esc(creditBarcode || "")}</div>
+                  </div>
+
+                  <div class="creditHint">הציגו את הברקוד בקופה למימוש הזיכוי.</div>
+                </div>
+              </div>
+            ` : `
+              <div class="h3">
+                <h3>פריטים</h3>
+                <div class="countPill">${items.length} פריטים</div>
+              </div>
+
+              <div class="itemsWrap">
+                <div class="itemsHeader">
+                  <div class="hName">שם פריט</div>
+                  <div class="hQty">כמות</div>
+                  <div class="hTotal">סכום לתשלום</div>
+                </div>
+
+              ${items.length
+            ? items.map(it => {
+              //console.log("ITEM:", it);
+              const name = it.ItemName ?? it.name ?? "";
+              const code = it.ItemCode ?? it.code ?? "";
+              const qtyRaw = it.Qty ?? it.quantity;
+              const qty = fmtQty(qtyRaw);
+              const weight = fmtWeight(
+                it.Weight ?? it.weight,
+                it.TotalLine ?? it.total,
+                it.UnitPrice ?? it.price,
+                it.Qty ?? it.quantity
+              );
+              const totalLine = n2(it.TotalLine ?? it.total);
+              const unit = n2(it.UnitPrice ?? it.price);
+
+              const itemAddInfoRaw = it.AdditionalInfoJson ?? it.additionalInfoJson ?? it.additionalInfo ?? null;
+              const extrasArr = parseAdditionalInfo(itemAddInfoRaw);
+
+              const extrasHtml = Array.isArray(extrasArr)
+                ? extrasArr.map(extra => {
+                  const k = String(extra?.key ?? "").trim();
+                  const v = String(extra?.value ?? "").trim();
+
+                  if (!k && !v) return "";
+
+                  const parts = splitExtraToTextAndAmount(`${k} ${v}`);
+                  const extraText = cutUntilFirstShekelWord(parts.text);
+                  const extraAmt = normalizeTrailingMinusAmount(parts.amt || v);
+
+                  return `
+        <div class="itemExtraFullRow">
+          <div class="itemExtraText">${esc(extraText)}</div>
+          <div class="itemExtraAmt">${esc(extraAmt)}</div>
+        </div>
+      `;
+                }).join("")
+                : "";
+
+              return `
+        <div class="itemRow ${isHighlightedItem(it) ? 'highlightItem' : ''}">
+          <div class="itemInfo">
+            <div class="itemName">${esc(name)}</div>
+            ${code ? `<div class="itemCode mono">${esc(code)}</div>` : ``}
+          </div>
+
+    <div class="itemQty">
+        ${qty ? `<div>${esc(qty)}</div>` : ``}
+        ${weight ? `<div style="display:block;margin-top:${qty ? "3px" : "0"};font-size:12px;color:#101828;font-weight:700;line-height:1.2;">${esc(weight)}</div>` : ``}
+      </div>
+
+   <div>
+  <div class="itemTotal">
+  ${Number(totalLine) < 0
+                  ? `${esc(Math.abs(Number(totalLine)).toFixed(2))}- ₪`
+                  : `${esc(totalLine || "0.00")} ₪`
+                }
+</div>
+
+  ${unit
+                  ? weight
+                    ? `<div class="itemUnit">${esc(unit)} ₪ לק"ג</div>`
+                    : `<div class="itemUnit">${esc(unit)} ₪ ליח׳</div>`
+                  : ``
+                }
+</div>
+
+    ${extrasHtml}
+        </div>
+      `;
+            }).join("")
+            : `<div style="padding:12px;color:#667085;font-size:13px;">אין פריטים להצגה</div>`
+          }
+
+              </div>
+
+              ${discounts.length ? `
+                <div style="height:14px"></div>
+
+                <div class="h3">
+                  <h3>הנחות</h3>
+                  <div class="countPill">${discounts.length} הנחות</div>
+                </div>
+
+                <div class="discWrap">
+                  <div class="discHeader">
+                    <div>קוד</div>
+                    <div>שם</div>
+                    <div class="dAmt">סכום</div>
+                  </div>
+
+                  ${discounts.map(d => {
+            const code = d.DiscountCode ?? d.code ?? "";
+            const name = d.DiscountName ?? d.name ?? "";
+            const amt = n2(d.DiscountAmount ?? d.amount);
+            return `
+                      <div class="discRow">
+                        <div class="discCode mono">${esc(code)}</div>
+                        <div class="discName">${esc(name)}</div>
+                        <div class="discAmt">${esc(amt || "0.00")} ₪</div>
+                      </div>
+                    `;
+          }).join("")}
+                </div>
+              ` : ``}
+
+              <div class="totalsBottom">
+                <div class="totalRow">
+                  <span>סכום לתשלום</span>
+                  <strong class="big">${n2(h.Total) || "0.00"} ₪</strong>
+                </div>
+              </div>
+            `}
+
+            ${paymentsToShow.length ? `
+              <div class="payWrap">
+                <div class="payHeader">
+                  <div>אמצעי תשלום</div>
+                  <div class="pAmt">סכום</div>
+                </div>
+
+                ${paymentsToShow.map(p => {
+            const name = p.name || "";
+            const amt = n2(p.amount);
+            const info = (p.info ?? "").trim();
+            return `
+                    <div class="payRow">
+                      <div>
+                        <div class="payName">${esc(name)}</div>
+                        ${info ? `<div class="payInfo">${esc(info)}</div>` : ``}
+                      </div>
+                      <div class="payAmt">₪ ${esc(amt || "0.00")} </div>
+                    </div>
+                  `;
+          }).join("")}
+              </div>
+            ` : ``}
+
+            ${notesBlock ? `
+              <div class="notesWrap">
+                <div class="notesHeader">פירוט עסקה</div>
+                <div class="notesBody">${notesBlock}</div>
+              </div>
+            ` : ``}
+
+            ${additionalInfoBlock || ``}
+          </div>
+
+          <div class="bottomBar">
+            ${(!hasCredit && exitBarcode) ? `
+              <div class="exitBarcodeWrap">
+                <svg id="exitBarcodeSvg"></svg>
+                <div class="exitBarcodeText">${esc(exitBarcode)}</div>
+              </div>
+            ` : ``}
+
+            ${socialIconsHtml()}
+          </div>
+        `;
+        stampsHost.innerHTML = "";
+        if (!hasCredit && showStamps && stamps > 0) {
+          stampsHost.innerHTML = `
+            <div class="slipCard" id="stampsSlip">
+              <div class="slipTear"></div>
+              <div class="slipHeader">ספח חותמות</div>
+              <div class="slipBody">
+                <div class="slipPill">
+                  <span>קיבלת</span>
+                  <span>${stamps}</span>
+                  <span>${stamps === 1 ? "חותמת" : "חותמות"}</span>
+                </div>
+
+                <div class="slipHint">
+                  לפי סכום החשבון מגיעות לך חותמות.<br/>
+                  <strong>גש/י לקופה הראשית</strong> לקבלת החותמות בפנקס.
+                </div>
+
+                <div id="stampsBarcodeContainer">
+                  <div class="stampsBarcodeWrap">
+                    <svg id="stampsBarcodeSvg"></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        if (hasCredit) {
+          const svg = document.getElementById("creditBarcodeSvg");
+          const val = String(creditBarcode || "").trim();
+          if (svg && val && typeof JsBarcode === "function") {
+            try {
+              JsBarcode(svg, val, { format: "CODE128", displayValue: false, margin: 0, height: 90 });
+            } catch (e) { }
+          }
+        }
+
+        if (!hasCredit) {
+          const svg2 = document.getElementById("exitBarcodeSvg");
+          const val2 = String(exitBarcode || "").trim();
+          if (svg2 && val2 && typeof JsBarcode === "function") {
+            try {
+              JsBarcode(svg2, val2, { format: "CODE128", displayValue: false, margin: 0, height: 60 });
+            } catch (e) { }
+          }
+
+          const svg3 = document.getElementById("stampsBarcodeSvg");
+          const val3 = String(stampsBarcodeValue || "").trim();
+          if (svg3 && val3 && typeof JsBarcode === "function") {
+            try {
+              JsBarcode(svg3, val3, { format: "CODE128", displayValue: false, margin: 0, height: 78 });
+            } catch (e) { }
+          }
+
+          if (showStamps && stamps > 0 && stampsBarcodeValue) {
+            startStampsPolling(stampsBarcodeValue);
+          } else {
+            stopStampsPolling();
+          }
+        } else {
+          stopStampsPolling();
+        }
+
+      } catch (e) {
+        app.innerHTML = `<div style="padding:16px"><div class="err">${esc(e.message || e)}</div></div>`;
+        const stampsHost = document.getElementById("stampsSlipHost");
+        if (stampsHost) stampsHost.innerHTML = "";
+        stopStampsPolling();
+      }
+    }
+
+    window.addEventListener("beforeunload", () => {
+      stopStampsPolling();
+    });
+
+    load();
+  </script>
+
+
+</body></html>

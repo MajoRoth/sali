@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatPrice } from '../lib/geo'
-import { itemPrices, itemRanges, type PricedStore } from '../lib/pricing'
+import type { PricedLine, PricedStore } from '../lib/pricing'
+import ChainMark from '../components/ChainMark'
 import SavingBadge from '../components/SavingBadge'
 import type { ReceiptItem } from '../lib/types'
 import './CartView.css'
@@ -12,6 +13,14 @@ interface CartNavState {
   name?: string
 }
 
+/**
+ * One basket, line by line.
+ *
+ * For the origin it is the shopper's own receipt, so every line is simply what
+ * they paid. For any other store each line is compared against what they paid,
+ * and a line the store has no price for is shown as unavailable — never filled
+ * in with an estimate, because on screen a guess and a fact look identical.
+ */
 export default function CartView() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -19,41 +28,28 @@ export default function CartView() {
 
   // Reached without context (e.g. a refresh) — nothing to show.
   useEffect(() => {
-    if (!state.store || !state.items) navigate('/', { replace: true })
-  }, [state.store, state.items, navigate])
-  if (!state.store || !state.items) return null
+    if (!state.store) navigate('/', { replace: true })
+  }, [state.store, navigate])
+  if (!state.store) return null
 
-  const { store, items } = state
-  const prices = itemPrices(store, items)
-  const ranges = itemRanges(items)
-  const total = items.reduce((s, it, i) => s + prices[i] * it.qty, 0)
+  const { store } = state
+  const rows = [...store.lines]
+    // The origin basket is compared against itself, so every line would read
+    // "saved ₪0.00" — no badge there, just the prices from the receipt.
+    .map((line) => ({ line, diff: store.isOrigin ? null : savingOf(line) }))
+    // Biggest difference first: the reason to look at this screen is the
+    // outliers, and they are what a shopper acts on.
+    .sort((a, b) => (b.diff ?? -Infinity) - (a.diff ?? -Infinity))
 
-  // Per-item comparison. Non-origin: saving vs the receipt's paid price.
-  // Origin: difference from the lowest price across all supermarkets.
-  const rows = items
-    .map((it, i) => {
-      const price = prices[i]
-      const lineTotal = price * it.qty
-      if (store.isOrigin) {
-        const overpay = (price - ranges[i].min) * it.qty // ≥ 0
-        return { it, i, price, lineTotal, amount: overpay, save: overpay < 0.005, sortVal: overpay }
-      }
-      const lineSave = (it.unitPrice - price) * it.qty
-      return { it, i, price, lineTotal, amount: Math.abs(lineSave), save: lineSave >= -0.005, sortVal: lineSave }
-    })
-    .sort((a, b) => b.sortVal - a.sortVal)
+  const paidTotal = (state.items ?? []).reduce((s, i) => s + i.unitPrice * i.qty, 0)
+  const totalDiff = store.isOrigin ? 0 : paidTotal - store.cartTotal
+  const totalSave = totalDiff >= -0.005
 
-  // Total headline. Non-origin: saved vs receipt. Origin: total overpay vs the
-  // cheapest-per-item basket (i.e. how much you could have saved).
-  const receiptTotal = items.reduce((s, it) => s + it.unitPrice * it.qty, 0)
-  const lowestTotal = items.reduce((s, it, i) => s + ranges[i].min * it.qty, 0)
-  const totalDiff = store.isOrigin ? total - lowestTotal : receiptTotal - total
-  const totalSave = store.isOrigin ? totalDiff < 0.005 : totalDiff >= -0.005
-  const totalLabel = store.isOrigin ? 'יכולת לחסוך' : totalSave ? 'חוסכים' : 'יקר יותר'
-
-  // Explains what the per-item difference badge means, at the top of the list.
+  // Says what the numbers on each row mean, above the rows. The origin basket
+  // is the receipt itself, so there is nothing to compare it against — only
+  // the other stores carry a per-line difference.
   const listNote = store.isOrigin
-    ? 'ההפרש מציג כמה יקר כל מוצר מהמחיר הזול ביותר שנמצא'
+    ? 'אלו המחירים ששילמתם בפועל, לפי הקבלה'
     : 'ההפרש מציג את החיסכון על כל מוצר לעומת המחיר בחנות המקורית'
 
   return (
@@ -63,44 +59,66 @@ export default function CartView() {
           →
         </button>
         <div className="cartview-store">
-          <span className="cartview-logo">
-            <img src={store.logo} alt={store.brand} />
-          </span>
+          <ChainMark chain={store.brand} logo={store.logo} className="cartview-logo" />
           <div className="cartview-store-info">
             <span className="cartview-brand">{store.brand}</span>
             <span className="cartview-sub">
-              {store.isOrigin ? 'המחירים מהקבלה' : 'מחירים משוערים'}
+              {store.isOrigin ? 'המחירים מהקבלה שלכם' : store.branch || 'מחירי המאגר הציבורי'}
             </span>
           </div>
         </div>
         <div className="cartview-totals">
           <span className="cartview-total mono" dir="ltr">
-            {formatPrice(total)}
+            {formatPrice(store.cartTotal)}
           </span>
-          <SavingBadge amount={Math.abs(totalDiff)} save={totalSave} size="sm" label={totalLabel} />
+          {!store.isOrigin && (
+            <SavingBadge
+              amount={Math.abs(totalDiff)}
+              save={totalSave}
+              size="sm"
+              label={totalSave ? 'חוסכים' : 'יקר יותר'}
+            />
+          )}
         </div>
       </header>
 
+      {store.unavailableCount > 0 && (
+        <p className="cartview-warn">
+          {store.unavailableCount} מוצרים אינם במלאי המתומחר של הסניף ואינם נכללים בסכום.
+        </p>
+      )}
+
       <div className="cartview-list">
         <p className="cartview-note">{listNote}</p>
-        {rows.map(({ it, i, price, lineTotal, amount, save }) => (
-          <div className="citem" key={`${it.barcode}-${i}`}>
+        {rows.map(({ line, diff }, i) => (
+          <div className={`citem ${line.available ? '' : 'unavailable'}`} key={`${line.barcode}-${i}`}>
             <div className="citem-top">
-              <span className="citem-name">{it.name}</span>
+              <span className="citem-name">{line.name}</span>
+              {/* This store's price for the line, with the difference beneath it. */}
               <div className="citem-vals">
-                <span className="citem-price mono" dir="ltr">
-                  {formatPrice(lineTotal)}
-                </span>
-                <SavingBadge amount={amount} save={save} size="sm" />
+                {line.available && line.lineTotal !== null && (
+                  <span className="citem-price mono" dir="ltr">
+                    {formatPrice(line.lineTotal)}
+                  </span>
+                )}
+                {diff !== null && <SavingBadge amount={Math.abs(diff)} save={diff >= -0.005} size="sm" />}
               </div>
             </div>
             <div className="citem-meta">
-              {it.qty} × {formatPrice(price)} ליחידה
-              {store.isOrigin && !save && ' · יקר מהזול ביותר'}
+              {line.available && line.unitPrice !== null
+                ? `${line.qty} × ${formatPrice(line.unitPrice)} ליחידה`
+                : 'אין מחיר עדכני בסניף'}
+              {line.swappedFrom && <span className="citem-swap"> · במקום {line.swappedFrom}</span>}
             </div>
           </div>
         ))}
       </div>
     </div>
   )
+}
+
+/** What this line saves against what the shopper paid; null when unknowable. */
+function savingOf(line: PricedLine): number | null {
+  if (!line.available || line.unitPrice === null || line.paidUnitPrice === null) return null
+  return (line.paidUnitPrice - line.unitPrice) * line.qty
 }

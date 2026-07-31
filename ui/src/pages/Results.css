@@ -500,3 +500,84 @@
 .map-btn:active {
   transform: scale(0.97);
 }
+
+/* ------------------------------------------------------------------ */
+/* Pricing states — pending, failed, and the honest "no prices" case.  */
+/* ------------------------------------------------------------------ */
+
+.stores-pending {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 30px 18px;
+  color: var(--muted, #6b7f74);
+  font-size: 14px;
+}
+
+.stores-empty {
+  margin: 8px 14px 18px;
+  padding: 18px 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px dashed rgba(23, 37, 29, 0.16);
+  text-align: center;
+}
+
+.stores-empty.error {
+  border-color: rgba(199, 62, 62, 0.35);
+  background: #fff6f6;
+}
+
+.stores-empty-title {
+  font-weight: 800;
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+
+.stores-empty-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted, #6b7f74);
+}
+
+.stores-empty-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted, #6b7f74);
+  opacity: 0.9;
+}
+
+/* The ranking's fine print: what could not be compared, and why. */
+.store-list-notes {
+  margin: 14px 4px 0;
+}
+
+/* A store that cannot supply the whole cart says so on its own row. */
+.row-gap {
+  font-size: 11px;
+  font-weight: 700;
+  color: #b4632a;
+}
+
+/* Simulated prices. Deliberately loud: this is the only thing distinguishing a
+   demo from a false claim about what groceries cost. */
+.demo-banner {
+  margin: 0 16px 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--warn-border, #e0b000);
+  border-radius: 12px;
+  background: var(--warn-bg, #fff8e1);
+  color: var(--warn-fg, #6b4e00);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* A partial store shows what it covers, never a saving — see StoreRow. */
+.row-partial {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink, #1a1a1a);
+}
