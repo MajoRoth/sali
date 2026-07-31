@@ -51,6 +51,19 @@ async def get_similar_products(
     return await crud.get_similar_products(db, item_code=item_code, limit=limit)
 
 
+@router.get("/ocr-match", response_model=list[Product])
+async def ocr_match_products(
+    item_code: str = Query(..., description="The OCR read item code"),
+    item_name: str = Query(..., description="The OCR read item name"),
+    price: float = Query(..., description="The OCR read item price"),
+    limit: int = Query(5, ge=1, le=50, description="Max items to return (max 50)"),
+    db: AsyncSession = Depends(deps.get_db),
+) -> Any:
+    return await crud.ocr_match_products(
+        db, item_code=item_code, item_name=item_name, item_price=price, limit=limit
+    )
+
+
 @router.get("/barcode/{barcode}", response_model=ProductBarcodeResponse)
 async def get_product_by_barcode(
     barcode: int = Path(...), db: AsyncSession = Depends(deps.get_db)

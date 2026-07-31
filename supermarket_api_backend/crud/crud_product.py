@@ -91,3 +91,45 @@ async def get_similar_products(
     result = await db.execute(stmt, {"item_code": item_code})
     rows = result.scalars().all()
     return [_map_item_to_product(row) for row in rows]
+
+
+async def ocr_match_products(
+    db: AsyncSession, item_code: str, item_name: str, item_price: float, limit: int = 5
+) -> list[Product]:
+    query = text("""
+        SELECT i.item_code, i.is_weighted, i.manufacturer_name, i.manufacture_country,
+               i.unit_of_measure, i.unit_qty, i.item_name,
+               MIN(
+                   SQRT(
+                       POWER(CAST(levenshtein(SUBSTRING(COALESCE(i.item_code, '') FROM 1 FOR 255), SUBSTRING(:code FROM 1 FOR 255)) AS FLOAT), 2) + 
+                       POWER(CAST(levenshtein(SUBSTRING(COALESCE(i.item_name, '') FROM 1 FOR 255), SUBSTRING(:name FROM 1 FOR 255)) AS FLOAT), 2) + 
+                       POWER(CAST(COALESCE(sp.item_price, 0) AS FLOAT) - :price, 2)
+                   )
+               ) as distance
+        FROM items i
+        LEFT JOIN store_prices sp ON i.item_code = sp.item_code
+        GROUP BY i.item_code, i.is_weighted, i.manufacturer_name, i.manufacture_country,
+                 i.unit_of_measure, i.unit_qty, i.item_name
+        ORDER BY distance ASC
+        LIMIT :limit
+    """)
+
+    result = await db.execute(
+        query,
+        {"code": item_code, "name": item_name, "price": item_price, "limit": limit},
+    )
+    rows = result.fetchall()
+
+    products = []
+    for row in rows:
+        item = ItemModel(
+            item_code=row.item_code,
+            is_weighted=row.is_weighted,
+            manufacturer_name=row.manufacturer_name,
+            manufacture_country=row.manufacture_country,
+            unit_of_measure=row.unit_of_measure,
+            unit_qty=row.unit_qty,
+            item_name=row.item_name,
+        )
+        products.append(_map_item_to_product(item))
+    return products
