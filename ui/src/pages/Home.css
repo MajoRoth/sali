@@ -17,6 +17,19 @@
   padding: max(20px, env(safe-area-inset-top)) 20px calc(30vh + env(safe-area-inset-bottom));
 }
 
+/* With saved receipts the column is taller than the screen, so it scrolls as
+   one piece and the list takes its natural height. The map band shrinks: it is
+   breathing room on the signed-out screen, but here there is content to show. */
+.home-content.with-list {
+  overflow-y: auto;
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+
+.home-content.with-list .receipt-list {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
 /* --- Footer: the open-source invitation, pinned under both versions --- */
 
 /* Anchored to the bottom of the content box rather than added to the flow, so
@@ -25,6 +38,7 @@
    the one the reader sees on the right whichever way the text runs. */
 .home-footer {
   position: absolute;
+  z-index: 2;
   bottom: max(12px, env(safe-area-inset-bottom));
   right: 20px;
   left: auto;
@@ -327,6 +341,36 @@
 }
 
 /* --- New-receipt panel (structure only; .panel/.tile/.field style it) --- */
+
+/* Secondary way in, under the receipt card: quieter than the card's tiles,
+   because building a cart by hand is the rarer of the two intentions. */
+.empty-cart-link {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 18px auto 16px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.empty-cart-link:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.empty-cart-link svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
 
 .new-receipt {
   margin-bottom: 16px;

@@ -180,7 +180,11 @@ export default function Home() {
   return (
     <div className="home">
       <HomeMapBackground />
-      <div className="home-content">
+      {/* `with-list` scrolls the whole column. The signed-out screen is one
+          card that always fits, but the same card above a list of receipts
+          does not, and the list alone cannot take the overflow — it would be
+          squeezed to a few pixels between the card and the map band. */}
+      <div className={`home-content ${showList ? 'with-list' : ''}`}>
         {scanError && (
           <div className="scan-error" role="alert">
             <span>{scanError}</span>
@@ -202,11 +206,11 @@ export default function Home() {
         ) : (
           <UploadHome onScan={runScan} />
         )}
-
-        {/* Sits below both versions of the home screen — the upload card and
-            the saved-receipts list are the only things that differ above it. */}
-        <OpenSourceFooter />
       </div>
+
+      {/* Outside the scrolling column so it stays pinned to the viewport, and
+          outside the signed-in/signed-out branch so both screens carry it. */}
+      <OpenSourceFooter />
 
       {stages && (
         <div className="loading-overlay">
@@ -277,11 +281,6 @@ interface UploadProps {
 }
 
 function UploadHome({ onScan }: UploadProps) {
-  const [dragOver, setDragOver] = useState(false)
-  const [url, setUrl] = useState('')
-  const cameraRef = useRef<HTMLInputElement>(null)
-  const uploadRef = useRef<HTMLInputElement>(null)
-
   return (
     <>
       <header className="home-header">
@@ -294,6 +293,31 @@ function UploadHome({ onScan }: UploadProps) {
         <p className="tagline">יכולת לחסוך, לא חבל?</p>
       </header>
 
+      <UploadCard onScan={onScan} />
+    </>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* The receipt card — the one way into a scan, on both home screens.   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Starting a receipt looks the same whether or not you are signed in.
+ *
+ * This used to be two things: the torn receipt card for a signed-out visitor,
+ * and a compact panel above the saved list. Two designs for one action meant
+ * the affordance a returning user had already learned changed under them the
+ * moment they had a receipt saved.
+ */
+function UploadCard({ onScan }: UploadProps) {
+  const [dragOver, setDragOver] = useState(false)
+  const [url, setUrl] = useState('')
+  const cameraRef = useRef<HTMLInputElement>(null)
+  const uploadRef = useRef<HTMLInputElement>(null)
+
+  return (
+    <>
       <main
         className={`upload-zone ${dragOver ? 'drag-over' : ''}`}
         onDragOver={(e) => {
@@ -374,7 +398,6 @@ function UploadHome({ onScan }: UploadProps) {
           }}
         />
       </main>
-
     </>
   )
 }
@@ -400,10 +423,6 @@ function ReceiptListHome({
   onCreateEmpty,
   onScan,
 }: ListProps) {
-  const [url, setUrl] = useState('')
-  const cameraRef = useRef<HTMLInputElement>(null)
-  const uploadRef = useRef<HTMLInputElement>(null)
-
   return (
     <>
       <header className="list-header">
@@ -421,46 +440,15 @@ function ReceiptListHome({
         </div>
       </header>
 
-      {/* Echo of the full upload zone — the entry point for a new receipt. */}
-      <section className="panel new-receipt">
-        <p className="panel-title">קבלה חדשה</p>
-        <div className="tile-grid lg">
-          <button className="tile lg" onClick={onCreateEmpty}>
-            <PlusIcon />
-            עגלה ריקה
-          </button>
-          <button className="tile lg" onClick={() => cameraRef.current?.click()}>
-            <CameraIcon />
-            מצלמה
-          </button>
-          <button className="tile lg" onClick={() => uploadRef.current?.click()}>
-            <ImageIcon />
-            קובץ
-          </button>
-        </div>
+      {/* The same card a signed-out visitor gets, so the way in never changes. */}
+      <UploadCard onScan={onScan} />
 
-        <form
-          className="field-row url-form inline"
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (url.trim()) onScan({ kind: 'url', url: url.trim() })
-          }}
-        >
-          <input
-            className="field mono"
-            type="url"
-            inputMode="url"
-            dir="ltr"
-            placeholder="הדביקו קישור לקבלה"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            aria-label="קישור לקבלה"
-          />
-          <button className="icon-btn forward" type="submit" disabled={!url.trim()} aria-label="טעינת הקבלה">
-            <ArrowIcon />
-          </button>
-        </form>
-      </section>
+      {/* Kept out of the card so the card stays identical across both screens.
+          Starting from nothing is still the only way to build a cart by hand. */}
+      <button className="empty-cart-link" onClick={onCreateEmpty}>
+        <PlusIcon />
+        או התחילו מעגלה ריקה
+      </button>
 
       <ul className="receipt-list">
         {receipts.map((r) => {
@@ -490,30 +478,6 @@ function ReceiptListHome({
           )
         })}
       </ul>
-
-      <input
-        ref={cameraRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        capture="environment"
-        hidden
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          e.target.value = ''
-          if (file) onScan({ kind: 'file', file })
-        }}
-      />
-      <input
-        ref={uploadRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        hidden
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          e.target.value = ''
-          if (file) onScan({ kind: 'file', file })
-        }}
-      />
     </>
   )
 }
